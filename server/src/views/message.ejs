@@ -1,0 +1,9 @@
+<% if (locals.messages) { %> <% locals.messages.forEach(element => { %>
+<p class="<%= element.type %>"><%= element.message %></p>
+<% }) %> <% removeMessages() %> <% } %>
+
+<style>
+    .error {
+        color: #f00;
+    }
+</style>

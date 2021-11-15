@@ -1,0 +1,25 @@
+extends ./layout.pug
+
+block title
+    title PugText
+
+block style
+    link(rel="stylesheet" href="/css/pug/pug.css")
+
+//- 把这个script加到layout定义的scripts块上面
+block append scripts
+    script(src="/js/pug/pug.js")
+
+block content
+    - var count = 0
+    each message in messages 
+        - count ++
+        script 
+            != 'console.log(' + count + ')' 
+        != '<div id="message_' + count + '">' + message + '</div>'
+
+
+
+
+
+

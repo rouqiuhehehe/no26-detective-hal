@@ -1,0 +1,12 @@
+[2021-11-05 16.24.56] GET /admin 200 {} {}
+[2021-11-05 16.24.56] POST /auth/management-system/login 404 {} {}
+[2021-11-05 16.24.56] POST /auth/management-system/login 404 {} {}
+[2021-11-05 16.24.56] POST /auth/management-system/login 404 {} {}
+[2021-11-05 17.16.47] GET /auth/management-system/login 404 {} {}
+[2021-11-05 17.16.47] GET /auth/management-system/login 404 {} {}
+[2021-11-05 17.17.39] GET /auth/management-system/login 404 {} {}
+[2021-11-05 17.17.39] GET /auth/management-system/login 404 {} {}
+[2021-11-05 17.17.39] GET /auth/management-system/login 404 {} {}
+[2021-11-05 17.44.45] POST /auth/management-system/login 404 {} {"userName":"xxxxxx","password":"a388013c78cd6e0ffbbdd95c86c775a0"}
+[2021-11-05 17.44.45] POST /auth/management-system/login 404 {} {"userName":"xxxxxx","password":"a388013c78cd6e0ffbbdd95c86c775a0"}
+[2021-11-05 17.44.45] GET /admin 304 {} {}

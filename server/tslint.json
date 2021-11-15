@@ -1,0 +1,20 @@
+{
+    "extends": ["./tslintConfig", "tslint-config-prettier"],
+    "linterOptions": {
+        "exclude": ["**/node_modules/**"]
+    },
+    "rules": {
+        // 这里填入你的项目需要的个性化配置，比如：
+        // 一个缩进必须用四个空格替代
+        // @has-fixer 可自动修复
+        // @prettier 可交由 prettier 控制
+        // "indent": [true, "spaces", 2]
+        "no-parameter-properties": false,
+        "no-non-null-assertion": false,
+        "ordered-imports": false,
+        "prefer-const": true,
+        "no-import-side-effect": false,
+        "no-implicit-dependencies": [true, "dev", ["@src", "@util", "domhandler"]],
+        "no-unused-expression": false
+    }
+}

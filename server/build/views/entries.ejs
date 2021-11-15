@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title><%= title %></title>
+    </head>
+    <body>
+        <%- include('menu') %> <% entries.forEach(element => { %>
+        <div>
+            <h3><%= element.title %></h3>
+            <p><%= element.body %></p>
+            <p>post by <span style="color: #333"><%= element.username %> </span></p>
+        </div>
+        <br />
+        <% }) %> <% if (locals.page) { %>
+        <h4>page: <%= locals.page.prepage %></h4>
+        <% } %>
+    </body>
+</html>

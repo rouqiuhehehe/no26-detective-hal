@@ -1,0 +1,24 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 10
+    },
+    "auditLog": "C:\\web\\26号探案馆\\后端\\log\\info/.audit.json",
+    "files": [
+        {
+            "date": 1635928540751,
+            "name": "C:\\web\\26号探案馆\\后端\\log\\info\\access-20211103.log",
+            "hash": "2e1235cddadd4d6730ed1dba1a7bf4e0"
+        },
+        {
+            "date": 1636100123298,
+            "name": "C:\\web\\26号探案馆\\后端\\log\\info\\access-20211105.log",
+            "hash": "e19253f5509267c1da1e183bd84bc2c6"
+        },
+        {
+            "date": 1636767712984,
+            "name": "C:\\web\\26号探案馆\\后端\\log\\info\\access-20211113.log",
+            "hash": "8f608dadeecda9b3c5071edfa31907b9"
+        }
+    ]
+}

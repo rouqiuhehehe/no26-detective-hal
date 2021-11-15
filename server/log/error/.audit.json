@@ -1,0 +1,14 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 10
+    },
+    "auditLog": "C:\\web\\26号探案馆\\后端\\log\\error/.audit.json",
+    "files": [
+        {
+            "date": 1636769047226,
+            "name": "C:\\web\\26号探案馆\\后端\\log\\error\\access-20211113.log",
+            "hash": "9bc5b7000c1e2abc9d17327ba7af99f7"
+        }
+    ]
+}
