@@ -3,10 +3,7 @@
 // import Async from './util/async';
 import 'reflect-metadata';
 // import './https';
-// import './child_process';
-import db from './bin/db';
-const dbm = new db();
-dbm.databaseBackup();
+import './child_process';
 
 // if (process.env.NODE_RUN === 'debugger') {
 //     easyMonitor('dsc');

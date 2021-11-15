@@ -1,7 +1,12 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const path = require('path')
+
 module.exports = {
     runtimeCompiler: true,
+    publicPath: './',
+    outputDir: path.join(__dirname, '../server/src/public'),
+    assetsDir: 'assets',
     devServer: {
-        publicPath: '/',
         // outputDir: 'dist',
         host: '127.0.0.1',
         port: 9999,
@@ -23,7 +28,7 @@ module.exports = {
             }
         },
         disableHostCheck: true
-    }
+    },
     // configureWebpack: {
     //     // provide the app's title in webpack's name field, so that
     //     // it can be accessed in index.html to inject the correct title.

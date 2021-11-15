@@ -23,7 +23,7 @@ interface DbUser {
     create_date: string;
 }
 export default class User {
-    public userInfo: UserInfo;
+    public userInfo!: UserInfo;
 
     private incrKey = 'user:ids';
 
@@ -42,17 +42,16 @@ export default class User {
 
     // 用户名密码认证
     public authenticate(userInfo: ParamsUserInfo): Promise<number> {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (_resolve, reject) => {
             try {
                 const dbUserInfo = await this.getByUsername(userInfo.username);
                 if (dbUserInfo) {
-                    const bcryptPassword = await bcrypt.hash(userInfo.password, dbUserInfo.userInfo.salt!);
-
-                    if (bcryptPassword === dbUserInfo.userInfo.password) {
-                        resolve(dbUserInfo.userInfo.id!);
-                    } else {
-                        reject(LoginError.PASSWORD_ERROR);
-                    }
+                    // const bcryptPassword = await bcrypt.hash(userInfo.password, dbUserInfo.userInfo.salt!);
+                    // if (bcryptPassword === dbUserInfo.userInfo.password) {
+                    //     resolve(dbUserInfo.userInfo.id!);
+                    // } else {
+                    //     reject(LoginError.PASSWORD_ERROR);
+                    // }
                 } else {
                     reject(LoginError.USERNAME_ERROR);
                 }
@@ -64,11 +63,11 @@ export default class User {
 
     public getById(id: number): Promise<User> {
         return new Promise((resolve, reject) => {
-            redis.hgetall('user:' + id, (err, userInfo) => {
+            redis.hgetall('user:' + id, (err) => {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(new User(userInfo as UserInfo));
+                    resolve(new User());
                 }
             });
         });
