@@ -1,12 +1,13 @@
 import { ErrorMsg } from '@src/config/error';
 import { ControllerMetadata } from '@src/descriptor/controller';
 import HttpError from '@src/models/httpError';
+import crypto from 'crypto';
 import events from 'events';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import iconv from 'iconv-lite';
 import path from 'path';
-import { Listen, Status } from '../config/server_config';
+import { Status } from '../config/server_config';
 import variableTypes from './variable_type';
 
 export enum DescriptorKey {
@@ -83,6 +84,38 @@ export default class Util {
         }
     }
 
+    public static ascllSort<T extends Record<string, any>>(obj: T) {
+        const sortkeys = Object.keys(obj).sort();
+        const newObj: Record<string, any> = {};
+
+        for (const i of sortkeys) {
+            newObj[i] = obj[i];
+        }
+
+        return newObj;
+    }
+
+    public static mkDirForFile(pathWithFile: string) {
+        path.dirname(pathWithFile)
+            .split(path.sep)
+            .reduce((fullPath, folder) => {
+                // tslint:disable-next-line: no-parameter-reassignment
+                fullPath += folder + path.sep;
+                // Option to replace existsSync as deprecated. Maybe in a future release.
+                // try{
+                //     var stats = fs.statSync(fullPath);
+                //     console.log('STATS',fullPath, stats);
+                // }catch(e){
+                //     fs.mkdirSync(fullPath);
+                //     console.log("STATS ERROR",e)
+                // }
+                if (!fs.existsSync(fullPath)) {
+                    fs.mkdirSync(fullPath);
+                }
+                return fullPath;
+            }, '');
+    }
+
     public static dateFormat(dft: string | number | Date, format: string): string {
         const dateObj = new Date(dft);
         let k;
@@ -156,8 +189,16 @@ export default class Util {
     }
 
     public static getNoParamsUrl(req: Request) {
-        const urlObj = new URL(req.url, 'http:localhost:' + Listen.PORT);
+        const urlObj = new URL(req.url, req.protocol + '://' + req.get('host'));
         return urlObj.pathname;
+    }
+
+    public static md5Crypto(password: string) {
+        const hash = crypto.createHash('md5');
+        hash.update(password);
+
+        const md5Password = hash.digest('hex');
+        return md5Password;
     }
 
     public static getFunctionTypeByDescriptor(descriptor: PropertyDescriptor) {
@@ -242,22 +283,6 @@ export default class Util {
                 reject(err);
             });
         });
-    }
-
-    public static successSend(data: unknown) {
-        return {
-            status: Status.SUCCESS,
-            data,
-            success: true
-        };
-    }
-
-    public static errorSend<T extends Error>(err: T) {
-        return {
-            status: Status.SERVER_ERROR,
-            success: false,
-            message: err.message
-        };
     }
 
     public static isExtendsHttpError<T extends Error>(err: Error): err is HttpError<T> {

@@ -1,29 +1,22 @@
 import Vue from 'vue';
-import Vuex from 'vuex';
+import Vuex, { ModuleTree } from 'vuex';
 
 Vue.use(Vuex);
 
+const controller = require.context('./modules', true, /\.ts$/);
+
+const modules = controller.keys().reduce((a, v) => {
+    const module = controller(v).default ?? controller(v);
+    const moduleName = v.match(/(?<=\/).*(?=\.)/);
+
+    if (moduleName) {
+        module.namespaced = true;
+        a[moduleName[0]] = module;
+    }
+
+    return a;
+}, {} as ModuleTree<any>);
+
 export default new Vuex.Store({
-    state: {
-        userInfo: {
-            userId: '',
-            userName: '',
-            level: 0
-        }
-        // menuNav: null
-    },
-    mutations: {
-        changeLoginState(state, params) {
-            state.userInfo.userId = params.userId;
-            state.userInfo.userName = params.userName;
-            state.userInfo.level = params.level;
-        },
-        initLoginState(state) {
-            state.userInfo.userId = '';
-            state.userInfo.userName = '';
-            state.userInfo.level = 0;
-        }
-    },
-    actions: {},
-    modules: {}
+    modules
 });

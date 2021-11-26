@@ -13,7 +13,7 @@ export class Jwt {
         );
     }
 
-    public static vailToken(token: string, secret: string) {
+    public static vailToken(token: string, secret: string): Promise<Jsonwebtoken.JwtPayload> {
         return new Promise((resolve, reject) => {
             return Jsonwebtoken.verify(token, secret, (err, decoded) => {
                 if (err) {
@@ -21,7 +21,7 @@ export class Jwt {
                     // JsonWebTokenError 报错，无效token
                     reject(err);
                 } else {
-                    resolve(decoded);
+                    resolve(decoded!);
                 }
             });
         });

@@ -1,4 +1,5 @@
-import myAxios from '@/utils/myAxios';
+import axios from '@/middleware/axios';
+import getUserInfo from '@/middleware/getUserInfo';
 import myUtils from '@/utils/utils';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
@@ -11,15 +12,22 @@ Vue.use(ElementUI);
 
 Vue.config.productionTip = false;
 Vue.prototype.utils = myUtils;
-Vue.prototype.$axios = myAxios;
+Vue.prototype.$axios = axios;
 
 router.beforeEach((to, from, next) => {
-    if (sessionStorage.getItem('isLogin')) {
+    if (to.meta?.title) {
+        document.title = to.meta.title;
+    }
+    if (sessionStorage.getItem('token')) {
+        getUserInfo(to, from);
         next();
     } else {
         if (to.path === '/login') next();
         else {
-            ElementUI.MessageBox.alert('You have not logged in yet, please log in first').then(() => {
+            ElementUI.MessageBox.alert('你还没有登陆，请先登录', {
+                title: '提示',
+                type: 'error'
+            }).then(() => {
                 next('/login');
             });
         }

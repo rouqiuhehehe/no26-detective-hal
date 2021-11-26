@@ -1,5 +1,4 @@
 import { scanController } from '@src/models/routes';
-import history from 'connect-history-api-fallback';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import session from 'express-session';
@@ -80,7 +79,6 @@ export default class App {
                 saveUninitialized: true
             })
         );
-        this.app.use(history());
     }
 
     private listen() {

@@ -97,7 +97,7 @@ module.exports = {
          * @description 禁止使用魔法数字，仅允许使用一部分白名单中的数字
          * @reason 魔法数字无法理解
          */
-        'no-magic-numbers': [true, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100, 1000, 10000],
+        'no-magic-numbers': [true, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 60, 100, 1000, 10000],
         /**
          * @category typescript-specific
          * @description 禁止使用 namespace 来定义命名空间

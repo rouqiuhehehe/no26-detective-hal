@@ -1,14 +1,32 @@
 import Date from '@/utils/dateFormat';
-import { Md5 } from 'ts-md5';
+import loadScript from './loadScript';
+import _r from './_r';
 
-export interface MyUtils {
-    date: (dft: Date, format: string) => string;
-    Md5: typeof Md5;
+export default class utils {
+    public static date = Date;
+    public static ascllSort<T extends Record<string, any>>(obj: T) {
+        const sortkeys = Object.keys(obj).sort();
+        const newObj: Record<string, any> = {};
+
+        for (const i of sortkeys) {
+            newObj[i] = obj[i];
+        }
+
+        return newObj;
+    }
+
+    public static _r = _r;
+
+    public static isEmpty(obj: unknown) {
+        if (typeof obj !== 'object') {
+            return !obj;
+        } else {
+            for (const i in obj) {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    public static loadScript = loadScript;
 }
-
-const myUtils: MyUtils = {
-    date: Date,
-    Md5
-};
-
-export default myUtils;

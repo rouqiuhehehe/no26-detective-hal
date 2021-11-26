@@ -1,8 +1,9 @@
-import myAxios from '@/utils/myAxios';
-import { MyUtils } from '@/utils/utils';
+import MyUtils from '@/utils/utils';
+import Axios from 'axios';
 import Vue, { VNode } from 'vue';
 import VueRouter, { Route } from 'vue-router';
 import { Store } from 'vuex';
+import { AxiosRes } from './types/store';
 declare global {
     namespace JSX {
         // tslint:disable no-empty-interface
@@ -17,10 +18,21 @@ declare global {
 
 declare module 'vue/types/vue' {
     interface Vue {
-        $axios: typeof myAxios;
+        $axios: typeof Axios;
         $router: VueRouter;
         $route: Route;
         $store: Store<unknown>;
-        utils: MyUtils;
+        utils: typeof MyUtils;
+    }
+}
+
+declare module 'axios' {
+    interface AxiosInstance {
+        <T = any>(config: AxiosRequestConfig): AxiosRes<T>;
+    }
+    interface AxiosResponse<T> {
+        status: number;
+        success: boolean;
+        data: T;
     }
 }

@@ -21,12 +21,14 @@
             }
         },
         {
-            "type": "pwa-node",
-            "request": "launch",
-            "name": "Launch Program",
-            "skipFiles": ["<node_internals>/**"],
-            "program": "${workspaceFolder}\\build\\app.bundle.js",
-            "outFiles": ["${workspaceFolder}/**/*.js"]
+            "name": "Attach to node",
+            "type": "node",
+            "sourceMaps": true,
+            "port": 5669,
+            "request": "attach",
+            "restart": true,
+            "processId": "${command:PickProcess}",
+            "skipFiles": ["<node_internals>/**"]
         }
     ]
 }

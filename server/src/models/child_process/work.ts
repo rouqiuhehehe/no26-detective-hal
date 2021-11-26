@@ -13,6 +13,8 @@ app.initRoute().then(() => {
             net.on('connection', (socket) => {
                 server.emit('connection', socket);
             });
+        } else {
+            console.log(process.pid, e);
         }
     });
 });

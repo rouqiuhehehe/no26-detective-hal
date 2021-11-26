@@ -1,37 +1,37 @@
 <template>
-    <div class="zhezhao" v-if="staties.success!==undefined">
+    <div class="zhezhao" v-if="staties.success !== undefined">
         <div>
-            <p v-if="staties.success">{{ staties.fromName }} successful, Jump to {{ staties.toName }} after {{ time }}s</p>
-            <p v-else>{{ staties.fromName }} failed, Please<a href="javascript:;" @click="handleClick">click</a>to try again</p>
+            <p v-if="staties.success">{{ staties.fromName }} 成功, {{ time }} 后跳转 {{ staties.toName }}</p>
+            <p v-else>{{ staties.fromName }} 失败, 请<a href="javascript:;" @click="handleClick">点击</a>再试一次</p>
         </div>
     </div>
 </template>
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
-import { Staties } from '@/types/store'
+import { Staties } from '@/types/store';
 @Component
 export default class Zhezhao extends Vue {
-    @Prop(Object) 
+    @Prop(Object)
     public readonly staties!: Staties;
 
-    private time = 3
+    private time = 3;
 
-    private handleClick (): void {
+    private handleClick(): void {
         this.$router.push(this.staties.path);
     }
 
     @Watch('staties.success')
-    changeState (): void{
-        if(this.staties.success) this.count();
+    changeState(): void {
+        if (this.staties.success) this.count();
     }
-    
-    private count (): void {
+
+    private count(): void {
         const timer = setInterval(() => {
-            this.time --;
-            if(this.time === 0) {
+            this.time--;
+            if (this.time === 0) {
                 clearInterval(timer);
                 this.$router.push(this.staties.path);
-            } 
+            }
         }, 1000);
     }
 }
@@ -41,7 +41,7 @@ export default class Zhezhao extends Vue {
     width: 100%;
     height: 100%;
     position: absolute;
-    background: rgba(0, 0, 0, .5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1000000;
     div {
         position: absolute;
@@ -51,7 +51,7 @@ export default class Zhezhao extends Vue {
         left: 50%;
         margin-left: -250px;
         margin-top: -150px;
-        background: rgba(255, 255, 255, .7);
+        background: rgba(255, 255, 255, 0.7);
         z-index: 1000000;
         p {
             text-align: center;

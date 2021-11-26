@@ -10,7 +10,7 @@ const callback =
         errcb?: 'redirect' | ((err?: Joi.ValidationError) => void)
     ) =>
     (method: RouteMethod) =>
-    (req: ExpressRequest, res: ExpressResPonse, next: NextFunction) => {
+    (req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) => {
         const schema = Joi.object(params);
 
         const { error } = schema.validate(method === 'get' ? req.query : req.body);
@@ -19,9 +19,6 @@ const callback =
             if (errcb) {
                 if (typeof errcb === 'function') {
                     errcb(error);
-                } else if (errcb === 'redirect') {
-                    res.error(error.message);
-                    res.redirect('back');
                 }
             } else {
                 next(new HttpError(Status.SERVER_ERROR, error.message));

@@ -1,11 +1,12 @@
 import Db from '@src/bin/db';
 import redis from '@src/bin/redis';
 import { Jwt_Config } from '@src/config/jwt';
+import { Secret } from '@src/config/secret';
 import { Status } from '@src/config/server_config';
 import { Issue, LoginError } from '@src/config/user_error';
-import { HashPasswordAndSalt, ParamsUserInfo, UserInfo } from '@src/types/user';
-import bcrypt from 'bcrypt';
-import { Request } from 'express';
+import { ParamsUserInfo, UserInfo } from '@src/types/user';
+import Util from '@util';
+import { JsonWebTokenError, JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 import HttpError from './httpError';
 import { Jwt } from './jwt';
 
@@ -21,104 +22,67 @@ interface DbUser {
     password: string;
     level: number;
     create_date: string;
+    update_date: string;
 }
 export default class User {
     public userInfo!: UserInfo;
 
-    private incrKey = 'user:ids';
-
-    private updateSetKey = '';
-
-    private updateHashSetKey = '';
-
-    private SALT_BASE = 12;
-
-    public constructor() {}
     public getByUsername(name: string) {
         const sql = 'select * from user where `username` = ?';
 
-        return db.asyncQuery<DbUser>(sql, [name]);
+        return db.asyncQuery<DbUser[]>(sql, [name]);
     }
 
     // 用户名密码认证
-    public authenticate(userInfo: ParamsUserInfo): Promise<number> {
-        return new Promise(async (_resolve, reject) => {
+    public authenticate(
+        userInfo: ParamsUserInfo
+    ): Promise<Omit<DbUser, 'password' | 'salt' | 'id'> & { token: string }> {
+        return new Promise(async (resolve, reject) => {
             try {
-                const dbUserInfo = await this.getByUsername(userInfo.username);
+                const dbUserInfo = (await this.getByUsername(userInfo.username))[0];
                 if (dbUserInfo) {
-                    // const bcryptPassword = await bcrypt.hash(userInfo.password, dbUserInfo.userInfo.salt!);
-                    // if (bcryptPassword === dbUserInfo.userInfo.password) {
-                    //     resolve(dbUserInfo.userInfo.id!);
-                    // } else {
-                    //     reject(LoginError.PASSWORD_ERROR);
-                    // }
+                    const { username, password, uid, nickname, avatar, create_date, update_date, level } = dbUserInfo;
+
+                    const bcryptPassword = Util.md5Crypto(
+                        Util.md5Crypto(password + Secret.PASSWORD_SECRET) + userInfo.salt
+                    );
+
+                    if (bcryptPassword === userInfo.password) {
+                        const token = await this.issueToken(userInfo.username, uid);
+                        resolve({
+                            uid,
+                            nickname,
+                            token,
+                            avatar,
+                            create_date,
+                            level,
+                            username,
+                            update_date
+                        });
+                    } else {
+                        reject(new HttpError(Status.PASSWORD_ERROR, LoginError.PASSWORD_ERROR));
+                    }
                 } else {
-                    reject(LoginError.USERNAME_ERROR);
+                    reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
                 }
-            } catch (e) {
-                reject(e);
+            } catch (e: any) {
+                reject(new HttpError(Status.SERVER_ERROR, e.message, e));
             }
         });
     }
 
-    public getById(id: number): Promise<User> {
+    public validateToken(req: ExpressRequest): Promise<JwtPayload> {
         return new Promise((resolve, reject) => {
-            redis.hgetall('user:' + id, (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(new User());
-                }
-            });
-        });
-    }
-
-    public issueToken(id: number) {
-        return new Promise((resolve, reject) => {
-            redis.hgetall('user:' + id, (err, userInfo) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const info = userInfo as UserInfo;
-                    info.secret = Jwt_Config.SECRET + Math.random();
-                    info.token = Jwt.issueToken(info.username, info.secret);
-                    redis.hmset('user:' + id, info as { [key: string]: string | number }, (err) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(info.token);
-                        }
-                    });
-                }
-            });
-        });
-    }
-
-    public validateToken(req: Request) {
-        return new Promise((resolve, reject) => {
-            let token: string | undefined;
-            if (process.env.NODE_ENV === 'development') {
-                if (!req.session.uid || !req.signedCookies.uid) {
-                    reject(new HttpError(Status.SERVER_ERROR, Issue.TOKEN_IS_NOT_FIND));
-                }
-
-                token =
-                    req.session.authorization?.replace('Bearer ', '') ??
-                    req.signedCookies.authorization?.replace('Bearer ', '');
-            } else {
-                if (!req.session.uid) {
-                    reject(new HttpError(Status.SERVER_ERROR, Issue.TOKEN_IS_NOT_FIND));
-                }
-                token = req.session.authorization?.replace('Bearer ', '');
-            }
+            const token = req.headers.authorization?.replace('Bearer ', '');
 
             if (!token) {
-                reject(new HttpError(Status.SERVER_ERROR, Issue.TOKEN_IS_NOT_FIND));
+                reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_NOT_FIND));
             } else {
-                const id = req.session.uid;
-                redis.hgetall('user:' + id, async (err, userInfo) => {
+                const uid = req.session.uid;
+
+                redis.hgetall('user:' + uid, async (err, userInfo) => {
                     if (err) {
-                        reject(err);
+                        reject(new HttpError(Status.SERVER_ERROR, err.message, err));
                     } else {
                         const info = userInfo as UserInfo;
                         if (info && info.token === token) {
@@ -126,10 +90,16 @@ export default class User {
                                 const decoded = await Jwt.vailToken(token!, info.secret!);
                                 resolve(decoded);
                             } catch (e: any) {
-                                reject(new HttpError(Status.SERVER_ERROR, e.message, e));
+                                if (e instanceof TokenExpiredError) {
+                                    // TokenExpiredError token到期
+                                    reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_EXPIRED));
+                                } else if (e instanceof JsonWebTokenError) {
+                                    // JsonWebTokenError 报错，无效token
+                                    reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_ERROR));
+                                }
                             }
                         } else {
-                            reject(new HttpError(Status.SERVER_ERROR, Issue.TOKEN_IS_ERROR));
+                            reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_ERROR));
                         }
                     }
                 });
@@ -137,96 +107,53 @@ export default class User {
         });
     }
 
-    public save(): Promise<number> {
+    public getUserInfoByToken(req: ExpressRequest): Promise<Omit<DbUser, 'password' | 'salt' | 'id' | 'uid'>> {
         return new Promise(async (resolve, reject) => {
-            if (this.userInfo.id) {
-                await this.update();
-                resolve(this.userInfo.id);
-            } else {
-                // 添加并设置自增id，返回自增id
-                try {
-                    redis.incr(this.incrKey, async (err, id) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            const hash = await this.hashPassword();
-                            this.userInfo.password = hash.hashPassword;
-                            this.userInfo.salt = hash.salt;
-                            this.userInfo.id = id;
-                            this.updateHashSetKey = 'user:' + id;
-                            await this.update();
-                            resolve(id);
-                        }
+            try {
+                const decoded = await this.validateToken(req);
+
+                const { data } = decoded;
+
+                const dbUserInfo = (await this.getByUsername(data))[0];
+
+                if (dbUserInfo) {
+                    const { username, update_date, nickname, avatar, create_date, level } = dbUserInfo;
+
+                    resolve({
+                        nickname,
+                        avatar,
+                        create_date,
+                        level,
+                        username,
+                        update_date
                     });
-                } catch (e) {
+                } else {
+                    reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
+                }
+            } catch (e) {
+                if (e instanceof HttpError) {
                     reject(e);
                 }
             }
         });
     }
 
-    // res.json 会调用toJSON方法
-    public toJSON() {
-        return {
-            id: this.userInfo.id,
-            username: this.userInfo.username
-        };
-    }
-
-    private getId(name: string): Promise<number | null> {
+    private issueToken(username: string, uid: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            redis.get('user:id:' + name, (err, id) => {
+            const secret = Jwt_Config.SECRET + Math.random();
+            const info: UserInfo = {
+                username,
+                secret,
+                uid,
+                token: Jwt.issueToken(username, secret)
+            };
+            redis.hmset('user:' + uid, info, (err) => {
                 if (err) {
-                    reject(err);
+                    reject(new HttpError(Status.SERVER_ERROR, err.message, err));
                 } else {
-                    if (id) {
-                        resolve(+id);
-                    } else {
-                        resolve(null);
-                    }
+                    resolve(info.token);
                 }
             });
-        });
-    }
-
-    private update() {
-        return new Promise((resolve, reject) => {
-            if (this.userInfo.id) {
-                redis.set(this.updateSetKey, this.userInfo.id.toString(), (err) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        // 哈希表，适用于储存对象
-                        redis.hmset(
-                            this.updateHashSetKey,
-                            this.userInfo as { [key: string]: string | number },
-                            (err) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve(true);
-                                }
-                            }
-                        );
-                    }
-                });
-            }
-        });
-    }
-
-    private hashPassword(): Promise<HashPasswordAndSalt> {
-        return new Promise(async (resolve, reject) => {
-            // 设定盐值
-            try {
-                const salt = await bcrypt.genSalt(this.SALT_BASE);
-                const hashPassword = await bcrypt.hash(this.userInfo.password, salt);
-                resolve({
-                    hashPassword,
-                    salt
-                });
-            } catch (e) {
-                reject(e);
-            }
         });
     }
 }
