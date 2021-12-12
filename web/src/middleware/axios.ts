@@ -68,7 +68,6 @@ axios.interceptors.request.use(
 
                     if (cfg.encrypt) {
                         Authorization = utils.ascllSort(Authorization);
-
                         // 获取保存的公钥
                         let pubKey = sessionStorage.getItem('public-key');
                         if (!pubKey) {
@@ -87,7 +86,7 @@ axios.interceptors.request.use(
                             }
                         }
                         if (pubKey) {
-                            console.log(Authorization);
+                            console.log(JSON.stringify(Authorization));
 
                             //实例化 jsencrypt
                             const JSencrypt = new jsencrypt();

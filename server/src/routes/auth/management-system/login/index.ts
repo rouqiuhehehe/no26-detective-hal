@@ -1,3 +1,4 @@
+import redis from '@src/bin/redis';
 import { ErrorMsg } from '@src/config/error';
 import { Status } from '@src/config/server_config';
 import { Get, Post } from '@src/descriptor/controller';
@@ -6,6 +7,7 @@ import { DefaultMiddleWareType } from '@src/descriptor/middlewareHandle';
 import Required from '@src/descriptor/required';
 import HttpError from '@src/models/httpError';
 import User from '@src/models/user';
+import Util from '@util';
 import bcrypt from 'bcrypt';
 import request from 'request';
 import ManagementSystem from '..';
@@ -63,8 +65,8 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/login')
-    public login(req: ExpressRequest, res: ExpressResPonse) {
-        this.loginHandle(req, res);
+    public login(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+        this.loginHandle(req, res, next);
     }
 
     private async verifyCodeHandle(token: string): Promise<
@@ -101,7 +103,7 @@ export default class Login extends ManagementSystem {
         });
     }
 
-    private async loginHandle(req: ExpressRequest, res: ExpressResPonse) {
+    private async loginHandle(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
         const { username, password } = req.body;
         const { salt } = req.session;
 
@@ -121,8 +123,33 @@ export default class Login extends ManagementSystem {
                 ...userInfo
             });
         } catch (e) {
-            if (e instanceof HttpError) {
-                res.error(e);
+            if (Util.isExtendsHttpError(e)) {
+                if (e.status === Status.PASSWORD_ERROR) {
+                    const err = e;
+                    try {
+                        await redis(async (client) => {
+                            const errorNum = await client.get('password_error_num:user#' + err.query!.uid);
+                            if (!errorNum) {
+                                await client.set(username, '0');
+                            }
+
+                            const num = await client.incr('password_error_num:user#' + err.query!.uid);
+
+                            if (+num === 5) {
+                                return res.error(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
+                            }
+                            err.message = err.message + '，还剩' + (5 - num) + '次机会';
+
+                            res.error(err);
+                        });
+                    } catch (error: any) {
+                        console.log(error);
+
+                        next(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, error));
+                    }
+                } else {
+                    res.error(e);
+                }
             }
         }
     }

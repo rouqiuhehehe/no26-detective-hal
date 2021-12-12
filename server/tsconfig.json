@@ -15,7 +15,7 @@
         "strictNullChecks": true,
         "noImplicitThis": true,
         "declaration": true,
-        "declarationDir": "./dist/type",
+        "declarationDir": "./dist/types",
         "lib": ["es2017", "DOM", "DOM.Iterable"],
         "emitDecoratorMetadata": true,
         "downlevelIteration": true,
@@ -29,6 +29,6 @@
             "@src/*": ["src/*", "dist/*"]
         }
     },
-    "exclude": ["node_modules", "*.test.ts"],
-    "include": ["src/**/*.ts", "types/*"]
+    "exclude": ["node_modules"],
+    "include": ["src/**/*.ts", "types/*", "test/*"]
 }

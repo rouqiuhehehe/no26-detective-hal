@@ -1,12 +1,12 @@
 import Vue from 'vue';
-import VueRouter, { Route, RouteConfig } from 'vue-router';
+import VueRouter, { RawLocation, Route, RouteConfig } from 'vue-router';
 import Home from '../views/Home.vue';
 
 Vue.use(VueRouter);
 
 const originPush = VueRouter.prototype.push;
 
-VueRouter.prototype.push = function (location) {
+VueRouter.prototype.push = function (location: RawLocation) {
     return (originPush.call(this, location) as unknown as Promise<Route>).catch((e) => {
         if (
             e.name !== 'NavigationDuplicated' &&

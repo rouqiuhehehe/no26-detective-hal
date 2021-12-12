@@ -97,13 +97,13 @@ interface Salt {
     salt: string;
 }
 
-const checkUserName: Check = (rule, value, callback): void => {
+const checkUserName: Check = (rule, value, callback) => {
     if (!value) return callback(new Error('用户名不能为空'));
     if (!/^[a-zA-Z]{4,20}$/g.test(value)) return callback(new Error('用户名为4-20位大小写字母'));
     return callback();
 };
 
-const checkPassword: Check = (rule, value, callback): void => {
+const checkPassword: Check = (rule, value, callback) => {
     if (!value) return callback(new Error('密码不能为空'));
     if (!/^[A-Za-z\d_@$!%*?&.]{6,16}$/.test(value)) {
         return callback(new Error('密码为6-16位大小写字母，数字，特殊符号'));
@@ -119,7 +119,7 @@ interface Form {
 
 const user = namespace('user');
 @Component
-export default class Login extends Vue {
+export default class extends Vue {
     public scriptSitekey = '6LcIylwdAAAAAABZ-eMKEwb0fffyHbqXBbkzyK5L';
 
     public rules = {
@@ -135,7 +135,7 @@ export default class Login extends Vue {
         password: ''
     };
 
-    private isVerify = false;
+    private isVerify = true;
 
     private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
 
@@ -199,7 +199,7 @@ export default class Login extends Vue {
                     this.$router.push('/');
                 });
             } catch (error) {
-                this.isVerify = false;
+                // this.isVerify = false;
             }
         });
     }

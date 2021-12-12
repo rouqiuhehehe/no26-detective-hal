@@ -10,10 +10,10 @@
         "debugger": "cross-env NODE_ENV=development NODE_RUN=debugger nodemon -e ts,tsx --exec node --inspect --expose-gc --trace-warnings -r ./bin.js src/app.ts",
         "production": "cross-env NODE_ENV=production NODE_RUN=dev nodemon -e ts,tsx --exec node --trace-warnings -r ./bin.js src/app.ts",
         "dist": "del dist && tsc && cross-env NODE_ENV=production node -r tsconfig-paths/register dist/app.js",
-        "test": "mocha -w -r ./test/requireConfig.js -r tsconfig-paths/register test/index.ts",
+        "test": "mocha -w --recursive -r ./bin.js ./test/**/*.spec.ts",
         "concurrent-test": "autocannon -c 1000 -p 5 http://127.0.0.1:1337/admin"
     },
-    "author": "",
+    "author": "yoshiki",
     "license": "ISC",
     "browser": {
         "crypto": false
@@ -33,13 +33,19 @@
         "@types/node": "^16.0.0",
         "@types/redis": "^2.8.31",
         "@types/request": "^2.48.7",
+        "@types/sinon": "^10.0.6",
+        "@types/sinon-chai": "^3.2.6",
         "chai": "^4.3.4",
         "mocha": "^9.0.2",
         "morgan": "^1.10.0",
+        "node-mocks-http": "^1.11.0",
         "prettier": "^2.3.1",
+        "sinon": "^12.0.1",
+        "sinon-chai": "^3.7.0",
         "tsconfig-paths-webpack-plugin": "^3.5.1"
     },
     "dependencies": {
+        "axios": "^0.24.0",
         "bcrypt": "^5.0.1",
         "cookie-parser": "^1.4.5",
         "cross-env": "^7.0.3",
@@ -54,7 +60,7 @@
         "mysql": "^2.18.1",
         "mysqldump": "^3.2.0",
         "path-browserify": "^1.0.1",
-        "redis": "^3.1.2",
+        "redis": "^4.0.0",
         "reflect-metadata": "^0.1.13",
         "request": "^2.88.2",
         "ts-loader": "^9.2.3",

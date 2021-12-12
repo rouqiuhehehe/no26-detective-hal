@@ -1,12 +1,16 @@
 import { Controller, Get } from '@src/descriptor/controller';
+import Middleware from '@src/descriptor/middleware';
 import { Request, Response } from 'express';
 import admin from '..';
 
 @Controller('/')
 export default class extends admin {
-    @Get('/')
-    public indexPage(_req: Request, res: Response) {
-        res.send(`<h1>${this.homePageRender()}</h1>`);
+    @Middleware(['default'])
+    @Get('/test')
+    public testRoute(_req: Request, res: Response) {
+        res.success({
+            value: true
+        });
     }
 
     // private homePageRender() {

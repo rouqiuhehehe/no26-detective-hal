@@ -24,7 +24,7 @@ export default function authorization(target: Object, propertyKey?: string | sym
     });
 }
 
-function authorizationMiddleware(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
     const originalUrl = Util.getNoParamsUrl(req);
     if (!excludesArr.includes(originalUrl)) {
         // 读取请求头消息
@@ -90,6 +90,8 @@ function authorizationMiddleware(req: ExpressRequest, res: ExpressResPonse, next
             } catch (e: any) {
                 next(new HttpError(Status.SERVER_ERROR, e.message, e));
             }
+        } else {
+            next(new HttpError(Status.SERVER_ERROR, ErrorMsg.HASH_ERROR));
         }
     }
 }

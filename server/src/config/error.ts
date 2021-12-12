@@ -8,5 +8,7 @@ export enum ErrorMsg {
     HASH_ERROR = '哈希参数校验失败',
     PASSWORD_SALT_ERROR = '密码加密错误',
     TIMESTAMP_ERRPR = '时间戳参数过期',
-    VERIFY_CODE_ERROR = '验证码验证失败'
+    VERIFY_CODE_ERROR = '验证码验证失败',
+    REDIS_ERROR = 'redis 错误',
+    ACCOUNT_FREEZE = '账号已被冻结，请联系管理员解冻'
 }

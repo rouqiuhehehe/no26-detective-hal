@@ -63,7 +63,7 @@ export default class App {
     }
 
     private set() {
-        this.app.set('views', __dirname + '/views');
+        this.app.set('views', path.join(__dirname, 'public', 'ejs'));
         this.app.set('view engine', 'ejs');
     }
 
@@ -71,6 +71,7 @@ export default class App {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(express.static(path.join(__dirname, 'public')));
+        this.app.use('/log', express.static(path.join(process.cwd(), 'log')));
         this.app.use(cookieParser(Secret.COOKIE_SECRET));
         this.app.use(
             session({

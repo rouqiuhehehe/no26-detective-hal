@@ -50,6 +50,13 @@ export default class Util {
         }
     }
 
+    public static isAbsoluteURL(url: string) {
+        // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+        // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+        // by any combination of letters, digits, plus, period, or hyphen.
+        return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+    }
+
     public static middlewareDescriptor(
         target: Object,
         propertyKey: string | symbol | undefined,
@@ -95,6 +102,10 @@ export default class Util {
         return newObj;
     }
 
+    /**
+     * 根据路径循环创建文件夹
+     * @param pathWithFile 文件路径
+     */
     public static mkDirForFile(pathWithFile: string) {
         path.dirname(pathWithFile)
             .split(path.sep)
@@ -155,6 +166,9 @@ export default class Util {
         return _format;
     }
 
+    /**
+     * 获取命令行参数
+     */
     public static getCmdParams() {
         const params = process.argv.splice(2);
         const paramsObj: Record<string, string> = {};
@@ -188,6 +202,9 @@ export default class Util {
         });
     }
 
+    /**
+     * 获取没有参数的完整url
+     */
     public static getNoParamsUrl(req: Request) {
         const urlObj = new URL(req.url, req.protocol + '://' + req.get('host'));
         return urlObj.pathname;
@@ -253,6 +270,9 @@ export default class Util {
         };
     }
 
+    /**
+     * 通过流的形式读取文件
+     */
     public static dataByReadStream(
         path: Parameters<typeof fs.createReadStream>[0],
         option?: Parameters<typeof fs.createReadStream>[1],
@@ -285,7 +305,7 @@ export default class Util {
         });
     }
 
-    public static isExtendsHttpError<T extends Error>(err: Error): err is HttpError<T> {
+    public static isExtendsHttpError<T extends Error>(err: any): err is HttpError<T> {
         if (err instanceof HttpError) {
             return true;
         }

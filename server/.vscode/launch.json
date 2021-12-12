@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "args": ["-w", "-u", "bdd", "--no-timeouts", "--colors", "${workspaceFolder}/test/**/*.spec.ts"],
+            "runtimeArgs": ["--nolazy", "-r", "${workspaceFolder}/bin.js"],
+            "sourceMaps": true,
+            "cwd": "${workspaceRoot}",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "internalConsoleOptions": "neverOpen",
+            "name": "Mocha Tests",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**"],
+            "runtimeExecutable": null,
+            "type": "node"
+        },
+        {
             "name": "TS-node-lauch",
             "type": "node",
             "request": "launch",

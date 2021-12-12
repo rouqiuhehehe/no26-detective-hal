@@ -1,4 +1,4 @@
-import Db from '@src/bin/db';
+import Db from '@src/bin/Db';
 import request from 'request';
 
 enum Params {
@@ -26,15 +26,17 @@ interface OperaList {
 }
 request.debug = true;
 const db = new Db();
-
+const truncateSql = 'truncate opera_list';
+const updateAutoIncrementSql = 'analyze table opera_list';
+const sql =
+    'insert into opera_list (' +
+    '`id`,`partner_id`,`goods_init_id`,`name`,`vip_price`,`sale_price`,`category_ids`,`default_category_ids`,`goods_label_ids`,`goods_numbers_id`,`man`,`woman`,`galley`,`galley_people`,`pic_url`,`game_time`,`difficulty`,`detail`,`browser_num`,`sales_num`,`issue_date`,`status`,`heat`,`score`,`sort`,`remark`,`flag`,`create_time`,`update_time`,`recommend`,`recommend_sort`,`history_price`,`goods_qr`,`goods_sort`,`is_top`,`forward_goods_id`,`vip_price_status`,`focus_number`,`focus_status`, `comment_status`, `play_number`,`play_status`,`catalogs_names`,`default_catalogs_names`,`is_city_limit`,`is_exclusive`,`is_real`,`number`,`goods_avg_score`, `total_play_num`, `rank`, `editor_name`, `editor_content`, `goods_comment_number`, `issue_dates`' +
+    ') values(?);';
 export class Opera {
-    private _sql =
-        'insert into opera_list (' +
-        '`id`,`partner_id`,`goods_init_id`,`name`,`vip_price`,`sale_price`,`category_ids`,`default_category_ids`,`goods_label_ids`,`goods_numbers_id`,`man`,`woman`,`galley`,`galley_people`,`pic_url`,`game_time`,`difficulty`,`detail`,`browser_num`,`sales_num`,`issue_date`,`status`,`heat`,`score`,`sort`,`remark`,`flag`,`create_time`,`update_time`,`recommend`,`recommend_sort`,`history_price`,`goods_qr`,`goods_sort`,`is_top`,`forward_goods_id`,`vip_price_status`,`focus_number`,`focus_status`,`play_number`,`play_status`,`catalogs_names`,`default_catalogs_names`,`is_city_limit`,`is_exclusive`,`is_real`,`number`' +
-        ') values(?);';
+    private _sql = sql;
 
     private set sql(val: string) {
-        this._sql = this._sql.replace('?', val);
+        this._sql = sql.replace('?', val);
     }
 
     private get sql() {
@@ -50,8 +52,9 @@ export class Opera {
             }
         } = JSON.parse(res) as OperaList;
 
-        rows.forEach(async (v) => {
+        const sqlArr = rows.map((v) => {
             const paramsArr = [];
+
             for (const i in v) {
                 if (Reflect.has(v, i)) {
                     if (typeof v[i] === 'string') {
@@ -64,11 +67,17 @@ export class Opera {
                     paramsArr.push(v[i]);
                 }
             }
+
             const str = paramsArr.join(',');
 
             this.sql = str;
-            console.log(await db.asyncQuery(this.sql));
+            return this.sql;
         });
+        sqlArr.unshift(truncateSql);
+        sqlArr.push(updateAutoIncrementSql);
+
+        await db.databaseBackup();
+        await db.beginTransaction(sqlArr);
     }
 
     private getOperaList(): Promise<string> {
@@ -103,4 +112,6 @@ export class Opera {
 }
 (async () => {
     await new Opera().updateOperaList();
+    console.log('导入成功');
+    process.exit(0);
 })();

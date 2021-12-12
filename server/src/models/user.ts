@@ -1,5 +1,6 @@
-import Db from '@src/bin/db';
+import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
+import { ErrorMsg } from '@src/config/error';
 import { Jwt_Config } from '@src/config/jwt';
 import { Secret } from '@src/config/secret';
 import { Status } from '@src/config/server_config';
@@ -43,25 +44,39 @@ export default class User {
                 if (dbUserInfo) {
                     const { username, password, uid, nickname, avatar, create_date, update_date, level } = dbUserInfo;
 
-                    const bcryptPassword = Util.md5Crypto(
-                        Util.md5Crypto(password + Secret.PASSWORD_SECRET) + userInfo.salt
-                    );
+                    await redis(async (client, quit) => {
+                        const errorNum = await client.get('password_error_num:user#' + uid);
 
-                    if (bcryptPassword === userInfo.password) {
-                        const token = await this.issueToken(userInfo.username, uid);
-                        resolve({
-                            uid,
-                            nickname,
-                            token,
-                            avatar,
-                            create_date,
-                            level,
-                            username,
-                            update_date
-                        });
-                    } else {
-                        reject(new HttpError(Status.PASSWORD_ERROR, LoginError.PASSWORD_ERROR));
-                    }
+                        if (errorNum && +errorNum === 5) {
+                            reject(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
+                        }
+
+                        const bcryptPassword = Util.md5Crypto(
+                            Util.md5Crypto(password + Secret.PASSWORD_SECRET) + userInfo.salt
+                        );
+
+                        if (bcryptPassword === userInfo.password) {
+                            const token = await this.issueToken(userInfo.username, uid, client);
+                            await client.del('password_error_num:user#' + uid);
+                            resolve({
+                                uid,
+                                nickname,
+                                token,
+                                avatar,
+                                create_date,
+                                level,
+                                username,
+                                update_date
+                            });
+                        } else {
+                            await quit();
+                            reject(
+                                new HttpError(Status.PASSWORD_ERROR, LoginError.PASSWORD_ERROR, undefined, {
+                                    uid
+                                })
+                            );
+                        }
+                    });
                 } else {
                     reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
                 }
@@ -72,18 +87,16 @@ export default class User {
     }
 
     public validateToken(req: ExpressRequest): Promise<JwtPayload> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             const token = req.headers.authorization?.replace('Bearer ', '');
 
             if (!token) {
                 reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_NOT_FIND));
             } else {
                 const uid = req.session.uid;
-
-                redis.hgetall('user:' + uid, async (err, userInfo) => {
-                    if (err) {
-                        reject(new HttpError(Status.SERVER_ERROR, err.message, err));
-                    } else {
+                try {
+                    await redis(async (client) => {
+                        const userInfo = await client.hGetAll('user:' + uid);
                         const info = userInfo as UserInfo;
                         if (info && info.token === token) {
                             try {
@@ -101,8 +114,10 @@ export default class User {
                         } else {
                             reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_ERROR));
                         }
-                    }
-                });
+                    });
+                } catch (err: any) {
+                    reject(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, err));
+                }
             }
         });
     }
@@ -138,8 +153,8 @@ export default class User {
         });
     }
 
-    private issueToken(username: string, uid: string): Promise<string> {
-        return new Promise((resolve, reject) => {
+    private issueToken(username: string, uid: string, client: Client): Promise<string> {
+        return new Promise(async (resolve, reject) => {
             const secret = Jwt_Config.SECRET + Math.random();
             const info: UserInfo = {
                 username,
@@ -147,13 +162,12 @@ export default class User {
                 uid,
                 token: Jwt.issueToken(username, secret)
             };
-            redis.hmset('user:' + uid, info, (err) => {
-                if (err) {
-                    reject(new HttpError(Status.SERVER_ERROR, err.message, err));
-                } else {
-                    resolve(info.token);
-                }
-            });
+            try {
+                await client.hSet('user:' + uid, info);
+                resolve(info.token);
+            } catch (err: any) {
+                reject(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, err));
+            }
         });
     }
 }

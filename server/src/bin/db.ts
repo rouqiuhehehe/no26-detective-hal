@@ -36,7 +36,7 @@ export interface Result<T> {
     fields?: mysql.FieldInfo[];
 }
 
-type Callback<T> = (err: mysql.MysqlError | null, results?: T, fields?: mysql.FieldInfo[]) => void;
+type Callback<T> = (results: T, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
     private status = 'ready';
     private pool = mysql.createPool(dbconfig);
@@ -67,55 +67,96 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务回滚方法
      */
-    public beginTransaction<T>(sql: string, values: unknown[], cb: Callback<T>): void;
-    public beginTransaction<T>(sql: string, cb: Callback<T>): void;
-    public beginTransaction<T>(sql: string, values: unknown[] | Callback<T>, cb?: Callback<T>): void {
-        let callback: Callback<T>;
+    public beginTransaction<T>(sql: string, values?: unknown[], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(sql: string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(
+        sql: string | string[] | [string, unknown[]][],
+        values?: unknown[] | Callback<T>,
+        cb?: Callback<T>
+    ): Promise<boolean> {
+        let callback: Callback<T> | undefined;
         let sqlVal: unknown[];
-        if (arguments.length === 2) {
+        if (typeof sql !== 'string') {
             callback = values as Callback<T>;
             sqlVal = [];
         } else {
-            callback = cb!;
+            callback = cb;
             sqlVal = values as unknown[];
         }
 
-        this.pool.getConnection((err, conn) => {
-            if (err) {
-                callback(err);
-                conn.release();
-            } else {
-                // 开始处理事务
-                conn.beginTransaction(async (err) => {
-                    if (err) {
-                        callback(err);
-                        conn.release();
-                    } else {
-                        conn.query(sql, sqlVal, async (err, result, _fields) => {
-                            if (err) {
-                                callback(err);
-                                conn.release();
-                            } else {
-                                try {
-                                    await callback(result);
-                                    // 提交事务
-                                    conn.commit((err) => {
-                                        if (err) {
-                                            throw err;
+        return new Promise((resolve, reject) => {
+            this.pool.getConnection((err, conn) => {
+                if (err) {
+                    conn.release();
+                    reject(err);
+                } else {
+                    // 开始处理事务
+                    conn.beginTransaction(async (err) => {
+                        if (err) {
+                            conn.release();
+                            reject(err);
+                        } else {
+                            try {
+                                if (typeof sql === 'string') {
+                                    const result = await this.transactionHandle(conn, sql, sqlVal);
+                                    try {
+                                        callback && (await callback(result as unknown as T));
+                                        // 提交事务
+                                        conn.commit((err) => {
+                                            if (err) {
+                                                throw err;
+                                            }
+                                            resolve(true);
+                                        });
+                                    } catch (error) {
+                                        conn.rollback((e) => {
+                                            if (e) {
+                                                throw e;
+                                            }
+                                            conn.release();
+                                        });
+                                        throw error;
+                                    }
+                                } else {
+                                    const allPromise = [];
+                                    for (const value of sql) {
+                                        if (typeof value === 'string') {
+                                            allPromise.push(this.transactionHandle(conn, value, []));
+                                        } else {
+                                            const [_sql, values] = value;
+                                            allPromise.push(this.transactionHandle(conn, _sql, values));
+                                        }
+                                    }
+
+                                    Promise.all(allPromise).then(async (result: any[]) => {
+                                        try {
+                                            callback && (await callback(result as unknown as T));
+                                            // 提交事务
+                                            conn.commit((err) => {
+                                                if (err) {
+                                                    throw err;
+                                                }
+                                                resolve(true);
+                                            });
+                                        } catch (error) {
+                                            conn.rollback((e) => {
+                                                if (e) {
+                                                    throw e;
+                                                }
+                                                conn.release();
+                                            });
+                                            throw error;
                                         }
                                     });
-                                } catch (error) {
-                                    serverError(error as Error);
-                                    // 回滚事务
-                                    conn.rollback(() => {
-                                        conn.release();
-                                    });
                                 }
+                            } catch (error: any) {
+                                serverError(error);
+                                reject(error);
                             }
-                        });
-                    }
-                });
-            }
+                        }
+                    });
+                }
+            });
         });
     }
 
@@ -172,6 +213,22 @@ export default class extends events.EventEmitter {
             } catch (e) {
                 this.emit(url, e);
             }
+        });
+    }
+
+    /**
+     * 处理事务方法
+     */
+    private transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal: unknown[]) {
+        return new Promise((resolve, reject) => {
+            conn.query(sql, sqlVal, async (err, result, _fields) => {
+                if (err) {
+                    conn.release();
+                    reject(err);
+                } else {
+                    resolve(result);
+                }
+            });
         });
     }
 }

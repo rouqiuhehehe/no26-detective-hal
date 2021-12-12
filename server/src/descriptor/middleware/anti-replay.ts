@@ -18,7 +18,7 @@ export default function antiReplay(target: Object, propertyKey?: string | symbol
     });
 }
 
-function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) {
+export async function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) {
     const { _r } = req.query;
 
     if (!_r) {
@@ -30,58 +30,35 @@ function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse, next: NextF
         return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.ERROR_REPLAY_PARAMS));
     }
 
-    redis.lrange(RedisKey.ANTI_REPLAY, 0, -1, (err, data) => {
-        if (err) {
-            return next(new HttpError(Status.SERVER_ERROR, err.message, err));
-        }
+    try {
+        await redis(async (client) => {
+            const data = await client.lRange(RedisKey.ANTI_REPLAY, 0, -1);
 
-        if (data && data.length) {
-            if (data.some((v) => v === _r)) {
-                return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.ERROR_REPLAY_PARAMS));
-            } else {
-                // 判断储存的防重放是否超过阀值
-                redis.llen(RedisKey.ANTI_REPLAY, (err, len) => {
-                    if (err) {
-                        return next(new HttpError(Status.SERVER_ERROR, err.message, err));
-                    }
-
+            if (data && data.length) {
+                if (data.some((v) => v === _r)) {
+                    return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.ERROR_REPLAY_PARAMS));
+                } else {
+                    // 判断储存的防重放是否超过阀值
+                    const len = await client.lLen(RedisKey.ANTI_REPLAY);
                     if (len >= ANTI_REPLAY_NUM) {
-                        redis.del(RedisKey.ANTI_REPLAY, (err, num) => {
-                            if (err) {
-                                return next(new HttpError(Status.SERVER_ERROR, err.message, err));
-                            }
-
-                            if (num === 1) {
-                                // 没有存放的数据，则往里插
-                                redis.rpush(RedisKey.ANTI_REPLAY, _r as string, (err) => {
-                                    if (err) {
-                                        return next(new HttpError(Status.SERVER_ERROR, err.message, err));
-                                    }
-                                    next();
-                                });
-                            }
-                        });
+                        const num = await client.del(RedisKey.ANTI_REPLAY);
+                        if (num === 1) {
+                            // 没有存放的数据，则往里插
+                            await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
+                            next();
+                        }
                     } else {
                         // 没有到达阀值，则往里插
-                        redis.rpush(RedisKey.ANTI_REPLAY, _r as string, (err) => {
-                            if (err) {
-                                return next(new HttpError(Status.SERVER_ERROR, err.message, err));
-                            }
-                            next();
-                        });
+                        await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
+                        next();
                     }
-                });
-            }
-        } else {
-            redis.rpush(RedisKey.ANTI_REPLAY, _r as string, (err) => {
-                if (err) {
-                    return next(new HttpError(Status.SERVER_ERROR, err.message, err));
                 }
-
-                // tslint:disable-next-line: no-magic-numbers
-                redis.expire(RedisKey.ANTI_REPLAY, 60 * 60);
+            } else {
+                await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
                 next();
-            });
-        }
-    });
+            }
+        });
+    } catch (error: any) {
+        next(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, error));
+    }
 }

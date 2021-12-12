@@ -1,12 +1,21 @@
 import { Status } from '@src/config/server_config';
 
 export default function resSendHandle(_req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
-    res.error = (err) => {
-        res.send({
-            status: err.status,
-            success: false,
-            message: err.message
-        });
+    res.error = (err, data?) => {
+        res.send(
+            data
+                ? {
+                      status: err.status,
+                      success: false,
+                      message: err.message
+                  }
+                : {
+                      status: err.status,
+                      success: false,
+                      data,
+                      message: err.message
+                  }
+        );
     };
 
     res.success = (body) => {
