@@ -1,20 +1,15 @@
 import NotFound from './404';
-import Auth from './auth';
 import ErrorMiddleware from './errorMiddleware';
-import Message from './message';
-import User from './user';
+import ResSendHandle from './res-send-handle';
 
 class Middleware {
     // public errorMiddleware = errorMiddleware;
 
     public constructor(
+        public resSendHandle = ResSendHandle,
         public errorMiddleware = ErrorMiddleware,
-        public message = Message.messageMiddleware,
-        public user = User,
-        public auth = Auth.authMiddleware,
         public notFound = NotFound.redirect
-    ) // public morgan = Morgan
-    {}
+    ) {}
 }
 
 export default new Middleware();

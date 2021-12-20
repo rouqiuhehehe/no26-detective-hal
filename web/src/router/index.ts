@@ -1,34 +1,47 @@
 import Vue from 'vue';
-import VueRouter, { RouteConfig } from 'vue-router';
-import Home from '../views/Home.vue';
+import VueRouter, { RawLocation, Route, RouteConfig } from 'vue-router';
+import RouterMiddleware from './routerMiddleware';
 
 Vue.use(VueRouter);
 
+const originPush = VueRouter.prototype.push;
+
+VueRouter.prototype.push = function (location: RawLocation) {
+    return (originPush.call(this, location) as unknown as Promise<Route>).catch((e) => {
+        if (
+            e.name !== 'NavigationDuplicated' &&
+            !e.message.includes('Avoided redundant navigation to current location')
+        ) {
+            // But print any other errors to the console
+            throw e;
+        }
+    }) as Promise<Route>;
+};
+
 const routes: Array<RouteConfig> = [
-    {
-        path: '/',
-        name: 'Home',
-        component: Home
-    },
     {
         path: '/login',
         name: 'Login',
+        meta: {
+            title: '登陆'
+        },
         component: () => import('../views/auth/Login.vue')
+    },
+    {
+        path: '/404',
+        name: 'NotFound',
+        component: () => import('../views/notFound/index.vue')
     }
-    // {
-    //   path: "/about",
-    //   name: "About",
-    //   // route level code-splitting
-    //   // this generates a separate chunk (about.[hash].js) for this route
-    //   // which is lazy-loaded when the route is visited.
-    //   component: () =>
-    //     import(/* webpackChunkName: "about" */ "../views/About.vue"),
-    // },
 ];
 
 const router = new VueRouter({
     mode: 'history',
     routes
 });
+
+const routerMiddleware = new RouterMiddleware();
+
+router.beforeEach(routerMiddleware.beforeEach);
+router.afterEach(routerMiddleware.afterEach);
 
 export default router;

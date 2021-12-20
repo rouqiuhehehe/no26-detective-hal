@@ -2,7 +2,7 @@
     <div class="login">
         <div class="form">
             <el-menu
-                :default-active="activeIndex"
+                default-active="1"
                 mode="horizontal"
                 background-color="#fff"
                 text-color="#000"
@@ -18,36 +18,38 @@
                 label-width="80px"
                 class="demo-ruleForm"
             >
-                <el-form-item label="userName" prop="userName">
+                <el-form-item label="用户名" prop="userName">
                     <el-input
                         v-model="formData.userName"
                         @keydown.enter.native="login('formData')"
-                        placeholder="please enter userName"
+                        placeholder="请输入用户名"
                     />
                 </el-form-item>
-                <el-form-item label="password" prop="password">
+                <el-form-item label="密码" prop="password">
                     <el-input
                         v-model="formData.password"
                         @keyup.enter.native="login('formData')"
                         type="password"
-                        placeholder="please enter password"
+                        placeholder="请输入密码"
                     />
+                </el-form-item>
+                <el-form-item label="验证码">
+                    <div id="g-recaptcha">Submit</div>
                 </el-form-item>
                 <el-button type="primary" round @click="login('formData')" class="login-btn">登录</el-button>
             </el-form>
         </div>
-        <Timeout :staties="staties"></Timeout>
     </div>
 </template>
 <style lang="less" scoped>
 .login {
     width: 100%;
     height: 100%;
-    background: url(../../assets/login/login-bg.jpg) no-repeat center;
-    background-size: cover;
+    background: url(../../assets/logo.jpg) no-repeat center;
+    background-size: contain;
     .form {
-        width: 400px;
-        height: 300px;
+        width: 420px;
+        height: 380px;
         position: absolute;
         z-index: 12;
         left: 50%;
@@ -75,27 +77,37 @@
 </style>
 <script lang="ts">
 // vue-property-decorator
-import { Vue } from 'vue-property-decorator';
-import Component from 'vue-class-component';
-import Timeout from '@/components/Timeout.vue';
-import { Staties, Check } from '@/types/store';
+import { Vue, Component } from 'vue-property-decorator';
+import { Check, MutationsFunction } from '@/types/store';
+import { Secret } from '@/utils/enum';
+import { Md5 } from 'ts-md5';
+import auth from '@/api/auth';
+import { namespace } from 'vuex-class';
 
 interface LoginRes {
-    authorization: string;
-    uid: number;
+    username: string;
     nickname: string;
-    level: number;
+    avatar: string;
+    create_date: string;
+    token: string;
 }
 
-const checkUserName: Check = (rule, value, callback): void => {
-    if (!value) return callback(new Error('Username can not be empty'));
-    if (!/^[a-zA-Z]{4,20}$/g.test(value)) return callback(new Error('Username should be 4-20 English letters'));
+interface Salt {
+    salt: string;
+}
+
+const checkUserName: Check = (rule, value, callback) => {
+    if (!value) return callback(new Error('用户名不能为空'));
+    if (!/^[a-zA-Z]{4,20}$/g.test(value)) return callback(new Error('用户名为4-20位大小写字母'));
     return callback();
 };
 
-const checkPassword: Check = (rule, value, callback): void => {
-    if (!value) return callback(new Error('Password can not be empty'));
-    if (!/^[A-Za-z\d@$!%*?&.]{6,16}$/.test(value)) return callback(new Error('Password should be 6-16'));
+const checkPassword: Check = (rule, value, callback) => {
+    if (!value) return callback(new Error('密码不能为空'));
+    if (!/^[A-Za-z\d_@$!%*?&.]{6,16}$/.test(value)) {
+        return callback(new Error('密码为6-16位大小写字母，数字，特殊符号'));
+    }
+
     return callback();
 };
 
@@ -104,54 +116,114 @@ interface Form {
     password: string;
 }
 
-@Component({
-    components: {
-        Timeout
-    }
-})
-export default class Login extends Vue {
-    private activeIndex = '1';
+const user = namespace('user');
+@Component
+export default class extends Vue {
+    public scriptSitekey = '6LcIylwdAAAAAABZ-eMKEwb0fffyHbqXBbkzyK5L';
+
+    public rules = {
+        userName: [{ validator: checkUserName, trigger: 'blur' }],
+        password: [{ validator: checkPassword, trigger: 'blur' }]
+    };
+
+    @user.Mutation('CHANGE_USER_INFO')
+    private changeUserInfo!: MutationsFunction;
 
     private formData: Form = {
         userName: '',
         password: ''
     };
 
-    private staties: Staties = {
-        fromName: 'Login',
-        toName: 'Home page',
-        success: undefined,
-        path: '/'
-    };
+    private isVerify = false;
 
-    private rules = {
-        userName: [{ validator: checkUserName, trigger: 'blur' }],
-        password: [{ validator: checkPassword, trigger: 'blur' }]
-    };
+    private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
+
+    public async created() {
+        try {
+            (window as any).onloadCallback = this.grecaptchaOnloadCallback;
+            await this.utils.loadScript(this.scriptSrc + '?onload=onloadCallback');
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    private grecaptchaOnloadCallback() {
+        (window as any).grecaptcha.render('g-recaptcha', {
+            sitekey: this.scriptSitekey, //公钥
+            callback: this.onSubmit, //验证成功回调
+            'expired-callback': this.recaptchaExpired, //验证过期回调
+            'error-callback': this.errorCallback //验证错误回调
+        });
+    }
 
     public async login(formName: string) {
+        if (!this.isVerify) {
+            this.$alert('请先点击验证码进行进行验证', {
+                title: '提示',
+                type: 'error'
+            });
+            return;
+        }
         (this.$refs[formName] as HTMLFormElement).validate(async (valid: boolean) => {
             if (!valid) return false;
-            const res = await this.$axios<LoginRes>({
-                method: 'post',
-                url: '/auth/management-system/login',
-                data: {
-                    userName: this.formData.userName,
-                    password: this.utils.Md5.hashStr(this.formData.password + 'dsc')
-                }
-            });
-            const { data } = res;
-            this.staties.success = true;
-            const obj = {
-                userId: data.uid,
-                userName: data.nickname,
-                level: data.level
-            };
-            this.$store.commit('changeLoginState', obj);
-            sessionStorage.setItem('isLogin', '1');
-            sessionStorage.setItem('userInfo', JSON.stringify(obj));
-            localStorage.setItem('authToken', data.authorization);
+            try {
+                const {
+                    data: { salt }
+                } = await auth.getSalt<Salt>();
+
+                const md5Password = Md5.hashStr(
+                    Md5.hashStr(Md5.hashStr(this.formData.password) + Secret.PASSWORD_SECRET) + salt
+                );
+                const res = await auth.login<LoginRes>({
+                    username: this.formData.userName,
+                    password: md5Password
+                });
+                const { data } = res;
+                const obj = {
+                    nickname: data.nickname,
+                    avatar: data.avatar,
+                    createDate: data.create_date,
+                    username: data.username
+                };
+
+                this.changeUserInfo(obj);
+                sessionStorage.setItem('token', data.token);
+
+                this.$alert('登陆成功，点击跳转首页', {
+                    title: '提示',
+                    type: 'success'
+                }).then(() => {
+                    this.$router.push('/');
+                });
+            } catch (error) {
+                // this.isVerify = false;
+            }
         });
+    }
+
+    private async onSubmit(token: string) {
+        try {
+            await auth.googleVerify({
+                token
+            });
+
+            this.isVerify = true;
+        } catch (error) {
+            this.isVerify = false;
+            console.log(error);
+        }
+    }
+
+    private recaptchaExpired() {
+        this.isVerify = false;
+    }
+
+    private errorCallback() {
+        this.$alert('验证失败，请重试', {
+            title: '提示',
+            type: 'error'
+        });
+        this.isVerify = false;
     }
 }
 </script>

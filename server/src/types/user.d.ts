@@ -1,10 +1,8 @@
-export interface UserInfo extends Record<string, undefined | string | number> {
+export interface UserInfo extends Record<string, string> {
     username: string;
-    password: string;
-    id?: number;
-    salt?: string;
-    secret?: string;
-    token?: string;
+    uid: string;
+    secret: string;
+    token: string;
 }
 
 export interface HashPasswordAndSalt {
@@ -12,4 +10,8 @@ export interface HashPasswordAndSalt {
     salt: string;
 }
 
-export type ParamsUserInfo = Pick<UserInfo, 'username' | 'password'>;
+export interface ParamsUserInfo {
+    username: string;
+    password: string;
+    salt: string;
+}

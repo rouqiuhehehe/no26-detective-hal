@@ -1,4 +1,30 @@
 import { RedisConfig } from '@src/config/redis_config';
-import redis from 'redis';
+import { createClient } from 'redis';
 
-export default redis.createClient(RedisConfig.POIT, '127.0.0.1');
+export default async function redis(cb: (connect: Client, quit: () => Promise<void>) => void) {
+    const client = createClient({
+        socket: {
+            port: RedisConfig.POIT as number,
+            host: RedisConfig.HOST as string
+        }
+    });
+
+    client.on('error', (err) => {
+        console.log('Redis Client Error', err);
+    });
+    let isQuit = false;
+    const quit = async () => {
+        isQuit = true;
+        await client.quit();
+    };
+    try {
+        await client.connect();
+        await cb(client, quit);
+    } catch (error: any) {
+        throw error;
+    } finally {
+        if (!isQuit) {
+            await quit();
+        }
+    }
+}

@@ -1,14 +1,10 @@
-export enum RegisterError {
-    NOT_FIND = 'user is not find',
-    USERNAME_WAS_USED = 'username was be used'
-}
-
 export enum LoginError {
-    PASSWORD_ERROR = 'password is error',
-    USERNAME_ERROR = 'username is not find'
+    PASSWORD_ERROR = '密码错误',
+    USERNAME_ERROR = '用户名错误'
 }
 
 export enum Issue {
-    TOKEN_IS_NOT_FIND = 'token is require',
-    TOKEN_IS_ERROR = 'token is error'
+    TOKEN_IS_NOT_FIND = '认证失效，请重新登陆',
+    TOKEN_IS_ERROR = '认证错误，请重新登陆',
+    TOKEN_IS_EXPIRED = '认证过期，请重新登陆'
 }

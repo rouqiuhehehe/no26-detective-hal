@@ -9,7 +9,10 @@ import { ControllerMetadata, Route, RouteMethod } from './controller';
 const repeatDefineError = new HttpError(Status.SERVER_ERROR, '父路由定义过的中间件不允许在子路由重复定义');
 export enum DefaultMiddleWareType {
     LOG = 'log',
-    LOGIN = 'login',
+    AUTH = 'auth',
+    AUTHORIZATION = 'authorization',
+    ANTI_REPLAY = 'antiReplay',
+    TIMESTAMP = 'timestamp',
     CUSTOM = 'custom'
 }
 
@@ -19,14 +22,17 @@ export interface MiddleWareArray {
     fn: (req: Request, res: Response, next: NextFunction) => void;
 }
 
-export const findFatherClass = (target: Object, cb: (v: Object) => boolean) => {
+export const findFatherClass: (target: Object, cb: (v: Object) => boolean) => any = (
+    target: Object,
+    cb: (v: Object) => boolean
+) => {
     const father = Object.getPrototypeOf(target);
 
     if (father) {
         if (cb(father)) {
             return father;
         } else {
-            findFatherClass(father, cb);
+            return findFatherClass(father, cb);
         }
     } else {
         return false;

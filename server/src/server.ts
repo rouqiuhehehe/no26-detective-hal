@@ -1,5 +1,4 @@
 import { scanController } from '@src/models/routes';
-import history from 'connect-history-api-fallback';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import session from 'express-session';
@@ -59,12 +58,12 @@ export default class App {
     }
 
     private errorMiddleWare() {
-        middleware.notFound(this.app.use.bind(this.app));
+        // middleware.notFound(this.app.use.bind(this.app));
         this.app.use(middleware.errorMiddleware(path.join(__dirname, '../log/error')));
     }
 
     private set() {
-        this.app.set('views', __dirname + '/views');
+        this.app.set('views', path.join(__dirname, 'public', 'ejs'));
         this.app.set('view engine', 'ejs');
     }
 
@@ -72,6 +71,7 @@ export default class App {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(express.static(path.join(__dirname, 'public')));
+        this.app.use('/log', express.static(path.join(process.cwd(), 'log')));
         this.app.use(cookieParser(Secret.COOKIE_SECRET));
         this.app.use(
             session({
@@ -80,7 +80,6 @@ export default class App {
                 saveUninitialized: true
             })
         );
-        this.app.use(history());
     }
 
     private listen() {

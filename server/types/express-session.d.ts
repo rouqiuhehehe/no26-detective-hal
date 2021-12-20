@@ -8,9 +8,10 @@ declare module 'express-session' {
     }
     export interface SessionData {
         messages: sessionMessages[];
-        uid: number;
+        uid: string;
         authorization: string;
         success: Success;
+        salt: string;
     }
 }
 

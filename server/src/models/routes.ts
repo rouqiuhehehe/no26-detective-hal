@@ -127,6 +127,7 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                 }
                             }
 
+                            // tslint:disable-next-line: jsdoc-format
                             if (/**isController && */ hasHomePath && (hasRoutes || hasStaticRoutes)) {
                                 const routes = [
                                     ...(Reflect.getOwnMetadata(ControllerMetadata.ROUTES, controller.prototype) ?? []),
