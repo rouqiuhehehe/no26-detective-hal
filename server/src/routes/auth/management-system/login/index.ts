@@ -8,8 +8,8 @@ import Required from '@src/descriptor/required';
 import HttpError from '@src/models/httpError';
 import User from '@src/models/user';
 import Util from '@util';
+import axios, { AxiosResponse } from 'axios';
 import bcrypt from 'bcrypt';
-import request from 'request';
 import ManagementSystem from '..';
 
 enum GoogleVerifyServer {
@@ -48,10 +48,10 @@ export default class Login extends ManagementSystem {
         try {
             const result = await this.verifyCodeHandle(token);
 
-            if (result.success) {
-                res.success(result);
+            if (result.data.success) {
+                res.success(result.data);
             } else {
-                res.error(new HttpError(Status.MISSING_PARAMS, result['error-codes'][0]));
+                res.error(new HttpError(Status.MISSING_PARAMS, result.data['error-codes'][0]));
             }
         } catch (error: any) {
             res.error(new HttpError(Status.MISSING_PARAMS, error.message, error));
@@ -70,36 +70,24 @@ export default class Login extends ManagementSystem {
     }
 
     private async verifyCodeHandle(token: string): Promise<
-        | {
+        | AxiosResponse<{
               success: true;
               challenge_ts: string;
               hostname: string;
               action: string;
-          }
-        | {
+          }>
+        | AxiosResponse<{
               success: false;
               challenge_ts: string;
               hostname: string;
               'error-codes': string[];
-          }
+          }>
     > {
-        return new Promise((resolve, reject) => {
-            request.post(
-                GoogleVerifyServer.URL,
-                {
-                    form: {
-                        secret: GoogleVerifyServer.KEY,
-                        response: token
-                    }
-                },
-                (err, _res, body) => {
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(body));
-                }
-            );
+        return axios.post(GoogleVerifyServer.URL, undefined, {
+            params: {
+                secret: GoogleVerifyServer.KEY,
+                response: token
+            }
         });
     }
 

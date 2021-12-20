@@ -109,19 +109,17 @@ declare global {
     type ExpressRequest = express.Request;
     type NextFunction = express.NextFunction;
     type Client = RedisClientType<typeof modules, Record<string, never>>;
-    interface Request {
-        user: UserInfo;
-    }
     namespace Express {
         type Message = (message: string, type?: string) => void;
         interface Response {
             message: Message;
             error<T extends Error>(e: HttpError<T>, data?: Record<string, string | number>): void;
-            success(data: Record<string, string | number | Date | boolean>): void;
+            success<T extends Record<string, any>>(data: T): void;
         }
 
         interface Request {
             user: UserInfo;
+            token?: string;
         }
     }
 

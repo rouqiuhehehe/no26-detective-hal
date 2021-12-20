@@ -1,6 +1,8 @@
 import { Status } from '@src/config/server_config';
 
-export default function resSendHandle(_req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+export default function resSendHandle(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    req.token = req.header('authorization')?.replace('Bearer ', '');
+
     res.error = (err, data?) => {
         res.send(
             data

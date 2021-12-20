@@ -192,7 +192,7 @@ export default class extends events.EventEmitter {
     /**
      * 加锁处理多请求
      */
-    public asyncQueryBySock<T>(req: Request, sql: string, values?: unknown[]): Promise<Result<T>> {
+    public asyncQueryBySock<T>(req: Request, sql: string, values?: unknown[]): Promise<T> {
         const url = Util.getNoParamsUrl(req);
         return new Promise(async (resolve, reject) => {
             this.once(url, (res) => {

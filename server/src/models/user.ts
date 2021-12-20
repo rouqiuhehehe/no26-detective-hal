@@ -21,7 +21,7 @@ interface DbUser {
     avatar: string;
     salt: string;
     password: string;
-    level: number;
+    permission: number;
     create_date: string;
     update_date: string;
 }
@@ -42,7 +42,8 @@ export default class User {
             try {
                 const dbUserInfo = (await this.getByUsername(userInfo.username))[0];
                 if (dbUserInfo) {
-                    const { username, password, uid, nickname, avatar, create_date, update_date, level } = dbUserInfo;
+                    const { username, password, uid, nickname, avatar, create_date, update_date, permission } =
+                        dbUserInfo;
 
                     await redis(async (client, quit) => {
                         const errorNum = await client.get('password_error_num:user#' + uid);
@@ -56,18 +57,21 @@ export default class User {
                         );
 
                         if (bcryptPassword === userInfo.password) {
-                            const token = await this.issueToken(userInfo.username, uid, client);
-                            await client.del('password_error_num:user#' + uid);
-                            resolve({
+                            const token = await this.issueToken(userInfo.username);
+                            const info = {
                                 uid,
                                 nickname,
                                 token,
                                 avatar,
                                 create_date,
-                                level,
+                                permission,
                                 username,
                                 update_date
-                            });
+                            };
+                            await client.hSet('user:' + token, info);
+                            await client.expire('user:' + token, Jwt_Config.JWT_EXPIRED);
+                            await client.del('password_error_num:user#' + uid);
+                            resolve(info);
                         } else {
                             await quit();
                             reject(
@@ -93,14 +97,12 @@ export default class User {
             if (!token) {
                 reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_NOT_FIND));
             } else {
-                const uid = req.session.uid;
                 try {
                     await redis(async (client) => {
-                        const userInfo = await client.hGetAll('user:' + uid);
-                        const info = userInfo as UserInfo;
-                        if (info && info.token === token) {
+                        const hasToken = await client.EXISTS('user:' + req.token);
+                        if (hasToken) {
                             try {
-                                const decoded = await Jwt.vailToken(token!, info.secret!);
+                                const decoded = await Jwt.vailToken(token!, Jwt_Config.SECRET);
                                 resolve(decoded);
                             } catch (e: any) {
                                 if (e instanceof TokenExpiredError) {
@@ -112,7 +114,7 @@ export default class User {
                                 }
                             }
                         } else {
-                            reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_ERROR));
+                            reject(new HttpError(Status.TOKEN_ERROR, Issue.TOKEN_IS_EXPIRED));
                         }
                     });
                 } catch (err: any) {
@@ -122,49 +124,60 @@ export default class User {
         });
     }
 
-    public getUserInfoByToken(req: ExpressRequest): Promise<Omit<DbUser, 'password' | 'salt' | 'id' | 'uid'>> {
+    public getUserInfoByToken(
+        req: ExpressRequest
+    ): Promise<Omit<DbUser, 'permission' | 'password' | 'salt' | 'id' | 'uid'>> {
         return new Promise(async (resolve, reject) => {
             try {
-                const decoded = await this.validateToken(req);
+                await redis(async (client) => {
+                    const dbUserInfo = await client.hGetAll('user:' + req.token);
 
-                const { data } = decoded;
+                    if (dbUserInfo) {
+                        const { username, update_date, nickname, avatar, create_date } = dbUserInfo;
 
-                const dbUserInfo = (await this.getByUsername(data))[0];
-
-                if (dbUserInfo) {
-                    const { username, update_date, nickname, avatar, create_date, level } = dbUserInfo;
-
-                    resolve({
-                        nickname,
-                        avatar,
-                        create_date,
-                        level,
-                        username,
-                        update_date
-                    });
-                } else {
-                    reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
-                }
+                        resolve({
+                            nickname,
+                            avatar,
+                            create_date,
+                            username,
+                            update_date
+                        });
+                    } else {
+                        reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
+                    }
+                });
             } catch (e) {
-                if (e instanceof HttpError) {
-                    reject(e);
-                }
+                reject(e);
             }
         });
     }
 
-    private issueToken(username: string, uid: string, client: Client): Promise<string> {
+    public loginOut(req: ExpressRequest): Promise<{ value: true }> {
         return new Promise(async (resolve, reject) => {
-            const secret = Jwt_Config.SECRET + Math.random();
-            const info: UserInfo = {
-                username,
-                secret,
-                uid,
-                token: Jwt.issueToken(username, secret)
-            };
             try {
-                await client.hSet('user:' + uid, info);
-                resolve(info.token);
+                await redis(async (client) => {
+                    const remove = await client.del('user:' + req.token);
+
+                    if (remove === 1) {
+                        resolve({
+                            value: true
+                        });
+                    } else {
+                        reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
+                    }
+                });
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    private issueToken(username: string): Promise<string> {
+        return new Promise(async (resolve, reject) => {
+            const secret = Jwt_Config.SECRET;
+            const token = Jwt.issueToken(username, secret);
+            try {
+                resolve(token);
             } catch (err: any) {
                 reject(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, err));
             }

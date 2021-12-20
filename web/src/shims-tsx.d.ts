@@ -1,4 +1,4 @@
-import MyUtils from '@/utils/utils';
+import MyUtils from '@/utils';
 import Axios from 'axios';
 import Vue, { VNode } from 'vue';
 import VueRouter, { Route } from 'vue-router';

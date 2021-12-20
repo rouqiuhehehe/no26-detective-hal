@@ -5,10 +5,6 @@ export default class auth {
         return axios.get<T>('/auth/management-system/get-salt');
     }
 
-    public static getUserInfo<T>() {
-        return axios.get<T>('/auth/management-system/get-user');
-    }
-
     public static login<T>(params: { username: string; password: string }) {
         return axios.post<T>('/auth/management-system/login', params);
     }

@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import VueRouter, { RawLocation, Route, RouteConfig } from 'vue-router';
-import Home from '../views/Home.vue';
+import RouterMiddleware from './routerMiddleware';
 
 Vue.use(VueRouter);
 
@@ -20,20 +20,17 @@ VueRouter.prototype.push = function (location: RawLocation) {
 
 const routes: Array<RouteConfig> = [
     {
-        path: '/',
-        name: 'Home',
-        meta: {
-            title: '26号探案馆'
-        },
-        component: Home
-    },
-    {
         path: '/login',
         name: 'Login',
         meta: {
             title: '登陆'
         },
         component: () => import('../views/auth/Login.vue')
+    },
+    {
+        path: '/404',
+        name: 'NotFound',
+        component: () => import('../views/notFound/index.vue')
     }
 ];
 
@@ -41,5 +38,10 @@ const router = new VueRouter({
     mode: 'history',
     routes
 });
+
+const routerMiddleware = new RouterMiddleware();
+
+router.beforeEach(routerMiddleware.beforeEach);
+router.afterEach(routerMiddleware.afterEach);
 
 export default router;

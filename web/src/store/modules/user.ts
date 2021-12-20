@@ -1,14 +1,8 @@
-import auth from '@/api/auth';
+import userOperation from '@/api/auth/user-operation';
+import { UserInfo } from '@/types/store';
 import { ActionTree, GetterTree, MutationTree } from 'vuex';
 
-interface UserInfo {
-    nickname: string;
-    avatar: string;
-    create_date: string;
-    level: number;
-    username: string;
-}
-interface State {
+export interface State {
     userInfo: Partial<UserInfo>;
 }
 const state: State = {
@@ -30,7 +24,7 @@ const mutations: MutationTree<State> = {
 const actions: ActionTree<State, any> = {
     async getUserInfo({ commit }) {
         try {
-            const res = await auth.getUserInfo<State>();
+            const res = await userOperation.getUserInfo<State>();
             const userInfo = res.data;
 
             commit('CHANGE_USER_INFO', userInfo);

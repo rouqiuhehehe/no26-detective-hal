@@ -58,7 +58,7 @@ export default class App {
     }
 
     private errorMiddleWare() {
-        middleware.notFound(this.app.use.bind(this.app));
+        // middleware.notFound(this.app.use.bind(this.app));
         this.app.use(middleware.errorMiddleware(path.join(__dirname, '../log/error')));
     }
 

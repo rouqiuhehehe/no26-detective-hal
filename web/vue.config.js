@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
     runtimeCompiler: true,
-    publicPath: './',
+    publicPath: '/',
     outputDir: path.join(__dirname, 'dist'),
     assetsDir: 'assets',
     devServer: {

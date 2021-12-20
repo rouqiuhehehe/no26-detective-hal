@@ -1,7 +1,7 @@
 import cfg from '@/config';
 import router from '@/router';
+import utils from '@/utils';
 import formatParams from '@/utils/formatParams';
-import utils from '@/utils/utils';
 import axios from 'axios';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 import ElementUI, { MessageBox } from 'element-ui';
@@ -19,7 +19,7 @@ const allExcludes = ['/auth', '/admin'];
 
 const isTokenExcludes = (url: string) => tokenExcludes.some((v) => new RegExp('^' + v).test(url));
 
-const defaultTimeout = 20000;
+const defaultTimeout = 30000;
 if (process.env.NODE_ENV !== 'development') {
     const baseUrl = process.env.VUE_APP_API_URL;
 
@@ -52,13 +52,14 @@ axios.interceptors.request.use(
                     };
 
                     if (!token && !isTokenExcludes(url)) {
+                        console.log(config);
                         ElementUI.MessageBox.alert('你还没有登陆，请先登录', {
                             title: '提示',
                             type: 'error'
                         }).then(() => {
                             router.push('/login');
                         });
-                        throw new axios.Cancel();
+                        throw new axios.Cancel('token error');
                     }
 
                     if (!isTokenExcludes(url)) {
@@ -164,10 +165,11 @@ axios.interceptors.response.use(
         if (err.config && isTokenExcludes(err.config.url)) {
             return Promise.reject(err);
         }
-
-        MessageBox.alert(err.message, '错误', {
-            type: 'error'
-        });
+        if (err.message) {
+            MessageBox.alert(err.message, '错误', {
+                type: 'error'
+            });
+        }
         return Promise.reject(err);
     }
 );

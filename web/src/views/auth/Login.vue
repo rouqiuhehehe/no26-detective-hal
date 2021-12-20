@@ -88,7 +88,6 @@ interface LoginRes {
     username: string;
     nickname: string;
     avatar: string;
-    level: number;
     create_date: string;
     token: string;
 }
@@ -135,7 +134,7 @@ export default class extends Vue {
         password: ''
     };
 
-    private isVerify = true;
+    private isVerify = false;
 
     private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
 
@@ -184,12 +183,10 @@ export default class extends Vue {
                     nickname: data.nickname,
                     avatar: data.avatar,
                     createDate: data.create_date,
-                    level: data.level,
                     username: data.username
                 };
 
                 this.changeUserInfo(obj);
-
                 sessionStorage.setItem('token', data.token);
 
                 this.$alert('登陆成功，点击跳转首页', {

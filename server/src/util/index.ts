@@ -311,4 +311,32 @@ export default class Util {
         }
         return false;
     }
+
+    public static deepClone(obj: any) {
+        if (typeof obj !== 'object' || obj === null || obj instanceof Date) {
+            return obj;
+        } else {
+            const newObj: any = Array.isArray(obj) ? [] : {};
+            if (obj && typeof obj === 'object') {
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        newObj[key] = Util.deepClone(obj[key]);
+                    }
+                }
+            }
+            return newObj;
+        }
+    }
+
+    public static isEmpty(obj: unknown) {
+        if (typeof obj !== 'object') {
+            return !obj;
+        } else {
+            // tslint:disable-next-line: forin
+            for (const i in obj) {
+                return false;
+            }
+            return true;
+        }
+    }
 }

@@ -2,10 +2,10 @@ import { Get } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import HttpError from '@src/models/httpError';
 import User from '@src/models/user';
-import ManagementSystem from '..';
+import UserOperation from '..';
 
 const user = new User();
-export default class GetUser extends ManagementSystem {
+export default class GetUser extends UserOperation {
     @Middleware(['default'])
     @Get('/get-user')
     public async getUser(req: ExpressRequest, res: ExpressResPonse) {
