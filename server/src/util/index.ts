@@ -192,16 +192,6 @@ export default class Util {
         });
     }
 
-    public static readFile(fileName: string, fn: (data: string | Buffer) => void, encoding: BufferEncoding = 'utf-8') {
-        fs.readFile(path.join(__dirname, '../', fileName), encoding, (err, data) => {
-            if (err) {
-                Util.hadError(new HttpError(Status.SERVER_ERROR, err.message, err));
-            } else {
-                fn.call(null, data);
-            }
-        });
-    }
-
     /**
      * 获取没有参数的完整url
      */

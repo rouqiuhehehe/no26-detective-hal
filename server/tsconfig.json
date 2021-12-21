@@ -27,7 +27,8 @@
         "paths": {
             "@util": ["src/util/index", "dist/util/index"],
             "@src/*": ["src/*", "dist/*"]
-        }
+        },
+        "plugins": []
     },
     "exclude": ["node_modules"],
     "include": ["src/**/*.ts", "types/*", "test/*"]

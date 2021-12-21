@@ -35,10 +35,10 @@ import Menu from '@/components/Menu.vue';
 import { AsideTree } from '@/types/routes';
 import { Mutation } from 'vuex';
 import userOperation from '@/api/auth/user-operation';
-import router from '@/router';
 
 const user = namespace('user');
 const aside = namespace('routes');
+
 @Component({
     components: {
         Menu

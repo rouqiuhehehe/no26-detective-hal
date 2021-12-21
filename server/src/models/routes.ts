@@ -11,28 +11,27 @@ const loadTs = (dirPath: string): Promise<any[]> => {
     return new Promise(async (resolve, reject) => {
         try {
             // 检测目录是否存在
-            await fsPromise.access(dirPath);
+            // await fsPromise.access(dirPath);
             const fileName = await fsPromise.readdir(dirPath);
 
             try {
                 for (const name of fileName) {
                     const curPath = path.join(dirPath, name);
-                    const dirStat = await fsPromise.stat(curPath);
-
-                    if (dirStat.isDirectory()) {
+                    const extname = path.extname(curPath);
+                    if (!extname) {
                         await loadTs(curPath);
                         continue;
                     }
 
-                    if (!/(\.js|\.ts)$/.test(curPath)) {
+                    if (extname === '.js' || extname === '.ts') {
+                        try {
+                            const module = import(`${curPath}`);
+                            moduleArr.push(module);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    } else {
                         continue;
-                    }
-
-                    try {
-                        const module = import(`${curPath}`);
-                        moduleArr.push(module);
-                    } catch (error) {
-                        reject(error);
                     }
                 }
                 resolve(moduleArr);
@@ -105,6 +104,8 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                                 const realPath = path.posix.join(homePath, basePath ?? '');
 
                                                 Reflect.deleteMetadata('middleware', target);
+                                                console.log(realPath);
+
                                                 route.use(realPath, v.fn);
                                             } else {
                                                 // 不存在则异常错误
@@ -124,6 +125,7 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                                 []) as MiddleWareArray[]
                                         ).map((v) => v.fn)
                                     );
+                                    Reflect.deleteMetadata('middleware', controller);
                                 }
                             }
 
@@ -162,7 +164,7 @@ export const scanController = (dirPath: string, route: express.Application) => {
                 });
             });
         } catch (error) {
-            reject(dirPath + ' does not exist');
+            reject(error);
         }
     });
 };

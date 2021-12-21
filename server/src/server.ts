@@ -8,6 +8,7 @@ import { Secret } from './config/secret';
 import { Listen } from './config/server_config';
 import middleware from './middleware';
 
+const dirname = process.env.NODE_ENV === 'development' ? __dirname : process.cwd();
 export default class App {
     public app: express.Application;
 
@@ -28,6 +29,8 @@ export default class App {
                 this.errorMiddleWare();
                 resolve(true);
             } catch (error: any) {
+                console.log(error, 10);
+
                 if (cb) {
                     cb(error);
                 } else {
@@ -42,13 +45,7 @@ export default class App {
 
         for (const key of keys) {
             if (Object.prototype.hasOwnProperty.call(middleware, key)) {
-                if (key === 'morgan') {
-                    const morgan = Object.getOwnPropertyDescriptor(middleware, key)?.value;
-                    const logger = new morgan(path.join(__dirname, '../log/info'));
-                    this.app.use(logger.useLogger());
-                    continue;
-                }
-                if (key === 'errorMiddleware' || key === 'notFound') {
+                if (key === 'errorMiddleware' || key === 'notFound' || key === 'morgan') {
                     continue;
                 }
                 const value = Object.getOwnPropertyDescriptor(middleware, key)?.value;
@@ -59,18 +56,18 @@ export default class App {
 
     private errorMiddleWare() {
         // middleware.notFound(this.app.use.bind(this.app));
-        this.app.use(middleware.errorMiddleware(path.join(__dirname, '../log/error')));
+        this.app.use(middleware.errorMiddleware(path.join(dirname, '../log/error')));
     }
 
     private set() {
-        this.app.set('views', path.join(__dirname, 'public', 'ejs'));
+        this.app.set('views', path.join(dirname, 'public', 'ejs'));
         this.app.set('view engine', 'ejs');
     }
 
     private config() {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(express.static(path.join(__dirname, 'public')));
+        this.app.use(express.static(path.join(dirname, 'public')));
         this.app.use('/log', express.static(path.join(process.cwd(), 'log')));
         this.app.use(cookieParser(Secret.COOKIE_SECRET));
         this.app.use(

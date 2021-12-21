@@ -3,6 +3,7 @@ import http from 'http';
 import net from 'net';
 
 const app = new App();
+
 app.initRoute().then(() => {
     const server = http.createServer(app.app);
 

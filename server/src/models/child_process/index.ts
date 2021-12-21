@@ -2,8 +2,6 @@ import autoBind from '@src/descriptor/autobind';
 import childProcess from 'child_process';
 import net from 'net';
 import os from 'os';
-import path from 'path/posix';
-import './work';
 
 /*
     类型         回调/异常    进程类型     执行类型         可设置超时
@@ -26,16 +24,25 @@ export default class ChildProcess {
     @autoBind
     protected forkChildProcess() {
         let i = 0;
-        const len = 2 || this.cpus.length;
+        const arr = [0, 0, 0];
+        const len = arr.length || this.cpus.length;
+        let processFilePath = '/work.js';
 
-        [0, 0].forEach((_v, index) => {
+        if (process.env.NODE_ENV === 'development') {
+            processFilePath = '/work.ts';
+        }
+
+        arr.forEach((_v, index) => {
             // 多进程google调试
-            const arg = ['-r', process.cwd() + '/bin.js'];
+            const arg: string[] = [];
+            if (process.env.NODE_ENV === 'development') {
+                arg.push('-r', process.cwd() + '/bin.js');
+            }
             if (process.execArgv.includes('--inspect')) {
                 arg.unshift('--inspect=' + (inspectPort + index + 1).toString());
             }
 
-            const cp = childProcess.fork(path.join(__dirname, './work.ts'), [], {
+            const cp = childProcess.fork(__dirname + processFilePath, [], {
                 execArgv: arg
             });
             cp.on('error', (err) => {

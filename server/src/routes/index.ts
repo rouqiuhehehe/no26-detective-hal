@@ -1,9 +1,6 @@
-import Db from '@src/bin/Db';
 import { Controller, Get } from '@src/descriptor/controller';
-import Log from '@src/descriptor/middleware/log';
 
-const db = new Db();
-@Log()
+// @Log()
 @Controller('/', true)
 export default class RootRoute {
     @Get('/404')
