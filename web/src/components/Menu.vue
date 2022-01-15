@@ -36,5 +36,8 @@ export default class extends Vue {
 }
 </script>
 
-<style>
+<style lang="less" scoped>
+.el-menu {
+    text-align: center;
+}
 </style>

@@ -7,14 +7,8 @@ Vue.use(VueRouter);
 const originPush = VueRouter.prototype.push;
 
 VueRouter.prototype.push = function (location: RawLocation) {
-    return (originPush.call(this, location) as unknown as Promise<Route>).catch((e) => {
-        if (
-            e.name !== 'NavigationDuplicated' &&
-            !e.message.includes('Avoided redundant navigation to current location')
-        ) {
-            // But print any other errors to the console
-            throw e;
-        }
+    return (originPush.call(this, location) as unknown as Promise<Route>).catch(() => {
+        //
     }) as Promise<Route>;
 };
 

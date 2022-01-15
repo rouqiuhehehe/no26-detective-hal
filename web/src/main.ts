@@ -1,5 +1,3 @@
-import axios from '@/middleware/axios';
-import myUtils from '@/utils';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import Vue from 'vue';
@@ -9,9 +7,9 @@ import store from './store';
 
 Vue.use(ElementUI);
 
-Vue.config.productionTip = false;
-Vue.prototype.utils = myUtils;
-Vue.prototype.$axios = axios;
+if (process.env.NODE_ENV === 'production') {
+    Vue.config.productionTip = false;
+}
 
 new Vue({
     router,

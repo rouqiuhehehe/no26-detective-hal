@@ -31,7 +31,7 @@ export async function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse
     }
 
     try {
-        await redis(async (client) => {
+        await redis(async (client, quit) => {
             const data = await client.lRange(RedisKey.ANTI_REPLAY, 0, -1);
 
             if (data && data.length) {
@@ -45,16 +45,19 @@ export async function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse
                         if (num === 1) {
                             // 没有存放的数据，则往里插
                             await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
+                            await quit();
                             next();
                         }
                     } else {
                         // 没有到达阀值，则往里插
                         await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
+                        await quit();
                         next();
                     }
                 }
             } else {
                 await client.rPush(RedisKey.ANTI_REPLAY, _r as string);
+                await quit();
                 next();
             }
         });

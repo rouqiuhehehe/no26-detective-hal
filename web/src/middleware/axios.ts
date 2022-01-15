@@ -4,31 +4,37 @@ import utils from '@/utils';
 import formatParams from '@/utils/formatParams';
 import axios from 'axios';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
-import ElementUI, { MessageBox } from 'element-ui';
+import ElementUI, { Loading, MessageBox } from 'element-ui';
 import jsencrypt from 'jsencrypt';
+import qs from 'qs';
+import { ElLoadingComponent } from 'element-ui/types/loading';
 
 const HMACSHA256KEY = '1001';
 
 function hashSHA256(params: Record<string, any>) {
     // 通过 hmacsha256 生成散列字符串
-    return HmacSHA256(JSON.stringify(params), HMACSHA256KEY).toString();
+    return HmacSHA256(qs.stringify(params), HMACSHA256KEY).toString();
 }
 const excludes = ['/auth/management-system/get-public-key'];
 const tokenExcludes = ['/auth/management-system'];
 const allExcludes = ['/auth', '/admin'];
 
 const isTokenExcludes = (url: string) => tokenExcludes.some((v) => new RegExp('^' + v).test(url));
-
+let loading: ElLoadingComponent | null;
 const defaultTimeout = 30000;
 if (process.env.NODE_ENV !== 'development') {
-    const baseUrl = process.env.VUE_APP_API_URL;
-
-    axios.defaults.baseURL = baseUrl;
+    axios.defaults.baseURL = process.env.VUE_APP_API_URL;
 }
 axios.defaults.timeout = defaultTimeout;
 
 axios.interceptors.request.use(
     async (config) => {
+        if (!loading) {
+            loading = Loading.service({
+                target: '.my-el-container-loading',
+                lock: true
+            });
+        }
         const { url } = config;
         if (url) {
             if (allExcludes.some((v) => new RegExp('^' + v).test(url))) {
@@ -40,7 +46,10 @@ axios.interceptors.request.use(
                 params._r = _r;
                 params.timestamp = timestamp;
                 params = formatParams(params);
-                data = formatParams(data);
+
+                if (config.headers && config.headers['Content-Type'] !== 'multipart/form-data') {
+                    data = formatParams(data);
+                }
 
                 config.params = params;
                 config.data = data;
@@ -50,17 +59,6 @@ axios.interceptors.request.use(
                         ...params,
                         ...data
                     };
-
-                    if (!token && !isTokenExcludes(url)) {
-                        console.log(config);
-                        ElementUI.MessageBox.alert('你还没有登陆，请先登录', {
-                            title: '提示',
-                            type: 'error'
-                        }).then(() => {
-                            router.push('/login');
-                        });
-                        throw new axios.Cancel('token error');
-                    }
 
                     if (!isTokenExcludes(url)) {
                         Authorization.authorization = token;
@@ -87,7 +85,7 @@ axios.interceptors.request.use(
                             }
                         }
                         if (pubKey) {
-                            console.log(JSON.stringify(Authorization));
+                            console.log(qs.stringify(Authorization));
 
                             //实例化 jsencrypt
                             const JSencrypt = new jsencrypt();
@@ -112,6 +110,8 @@ axios.interceptors.request.use(
         return config;
     },
     (err) => {
+        loading?.close();
+        loading = null;
         return Promise.reject(err);
     }
 );
@@ -119,6 +119,8 @@ axios.interceptors.request.use(
 // 响应拦截
 axios.interceptors.response.use(
     (response) => {
+        loading?.close();
+        loading = null;
         if (allExcludes.some((v) => new RegExp('^' + v).test(response.config.url!))) {
             try {
                 if (response.data.success === false) {
@@ -129,17 +131,20 @@ axios.interceptors.response.use(
                             title: '提示',
                             type: 'error'
                         }).then(() => {
-                            router.push('/login');
+                            router.push('/login').then(() => void 0);
                         });
                         return response.data;
                     }
                     throw new Error(response.data.message);
                 }
 
-                if (!excludes.includes(response.config.url ?? '')) {
+                if (!excludes.includes(response.config.url ?? '') && response.request.responseType !== 'blob') {
                     if (response.headers?.authorization) {
                         const { authorization } = response.headers;
-                        const decrypt = HmacSHA256(JSON.stringify(response.data.data), HMACSHA256KEY).toString();
+                        const decrypt = HmacSHA256(
+                            JSON.stringify(response.data.data ?? response.data),
+                            HMACSHA256KEY
+                        ).toString();
                         if (decrypt === authorization) {
                             return response.data;
                         } else {
@@ -154,7 +159,7 @@ axios.interceptors.response.use(
             } catch (err: any) {
                 MessageBox.alert(err.message, '错误', {
                     type: 'error'
-                });
+                }).then(() => void 0);
                 return Promise.reject(err);
             }
         } else {
@@ -162,13 +167,15 @@ axios.interceptors.response.use(
         }
     },
     (err) => {
+        loading?.close();
+        loading = null;
         if (err.config && isTokenExcludes(err.config.url)) {
             return Promise.reject(err);
         }
         if (err.message) {
             MessageBox.alert(err.message, '错误', {
                 type: 'error'
-            });
+            }).then(() => void 0);
         }
         return Promise.reject(err);
     }

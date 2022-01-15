@@ -3,8 +3,13 @@
 // import Async from './util/async';
 import 'reflect-metadata';
 // import './https';
-import './child_process';
+import cp from './child_process';
+import initEnv from './util/initEnv';
 
+(async () => {
+    await initEnv();
+    new cp();
+})();
 // if (process.env.NODE_RUN === 'debugger') {
 //     easyMonitor('dsc');
 // }

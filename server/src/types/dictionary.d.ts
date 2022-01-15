@@ -1,0 +1,63 @@
+export interface OperaList {
+    opera_id: number;
+    id: string;
+    partner_id: null;
+    goods_init_id: string;
+    name: string;
+    vip_price: number;
+    sale_price: number;
+    category_ids: string;
+    default_category_ids: string;
+    goods_label_ids: string;
+    goods_numbers_id: null;
+    man: number;
+    woman: number;
+    galley: string;
+    galley_people: string;
+    pic_url: string;
+    game_time: string;
+    difficulty: number;
+    detail: string;
+    browser_num: number;
+    sales_num: number;
+    issue_date: null;
+    status: number;
+    heat: number;
+    score: number;
+    sort: number;
+    remark: string;
+    flag: number;
+    create_time: null;
+    update_time: null;
+    recommend: string;
+    recommend_sort: number;
+    history_price: number;
+    goods_qr: string;
+    goods_sort: number;
+    is_top: number;
+    forward_goods_id: string;
+    vip_price_status: number;
+    focus_number: number;
+    focus_status: number;
+    comment_status: number;
+    play_number: number;
+    play_status: number;
+    catalogs_names: string;
+    default_catalogs_names: string;
+    is_city_limit: number;
+    is_exclusive: number;
+    is_real: null;
+    number: number;
+    goods_avg_score: number;
+    total_play_num: number;
+    rank: number;
+    editor_name: string;
+    editor_content: string;
+    goods_comment_number: number;
+    issue_dates: string;
+}
+
+export interface OperaTypes {
+    id: number;
+    label: string;
+}

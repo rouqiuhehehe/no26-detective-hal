@@ -1,10 +1,10 @@
-import { ErrorMsg } from '@src/config/error';
 import { ControllerMetadata } from '@src/descriptor/controller';
 import HttpError from '@src/models/httpError';
 import crypto from 'crypto';
 import events from 'events';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import fs from 'fs';
+import fsPromise from 'fs/promises';
 import iconv from 'iconv-lite';
 import path from 'path';
 import { Status } from '../config/server_config';
@@ -26,35 +26,16 @@ const channel = new events.EventEmitter();
 export default class Util {
     public static channel = channel;
     public static variableTypes = variableTypes;
-    public static hadError<T extends Error>(err: HttpError<T>, res?: Response) {
-        if (process.env.NODE_ENV === 'development') {
-            if (res) {
-                res.status(err.status).send({
-                    status: err.status,
-                    success: false,
-                    message: err.message
-                });
-            } else {
-                throw new Error(err.message);
-            }
-        } else {
-            if (res) {
-                res.status(err.status).send({
-                    status: err.status,
-                    success: false,
-                    message: ErrorMsg.SERVER_ERROR
-                });
-            } else {
-                console.log('err', err.message);
-            }
-        }
+
+    public static getUrlWithHost(url: string) {
+        return new URL(url, process.env.HTTP_URL_HOST as string).href;
     }
 
     public static isAbsoluteURL(url: string) {
         // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
         // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
         // by any combination of letters, digits, plus, period, or hyphen.
-        return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+        return new RegExp('^([a-z][a-zd+-.]*:)?//', 'i').test(url);
     }
 
     public static middlewareDescriptor(
@@ -200,12 +181,27 @@ export default class Util {
         return urlObj.pathname;
     }
 
+    /**
+     * 获取不带协议头和ip的url路径
+     */
+    public static getNoHostUrl(url: string) {
+        return new URL(url).pathname;
+    }
+
     public static md5Crypto(password: string) {
         const hash = crypto.createHash('md5');
         hash.update(password);
 
-        const md5Password = hash.digest('hex');
-        return md5Password;
+        return hash.digest('hex');
+    }
+
+    public static async md5File(filePath: string) {
+        try {
+            const data = await fsPromise.readFile(filePath);
+            return crypto.createHash('md5').update(data.toString(), 'utf8').digest('hex');
+        } catch (error) {
+            throw error;
+        }
     }
 
     public static getFunctionTypeByDescriptor(descriptor: PropertyDescriptor) {
@@ -296,10 +292,7 @@ export default class Util {
     }
 
     public static isExtendsHttpError<T extends Error>(err: any): err is HttpError<T> {
-        if (err instanceof HttpError) {
-            return true;
-        }
-        return false;
+        return err instanceof HttpError;
     }
 
     public static deepClone(obj: any) {

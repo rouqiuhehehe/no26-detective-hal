@@ -2,8 +2,8 @@ const enum dbConfig {
     HOST = 'localhost',
     USER = 'root',
     PASSWORD = 'jianv4as',
-    DATABASE = 'no26_detective_hal',
-    MULTIPLESTATEMENTS = 'true'
+    DATABASE = 'no26_detective_hal'
+    // MULTIPLESTATEMENTS = 'true'
 }
 
 const enum dbPoolConfig {
@@ -15,6 +15,6 @@ export default {
     user: dbConfig.USER,
     password: dbConfig.PASSWORD,
     database: dbConfig.DATABASE,
-    multiplestatements: dbConfig.MULTIPLESTATEMENTS,
+    // multiplestatements: dbConfig.MULTIPLESTATEMENTS,
     connectionLimit: dbPoolConfig.CONNECTIONLIMIT
 };

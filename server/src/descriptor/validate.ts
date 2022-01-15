@@ -7,26 +7,40 @@ import { methodMiddleware } from './middlewareHandle';
 const callback =
     <T = any, isStrict = false>(
         params: Joi.SchemaMap<T, isStrict>,
-        errcb?: 'redirect' | ((err?: Joi.ValidationError) => void)
+        validateCb?: () => void,
+        errcb?: (err: Joi.ValidationError) => void
     ) =>
     (method: RouteMethod) =>
-    (req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) => {
-        const schema = Joi.object(params);
+    async (req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) => {
+        const schema = Joi.object(params).unknown();
 
         const { error } = schema.validate(method === 'get' ? req.query : req.body);
 
         if (error) {
-            if (errcb) {
-                if (typeof errcb === 'function') {
-                    errcb(error);
+            errorHandle(errcb, error, next);
+        } else {
+            if (validateCb) {
+                try {
+                    await validateCb();
+                    next();
+                } catch (error: any) {
+                    errorHandle(errcb, error, next);
                 }
             } else {
-                next(new HttpError(Status.SERVER_ERROR, error.message));
+                next();
             }
-        } else {
-            next();
         }
     };
+
+const errorHandle = <T extends Error>(errcb: ((err: T) => void) | undefined, error: T, next: NextFunction) => {
+    if (errcb) {
+        if (typeof errcb === 'function') {
+            errcb(error);
+        }
+    } else {
+        next(new HttpError(Status.SERVER_ERROR, error.message));
+    }
+};
 export default function Validate(...arr: Parameters<typeof callback>) {
     return (target: Object, name: string, _descriptor: PropertyDescriptor) => {
         methodMiddleware(target, name, callback(...arr));

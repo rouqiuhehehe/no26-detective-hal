@@ -30,8 +30,6 @@ const loadTs = (dirPath: string): Promise<any[]> => {
                         } catch (error) {
                             reject(error);
                         }
-                    } else {
-                        continue;
                     }
                 }
                 resolve(moduleArr);
@@ -104,12 +102,11 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                                 const realPath = path.posix.join(homePath, basePath ?? '');
 
                                                 Reflect.deleteMetadata('middleware', target);
-                                                console.log(realPath);
 
                                                 route.use(realPath, v.fn);
                                             } else {
                                                 // 不存在则异常错误
-                                                throw new Error('unkown Error');
+                                                throw new Error('unknown Error');
                                             }
                                         });
 

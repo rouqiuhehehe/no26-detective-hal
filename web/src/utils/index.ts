@@ -36,8 +36,20 @@ export default class utils {
 
     public static loadScript = loadScript;
 
+    public static downloadFile(filename: string, data: Blob) {
+        const a = document.createElement('a');
+        a.download = filename;
+        const url = window.URL.createObjectURL(data);
+
+        a.href = url;
+        // 会生成一个类似blob:http://localhost:8080/d3958f5c-0777-0845-9dcf-2cb28783acaf 这样的URL字符串
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+    }
+
     public static deepClone(obj: any) {
-        if (typeof obj !== 'object') {
+        if (obj === null || typeof obj !== 'object' || obj instanceof Date) {
             return obj;
         } else {
             const newObj: any = Array.isArray(obj) ? [] : {};
