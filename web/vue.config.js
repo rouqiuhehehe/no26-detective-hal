@@ -23,11 +23,11 @@ module.exports = {
             // //    }
             // },
             '/auth': {
-                target: 'http://127.0.0.1:1337', //代理地址，这里设置的地址会代替axios中设置的baseURL
+                target: process.env.VUE_APP_API_URL, //代理地址，这里设置的地址会代替axios中设置的baseURL
                 changeOrigin: true
             },
             '/admin': {
-                target: 'http://127.0.0.1:1337', //代理地址，这里设置的地址会代替axios中设置的baseURL
+                target: process.env.VUE_APP_API_URL, //代理地址，这里设置的地址会代替axios中设置的baseURL
                 changeOrigin: true
             },
             '/recaptcha': {

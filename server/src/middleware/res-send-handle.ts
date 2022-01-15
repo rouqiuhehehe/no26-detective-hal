@@ -23,7 +23,9 @@ export default function resSendHandle(req: ExpressRequest, res: ExpressResPonse,
     res.success = (body) => {
         res.send({
             status: Status.SUCCESS,
-            data: body,
+            data: body ?? {
+                value: true
+            },
             success: true
         });
     };

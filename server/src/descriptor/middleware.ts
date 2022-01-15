@@ -20,12 +20,16 @@ export function validateController(middleWare: Callback, type: DefaultMiddleWare
     };
 }
 export default function Middleware(
-    params: (Omit<DefaultMiddleWareType, 'CUSTOM' | 'custom'> | 'default' | Callback)[]
+    params?: (Omit<DefaultMiddleWareType, 'CUSTOM' | 'custom'> | 'default' | Callback)[]
 ) {
+    if (!params) {
+        // tslint:disable-next-line: no-parameter-reassignment
+        params = ['default'];
+    }
     params.forEach((v, i) => {
         v === DefaultMiddleWareType.CUSTOM;
         if (v === 'default') {
-            params.splice(
+            params!.splice(
                 i,
                 1,
                 DefaultMiddleWareType.AUTHORIZATION,
@@ -38,7 +42,7 @@ export default function Middleware(
     // tslint:disable-next-line: no-parameter-reassignment
     params = [...new Set(params)];
     return (target: Object | Function, propertyKey?: string | symbol, descriptor?: PropertyDescriptor) => {
-        params.forEach((v) => {
+        params!.forEach((v) => {
             if (typeof v === 'string') {
                 switch (v) {
                     case DefaultMiddleWareType.LOG:

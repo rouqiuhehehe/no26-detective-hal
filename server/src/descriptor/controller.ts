@@ -43,10 +43,10 @@ function createRouterDecorator(method: RouteMethod) {
                 throw new HttpError(Status.SERVER_ERROR, propertyKey.toString() + 'does not in ' + target);
             }
 
-            if (!Reflect.hasMetadata(ControllerMetadata.ROUTES, constructor)) {
+            if (!Reflect.hasOwnMetadata(ControllerMetadata.ROUTES, constructor)) {
                 Reflect.defineMetadata(ControllerMetadata.ROUTES, [], constructor);
             }
-            const routes = Reflect.getMetadata(ControllerMetadata.ROUTES, constructor);
+            const routes = Reflect.getOwnMetadata(ControllerMetadata.ROUTES, constructor);
             routes.push(route);
         });
     };
@@ -65,7 +65,8 @@ export const Controller =
             const basePath = Reflect.getMetadata(ControllerMetadata.BASEPATH, target);
 
             if (basePath) {
-                path === '/' ? '' : path;
+                // tslint:disable-next-line:no-parameter-reassignment
+                path = path === '/' ? '' : path;
                 Reflect.defineMetadata(ControllerMetadata.BASEPATH, basePath + path, target);
             } else {
                 Reflect.defineMetadata(ControllerMetadata.BASEPATH, path, target);

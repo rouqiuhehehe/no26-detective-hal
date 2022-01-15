@@ -2,7 +2,7 @@ import dbconfig from '@src/config/db_config';
 import serverError from '@src/util/serverError';
 import Util from '@util';
 import events from 'events';
-import { Request } from 'express';
+import {Request} from 'express';
 import FileStreamRotator from 'file-stream-rotator';
 import mysql from 'mysql';
 import mysqldump from 'mysqldump';
@@ -31,11 +31,6 @@ const FOOTER_VARIABLES = [
     ''
 ].join('\n');
 
-export interface Result<T> {
-    result: T;
-    fields?: mysql.FieldInfo[];
-}
-
 type Callback<T> = (results: T, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
     private status = 'ready';
@@ -46,7 +41,7 @@ export default class extends events.EventEmitter {
         this.setMaxListeners(0);
     }
 
-    public asyncQuery<T>(sql: string, values?: unknown[]): Promise<T> {
+    public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
         return new Promise((resolve, reject) => {
             this.pool.getConnection((err, connection) => {
                 if (err) {
@@ -58,6 +53,7 @@ export default class extends events.EventEmitter {
                         }
                         resolve(result);
                     });
+                    // console.log(query.sql);
                 }
                 connection.release();
             });
@@ -68,6 +64,7 @@ export default class extends events.EventEmitter {
      * 处理事务回滚方法
      */
     public beginTransaction<T>(sql: string, values?: unknown[], cb?: Callback<T>): Promise<boolean>;
+    // noinspection JSUnusedGlobalSymbols
     public beginTransaction<T>(sql: string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
     public beginTransaction<T>(
         sql: string | string[] | [string, unknown[]][],
@@ -110,12 +107,13 @@ export default class extends events.EventEmitter {
                                         });
                                     } catch (error) {
                                         conn.rollback((e) => {
+                                            console.log('事务回滚');
                                             if (e) {
                                                 throw e;
                                             }
                                             conn.release();
                                         });
-                                        throw error;
+                                        reject(error);
                                     }
                                 } else {
                                     const allPromise = [];
@@ -140,6 +138,8 @@ export default class extends events.EventEmitter {
                                             });
                                         } catch (error) {
                                             conn.rollback((e) => {
+                                                console.log('事务回滚');
+
                                                 if (e) {
                                                     throw e;
                                                 }
@@ -191,9 +191,12 @@ export default class extends events.EventEmitter {
 
     /**
      * 加锁处理多请求
+     * @param req 订阅名，用于接口订阅的锁，建议为当前接口url
+     * @param sql 数据库操作语句
+     * @param values 数据库操作语句values
      */
-    public asyncQueryBySock<T>(req: Request, sql: string, values?: unknown[]): Promise<T> {
-        const url = Util.getNoParamsUrl(req);
+    public asyncQueryBySock<T>(req: Request | string, sql: string, values?: unknown[] | string): Promise<T> {
+        const url = typeof req === 'object' ? Util.getNoParamsUrl(req) : req;
         return new Promise(async (resolve, reject) => {
             this.once(url, (res) => {
                 if (res instanceof Error) {

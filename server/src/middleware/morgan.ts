@@ -17,8 +17,11 @@ export default class Morgan {
     }
 
     private morganforMat() {
-        const dateFormat = Util.dateFormat(new Date(), 'yyyy-MM-dd HH.mm.ss');
         const key = 'dev_params';
+
+        morgan.token('localDate', () => {
+            return `[${Util.dateFormat(new Date(), 'yyyy-MM-dd HH.mm.ss')}]`;
+        });
 
         morgan.token('requestHeaders', (req: Request, _res: Response) => {
             return 'headers: ' + JSON.stringify(req.headers) || '-';
@@ -38,7 +41,7 @@ export default class Morgan {
 
         morgan.format(
             key,
-            `[${dateFormat}] \n:requestHeaders \n:method :url :status \n:requestRouteParameters :requestParameters :requestBody \n`
+            `:localDate \n:requestHeaders \n:method :url :status \n:requestRouteParameters :requestParameters :requestBody \n`
         );
 
         return key;

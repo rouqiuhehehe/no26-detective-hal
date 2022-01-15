@@ -83,6 +83,8 @@ import { Secret } from '@/utils/enum';
 import { Md5 } from 'ts-md5';
 import auth from '@/api/auth';
 import { namespace } from 'vuex-class';
+import utils from '@/utils';
+import { addRoutes } from '@/middleware/getRoutes';
 
 interface LoginRes {
     username: string;
@@ -141,7 +143,7 @@ export default class extends Vue {
     public async created() {
         try {
             (window as any).onloadCallback = this.grecaptchaOnloadCallback;
-            await this.utils.loadScript(this.scriptSrc + '?onload=onloadCallback');
+            await utils.loadScript(this.scriptSrc + '?onload=onloadCallback');
         } catch (error) {
             console.log(error);
         }
@@ -192,8 +194,9 @@ export default class extends Vue {
                 this.$alert('登陆成功，点击跳转首页', {
                     title: '提示',
                     type: 'success'
-                }).then(() => {
-                    this.$router.push('/');
+                }).then(async () => {
+                    await addRoutes();
+                    this.$router.replace('/');
                 });
             } catch (error) {
                 // this.isVerify = false;
