@@ -42,7 +42,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/verify-code')
-    public async verifyCode(req: ExpressRequest, res: ExpressResPonse) {
+    public async verifyCode(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
         const { token } = req.body;
 
         try {
@@ -51,10 +51,10 @@ export default class Login extends ManagementSystem {
             if (result.data.success) {
                 res.success(result.data);
             } else {
-                res.error(new HttpError(Status.MISSING_PARAMS, result.data['error-codes'][0]));
+                next(new HttpError(Status.MISSING_PARAMS, result.data['error-codes'][0]));
             }
         } catch (error: any) {
-            res.error(new HttpError(Status.MISSING_PARAMS, error.message, error));
+            next(new HttpError(Status.MISSING_PARAMS, error.message, error));
         }
     }
 
@@ -116,11 +116,6 @@ export default class Login extends ManagementSystem {
                     const err = e;
                     try {
                         await redis(async (client) => {
-                            const errorNum = await client.get('password_error_num:user#' + err.query!.uid);
-                            if (!errorNum) {
-                                await client.set(username, '0');
-                            }
-
                             const num = await client.incr('password_error_num:user#' + err.query!.uid);
 
                             if (+num === 5) {

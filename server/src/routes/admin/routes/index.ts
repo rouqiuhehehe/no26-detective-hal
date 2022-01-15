@@ -1,5 +1,6 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
+import { Permission } from '@src/config/permission';
 import { Controller, Get } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Util from '@util';
@@ -7,11 +8,6 @@ import { Request, Response } from 'express';
 import admin from '..';
 
 const db = new Db();
-enum Permission {
-    HIDDEN = 1 << 1,
-    READ = 1 << 2,
-    READ_AND_WRITE = 1 << 1
-}
 interface WebRoutes {
     id: number;
     uid: string;
@@ -44,7 +40,7 @@ type AsideTree = Pick<WebRoutes, 'title' | 'path' | 'icon'> & {
 
 @Controller('/routes')
 export default class extends admin {
-    private excludesAsides = ['Home'];
+    private excludesAsides = ['Home', 'Setting'];
 
     private excludesAsidesMap = new Map();
 
@@ -111,10 +107,13 @@ export default class extends admin {
 
     private formatRoutes(routes: WebRoutesTree[], pid: string | null) {
         const routesTree: WebRoutesTree[] = [];
+        let i = 0;
 
-        routes.reduce((a, v, i) => {
+        while (i < routes.length) {
+            const v = routes[i];
+
             if (v.pid === pid) {
-                routes.splice(i, 1);
+                routes.splice(i--, 1);
                 const children = this.formatRoutes(routes, v.uid);
 
                 v.meta.title = v.title;
@@ -131,12 +130,10 @@ export default class extends admin {
                 Reflect.deleteProperty(v, 'pid');
                 Reflect.deleteProperty(v, 'id');
                 Reflect.deleteProperty(v, 'icon');
-                a.push(v);
+                routesTree.push(v);
             }
-
-            return a;
-        }, routesTree);
-
+            i++;
+        }
         return routesTree;
     }
 

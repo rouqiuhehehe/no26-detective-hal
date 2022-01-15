@@ -1,7 +1,7 @@
 {
     "name": "no26-detective-hal-server",
-    "version": "1.0.1",
-    "description": "",
+    "version": "1.0.4",
+    "description": "26号探案馆后端项目",
     "main": "app.js",
     "typings": "./types/*.d.ts",
     "scripts": {
@@ -47,7 +47,6 @@
         "@types/mysql": "^2.15.19",
         "@types/node": "^16.0.0",
         "@types/redis": "^2.8.31",
-        "@types/request": "^2.48.7",
         "@types/sinon": "^10.0.6",
         "@types/sinon-chai": "^3.2.6",
         "babel-plugin-module-resolver": "^4.1.0",
@@ -58,7 +57,6 @@
         "prettier": "^2.3.1",
         "sinon": "^12.0.1",
         "sinon-chai": "^3.7.0",
-        "tsconfig-paths-webpack-plugin": "^3.5.1",
         "typescript": "^4.5.4"
     },
     "dependencies": {
@@ -73,14 +71,12 @@
         "iconv-lite": "^0.4.24",
         "joi": "^17.4.1",
         "jsonwebtoken": "^8.5.1",
-        "multer": "^1.4.2",
+        "multer": "^1.4.4",
         "mysql": "^2.18.1",
         "mysqldump": "^3.2.0",
         "path-browserify": "^1.0.1",
         "redis": "^4.0.0",
         "reflect-metadata": "^0.1.13",
-        "request": "^2.88.2",
-        "ts-loader": "^9.2.3",
         "ts-node": "^10.0.0",
         "ts-node-dev": "^1.1.8",
         "tsconfig-paths": "^3.10.1",

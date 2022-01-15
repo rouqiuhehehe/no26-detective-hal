@@ -5,11 +5,13 @@ import Util, { DescriptorKey } from '@util';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+// tslint:disable-next-line: no-implicit-dependencies
+import qs from 'qs';
 import { classLogHandler, DefaultMiddleWareType, methodLogHandler } from '../middlewareHandle';
 
 const privateKeyPath = path.join(process.cwd() + '/key/rsa_private.key');
 // hmac_sha256秘钥
-const HMACSHA256KEY = '1001';
+export const HMACSHA256KEY = '1001';
 
 // 过滤不需要验证的接口
 const excludesArr = ['/api/getpubkey'];
@@ -50,16 +52,18 @@ export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPons
                         const hash = crypto.createHmac('sha256', HMACSHA256KEY);
                         const { query, body } = req;
                         const authorization = req.get('authorization');
-                        Reflect.deleteProperty(query, 'sign');
+                        const deepCloneQuery = Util.deepClone(query);
+                        // 把sign签名删掉和前端参数做对比，深克隆query，避免把request中的query.sign删掉
+                        Reflect.deleteProperty(deepCloneQuery, 'sign');
                         const obj = {
-                            ...query,
+                            ...deepCloneQuery,
                             ...body,
                             authorization
                         };
                         if (!authorization) {
                             Reflect.deleteProperty(obj, 'authorization');
                         }
-                        const params = JSON.stringify(Util.ascllSort(obj));
+                        const params = qs.stringify(Util.ascllSort(obj));
 
                         const hashed = hash.update(params).digest('hex').toString();
 
@@ -67,6 +71,10 @@ export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPons
                             const success = res.success;
                             // 修改响应，添加响应头
                             res.success = (body: any) => {
+                                // tslint:disable-next-line: no-parameter-reassignment
+                                body = body ?? {
+                                    value: true
+                                };
                                 res.header(
                                     'authorization',
                                     crypto

@@ -104,7 +104,6 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                                 const realPath = path.posix.join(homePath, basePath ?? '');
 
                                                 Reflect.deleteMetadata('middleware', target);
-                                                console.log(realPath);
 
                                                 route.use(realPath, v.fn);
                                             } else {

@@ -1,6 +1,5 @@
 import { Controller, Get } from '@src/descriptor/controller';
 
-// @Log()
 @Controller('/', true)
 export default class RootRoute {
     @Get('/404')

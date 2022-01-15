@@ -16,7 +16,6 @@
         "noImplicitThis": true,
         "declaration": true,
         "declarationDir": "./dist/types",
-        "lib": ["es2017", "DOM", "DOM.Iterable"],
         "emitDecoratorMetadata": true,
         "downlevelIteration": true,
         "experimentalDecorators": true,
@@ -24,6 +23,7 @@
         "moduleResolution": "Node",
         "typeRoots": ["node_modules/@types", "types/*.d.ts"],
         "baseUrl": ".",
+        "suppressImplicitAnyIndexErrors": true,
         "paths": {
             "@util": ["src/util/index", "dist/util/index"],
             "@src/*": ["src/*", "dist/*"]

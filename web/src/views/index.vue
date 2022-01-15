@@ -4,12 +4,13 @@
             <h1 @click="handleClick"><img src="../assets/logo.jpg" />26号探案馆管理后台</h1>
             <el-dropdown class="dropdown" @command="handleCommand">
                 <span class="el-dropdown-link">
-                    <em>{{ userName }}</em
+                    <img :src="userInfo.avatar" alt="" />
+                    <em>{{ userInfo.nickname }}</em
                     ><i class="el-icon-arrow-down el-icon--right" style="margin-left: 10px"></i>
                 </span>
                 <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item command="setting" icon="el-icon-user">个人信息</el-dropdown-item>
-                    <el-dropdown-item command="signOut" divided>退出登陆</el-dropdown-item>
+                    <el-dropdown-item command="setting" icon="el-icon-user">账号设置</el-dropdown-item>
+                    <el-dropdown-item command="signOut" divided style="text-align: center">退出登陆</el-dropdown-item>
                 </el-dropdown-menu>
             </el-dropdown>
         </el-header>
@@ -20,7 +21,7 @@
             <el-aside style="width: 250px; overflow: hidden">
                 <Menu :menu-tree="asideTree"></Menu>
             </el-aside>
-            <el-main>
+            <el-main class="my-el-container-loading">
                 <router-view />
             </el-main>
         </el-container>
@@ -28,13 +29,13 @@
 </template>
 
 <script lang="ts">
-import { UserInfo } from '@/types/store';
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import Menu from '@/components/Menu.vue';
 import { AsideTree } from '@/types/routes';
 import { Mutation } from 'vuex';
 import userOperation from '@/api/auth/user-operation';
+import { UserInfo } from '@/api/setting';
 
 const user = namespace('user');
 const aside = namespace('routes');
@@ -45,8 +46,6 @@ const aside = namespace('routes');
     }
 })
 export default class Home extends Vue {
-    public userName = '';
-
     //   private navConfig = navConfig;
     @user.Getter
     private userInfo!: UserInfo;
@@ -56,12 +55,6 @@ export default class Home extends Vue {
 
     @aside.Getter
     public asideTree!: AsideTree;
-
-    public async mounted() {
-        if (this.userInfo) {
-            this.userName = this.userInfo.nickname;
-        }
-    }
 
     public handleCommand(command: string): void {
         if (command === 'setting') this.$router.push('/setting');
@@ -90,7 +83,7 @@ export default class Home extends Vue {
     }
 }
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .container {
     width: 100%;
     height: 100%;
@@ -114,10 +107,18 @@ export default class Home extends Vue {
             &:hover {
                 color: #409eff;
             }
-            .el-dropdown-link em {
-                font-weight: 600;
-                font-style: normal;
-                margin-right: 10px;
+            .el-dropdown-link {
+                display: flex;
+                align-items: center;
+                > img {
+                    width: 25px;
+                    height: 25px;
+                    margin-right: 5px;
+                }
+                > em {
+                    font-weight: 600;
+                    font-style: normal;
+                }
             }
         }
     }

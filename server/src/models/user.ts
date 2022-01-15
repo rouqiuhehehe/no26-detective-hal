@@ -62,7 +62,7 @@ export default class User {
                                 uid,
                                 nickname,
                                 token,
-                                avatar,
+                                avatar: Util.getUrlWithHost(avatar),
                                 create_date,
                                 permission,
                                 username,
@@ -124,24 +124,15 @@ export default class User {
         });
     }
 
-    public getUserInfoByToken(
-        req: ExpressRequest
-    ): Promise<Omit<DbUser, 'permission' | 'password' | 'salt' | 'id' | 'uid'>> {
+    public getUserInfoByToken(req: ExpressRequest): Promise<DbUser> {
         return new Promise(async (resolve, reject) => {
             try {
-                await redis(async (client) => {
+                await redis(async (client, quit) => {
                     const dbUserInfo = await client.hGetAll('user:' + req.token);
 
+                    await quit();
                     if (dbUserInfo) {
-                        const { username, update_date, nickname, avatar, create_date } = dbUserInfo;
-
-                        resolve({
-                            nickname,
-                            avatar,
-                            create_date,
-                            username,
-                            update_date
-                        });
+                        resolve(dbUserInfo as unknown as DbUser);
                     } else {
                         reject(new HttpError(Status.USER_NOT_FOND, LoginError.USERNAME_ERROR));
                     }

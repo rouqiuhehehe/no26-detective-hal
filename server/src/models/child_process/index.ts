@@ -15,58 +15,104 @@ const inspectPort = 9229;
 export default class ChildProcess {
     protected cpus = os.cpus();
     protected server = net.createServer();
+    private workerMap = new Map();
+    private workerCount = 0;
+    private arr = [0, 0];
+    private len = this.arr.length || this.cpus.length;
+    private limit = 10;
+    // 10次重启的超时时间
+    private during = 60000;
+    private restart: number[] = [];
 
     public constructor() {
         // 创建tcp服务，发射给子进程
         this.server.listen(port, this.forkChildProcess);
+
+        process.on('exit', () => {
+            this.workerMap.forEach((v: childProcess.ChildProcess) => {
+                v.kill();
+            });
+        });
     }
 
     @autoBind
     protected forkChildProcess() {
-        let i = 0;
-        const arr = [0, 0, 0];
-        const len = arr.length || this.cpus.length;
         let processFilePath = '/work.js';
 
         if (process.env.NODE_ENV === 'development') {
             processFilePath = '/work.ts';
         }
 
-        arr.forEach((_v, index) => {
-            // 多进程google调试
-            const arg: string[] = [];
-            if (process.env.NODE_ENV === 'development') {
-                arg.push('-r', process.cwd() + '/bin.js');
-            }
-            if (process.execArgv.includes('--inspect')) {
-                arg.unshift('--inspect=' + (inspectPort + index + 1).toString());
-            }
-
-            const cp = childProcess.fork(__dirname + processFilePath, [], {
-                execArgv: arg
-            });
-            cp.on('error', (err) => {
-                console.log(err, 'child_err');
-            });
-
-            cp.on('close', (code) => {
-                console.log(code, 'child_code');
-            });
-
-            cp.on('message', (msg) => {
-                if (msg === 'init') {
-                    cp.send('tcp', this.server);
-                    i++;
-                    cp.send(i);
-
-                    if (i === len) {
-                        // 发射完成后，关闭主进程tcp服务
-                        this.server.close(() => {
-                            console.log('服务启动完毕');
-                        });
-                    }
-                }
-            });
+        this.arr.forEach((_v, index) => {
+            this.createWorker(processFilePath, index);
         });
+    }
+
+    private createWorker(path: string, index: number) {
+        const arg: string[] = [];
+        if (this.isTooFrequently()) {
+            process.emit('giveup', this.restart.length, this.during);
+        }
+        if (process.env.NODE_ENV === 'development') {
+            arg.push('-r', process.cwd() + '/bin.js');
+        }
+        // 多进程google调试
+        if (process.execArgv.includes('--inspect')) {
+            arg.unshift('--inspect=' + (inspectPort + index + 1).toString());
+        }
+
+        const cp = childProcess.fork(__dirname + path, [], {
+            execArgv: arg
+        });
+
+        this.workerMap.set(cp.pid, cp);
+
+        cp.on('error', (err) => {
+            console.log(err, 'child_err');
+        });
+
+        cp.on('close', (code) => {
+            console.log(code, 'child_code');
+        });
+
+        cp.on('message', (msg) => {
+            if (msg === 'init') {
+                cp.send('tcp', this.server);
+                this.workerCount++;
+                cp.send(this.workerCount);
+
+                if (this.workerCount === this.len) {
+                    // 发射完成后，关闭主进程tcp服务
+                    // this.server.close(() => {
+                    console.log('服务启动完毕');
+                    // });
+                }
+            } else if (msg === 'suicide') {
+                this.createWorker(path, index);
+            }
+        });
+
+        cp.on('exit', () => {
+            console.log('worker ' + cp.pid + ' exited');
+            this.workerMap.delete(cp.pid);
+        });
+
+        return cp;
+    }
+
+    private isTooFrequently() {
+        // 当前重启时间
+        const time = Date.now();
+
+        const len = this.restart.push(time);
+
+        if (len > this.limit) {
+            this.restart = this.restart.slice(this.limit * -1);
+        }
+
+        // 判断restart数组长度是否大于最大重启数，如果大于则判断最后一次重启时间-第一次重启时间是否小于超时时间，超时则报错，取消重启
+        return (
+            this.restart.length >= this.limit && this.restart[this.restart.length - 1] - this.restart[0] < this.during
+        );
     }
 }

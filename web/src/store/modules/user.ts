@@ -1,5 +1,5 @@
 import userOperation from '@/api/auth/user-operation';
-import { UserInfo } from '@/types/store';
+import { UserInfo } from '@/api/setting';
 import { ActionTree, GetterTree, MutationTree } from 'vuex';
 
 export interface State {

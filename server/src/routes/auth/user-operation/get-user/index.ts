@@ -15,8 +15,14 @@ export default class GetUser extends UserOperation {
     private async getUserHandle(req: ExpressRequest, res: ExpressResPonse) {
         try {
             const userInfo = await user.getUserInfoByToken(req);
-
-            res.success(userInfo);
+            const { nickname, avatar, create_date, username, update_date } = userInfo;
+            res.success({
+                nickname,
+                avatar,
+                create_date,
+                username,
+                update_date
+            });
         } catch (e) {
             if (e instanceof HttpError) {
                 res.error(e);
