@@ -1,5 +1,6 @@
 <template>
     <div>
+        <!--suppress RequiredAttributes -->
         <el-upload
             ref="img-upload"
             :file-list="filesList"
@@ -14,28 +15,28 @@
                     <img class="el-upload-list__item-thumbnail" :src="file.url" alt="" />
                     <span class="el-upload-list__item-actions">
                         <span
-                            v-if="soltType.includes('zoom')"
+                            v-if="sortType.includes('zoom')"
                             class="el-upload-list__item-preview"
                             @click="handlePictureCardPreview(file)"
                         >
                             <i class="el-icon-zoom-in"></i>
                         </span>
                         <span
-                            v-if="soltType.includes('download')"
+                            v-if="sortType.includes('download')"
                             class="el-upload-list__item-delete"
                             @click="handleDownload(file)"
                         >
                             <i class="el-icon-download"></i>
                         </span>
                         <span
-                            v-if="soltType.includes('remove')"
+                            v-if="sortType.includes('remove')"
                             class="el-upload-list__item-delete"
                             @click="handleRemove(file)"
                         >
                             <i class="el-icon-delete"></i>
                         </span>
                         <span
-                            v-if="soltType.includes('edit')"
+                            v-if="sortType.includes('edit')"
                             class="el-upload-list__item-edit"
                             @click="handleEdit(file)"
                         >
@@ -56,8 +57,8 @@
 <script lang="ts">
 import Dictionary from '@/api/dictionary';
 import utils from '@/utils';
-import { ElUploadInternalFileDetail, FileListItem, HttpRequestOptions } from 'element-ui/types/upload';
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import {ElUploadInternalFileDetail, FileListItem, HttpRequestOptions} from 'element-ui/types/upload';
+import {Component, Prop, Vue, Watch} from 'vue-property-decorator';
 
 @Component({
     inheritAttrs: false
@@ -78,7 +79,7 @@ export default class extends Vue {
             return ['zoom', 'download', 'edit'];
         }
     })
-    public soltType!: ('zoom' | 'download' | 'remove' | 'edit')[];
+    public sortType!: ('zoom' | 'download' | 'remove' | 'edit')[];
 
     @Watch('value', { immediate: true })
     public changeValue(value: string | string[]) {
@@ -186,7 +187,7 @@ export default class extends Vue {
     }
 }
 </script>
-<style lang='less' scoped>
+<style lang="less" scoped>
 /deep/ .hide .el-upload--picture-card {
     display: none;
 }

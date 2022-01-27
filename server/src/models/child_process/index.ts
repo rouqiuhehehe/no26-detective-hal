@@ -51,7 +51,8 @@ export default class ChildProcess {
     private createWorker(path: string, index: number) {
         const arg: string[] = [];
         if (this.isTooFrequently()) {
-            process.emit('giveup', this.restart.length, this.during);
+            // 发送报警事件，不再重启
+            return process.emit('giveup', this.restart.length, this.during);
         }
         if (process.env.NODE_ENV === 'development') {
             arg.push('-r', process.cwd() + '/bin.js');

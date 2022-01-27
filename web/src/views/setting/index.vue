@@ -9,7 +9,7 @@
         <el-main>
             <el-descriptions title="用户信息" :column="1">
                 <template slot="extra">
-                    <el-button type="primary" @click="dialogShow">编辑</el-button>
+                    <el-button v-if="can" type="primary" @click="dialogShow">编辑</el-button>
                 </template>
                 <el-descriptions-item v-for="item in descriptionsData" :key="item.key" :label="item.label">
                     <el-image
@@ -24,7 +24,7 @@
                     </span>
                 </el-descriptions-item>
                 <el-descriptions-item label="操作">
-                    <el-button type="primary" size="small" @click="updateOperaList">操作</el-button>
+                    <el-button v-if="can" type="primary" size="small" @click="updateOperaList">操作</el-button>
                 </el-descriptions-item>
             </el-descriptions>
         </el-main>
@@ -46,14 +46,18 @@ interface DescriptionsData {
 }
 
 @Component({
+    name: 'setting',
     components: {
         dialogForm
     }
 })
 export default class extends Vue {
-    public loading = true;
     public descriptionsData: DescriptionsData[] = [];
     public config = new Config(this.getUserInfo);
+    public can = !this.$route.meta?.readonly;
+
+    // @ProvideReactive('myTable')
+    // public aaa = { a: 1 };
 
     public async mounted() {
         await this.getUserInfo();

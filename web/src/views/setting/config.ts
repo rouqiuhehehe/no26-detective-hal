@@ -3,6 +3,8 @@ import autoBind from '@/descriptors/Autobind';
 import store from '@/store';
 import { MyDialog } from '@/types/components';
 import Vue from 'vue';
+import Util from '@/utils';
+
 export default class {
     private imgUrl = '';
 
@@ -15,6 +17,9 @@ export default class {
                 type: 'edit',
                 store: Setting.updateUserInfo,
                 viewStore: Setting.viewSettingUserInfo,
+                beforeCommit(formData: Record<string, any>) {
+                    return formData;
+                },
                 async afterCommit(this: Vue) {
                     await this.$alert('提交成功', '提示', {
                         type: 'success'
@@ -30,7 +35,20 @@ export default class {
                         label: '昵称：',
                         // box: 6,
                         placeholder: '请输入昵称',
-                        required: true
+                        required: {
+                            trigger: 'change',
+                            handle(v: string) {
+                                if (!v) {
+                                    return '请输入昵称';
+                                } else if (Util.specialSymbolsRegExp().test(v)) {
+                                    return '昵称不能输入特殊符号';
+                                } else if (v.length < 4 || v.length > 8) {
+                                    return '请输入4-8位昵称';
+                                } else {
+                                    return true;
+                                }
+                            }
+                        }
                     },
                     {
                         xType: 'input',

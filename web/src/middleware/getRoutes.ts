@@ -7,7 +7,7 @@ import { Route, RouteConfig } from 'vue-router';
 export default async function getUserInfo(to: Route, from: Route, next: (...arg: any) => void) {
     if (utils.isEmpty(store.getters['routes/routesTree']) || utils.isEmpty(store.getters['routes/asideTree'])) {
         try {
-            addRoutes();
+            await addRoutes();
 
             next({ ...to, replace: true });
         } catch (error) {

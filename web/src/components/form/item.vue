@@ -1,5 +1,16 @@
 <template>
-    <div v-if="itemConfig.component === 'div'" v-html="value"></div>
+    <!--suppress JSUnresolvedVariable -->
+    <component
+        v-if="options.xType === 'component'"
+        :is="
+            typeof options.component === 'function'
+                ? options.component.call(this.thisArg, value, options)
+                : options.component
+        "
+        v-bind="typeof options.bind === 'function' ? options.bind.call(this.thisArg, value, options) : options.bind"
+        v-on="typeof options.events === 'function' ? options.events.call(this.thisArg, value, options) : options.events"
+    ></component>
+    <div v-else-if="itemConfig.component === 'div'" v-html="value"></div>
     <component
         v-else
         :is="itemConfig.component"
@@ -56,6 +67,15 @@ export default class extends Vue {
         default: {}
     })
     private readonly myForm!: MyDialogForm;
+
+    @InjectReactive({
+        from: 'thisArg',
+        default: null
+    })
+    private controller?: Vue;
+
+    public thisArg!: Vue;
+
     public allData?: any[];
 
     public options!: Columns;
@@ -65,9 +85,9 @@ export default class extends Vue {
     @Watch('option', { immediate: true, deep: true })
     public async onOptionChange() {
         this.options = utils.deepClone(this.option);
+        this.thisArg = this.controller ?? this;
 
         this.itemConfig = itemConfig.typeMap.get(this.options.xType);
-
         let data;
         if (
             this.options.xType === 'select' ||
@@ -77,7 +97,7 @@ export default class extends Vue {
             if (typeof this.options.store === 'function') {
                 let params;
                 if (this.options.params) {
-                    if (typeof this.options.params === 'function') {
+                    if (typeof this.options.params === 'function' && this.myForm.type !== 'del') {
                         params = await (this.options.params as any).call(
                             this,
                             this.options,

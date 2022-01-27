@@ -20,6 +20,7 @@ import ItemComponent from './item.vue';
 import { ElForm } from 'element-ui/types/form';
 
 @Component({
+    name: 'myForm',
     components: {
         ItemComponent
     }
@@ -32,15 +33,28 @@ export default class extends Vue {
     public option!: MyDialogForm;
 
     @InjectReactive({
-        from: 'MyTable',
+        from: 'myTable',
+        default: {}
+    })
+    public readonly MyTable?: Vue & { [K in keyof any]: any };
+
+    @InjectReactive({
+        from: 'tableColumnData',
+        default: {}
+    })
+    public readonly tableColumnData?: Record<string, any>;
+
+    @InjectReactive({
+        from: 'thisArg',
         default: null
     })
-    public readonly MyTable!: Vue & { [K in keyof any]: any };
+    private readonly controller?: Vue;
 
     @ProvideReactive('myForm')
     public myForm = this;
 
-    @ProvideReactive('formOptions')
+    public thisArg!: Vue;
+
     public options!: MyDialogForm;
 
     public formData: Record<string, any> = {};
@@ -71,69 +85,68 @@ export default class extends Vue {
         return obj;
     }
 
-    // tableDataIndex 当前操作栏index
     @Watch('option', { immediate: true, deep: true })
     public async onOptionChange() {
         this.options = utils.deepClone(this.option);
         this.formData = {};
-        let formData = {};
+        let data = {};
+        this.thisArg = this.controller ?? this;
 
-        if (this.isEditForm(this.options)) {
-            let params;
-            let tableData;
-            let tableDataIndex;
-            if (this.MyTable) {
-                tableData = this.MyTable.tableData;
-                tableDataIndex = this.MyTable.tableDataIndex;
-            }
-            if (this.options.viewParams) {
-                if (typeof this.options.viewParams === 'function') {
-                    params = await this.options.viewParams.call(this, tableData, tableDataIndex);
-                } else {
-                    params = this.options.viewParams;
+        if (this.options.type !== 'del') {
+            if (this.isEditForm(this.options)) {
+                let params;
+
+                if (this.options.viewParams) {
+                    if (typeof this.options.viewParams === 'function') {
+                        params = await this.options.viewParams.call(this.thisArg, this.tableColumnData, this.MyTable);
+                    } else {
+                        params = this.options.viewParams;
+                    }
                 }
-            }
 
-            let { data } = await this.options.viewStore(params);
+                data = (await this.options.viewStore(params)).data;
+            }
 
             if (this.options.beforeRender) {
-                data = await this.options.beforeRender.call(this, data);
+                data = await this.options.beforeRender.call(this.thisArg, data, this.options);
             }
 
-            formData = {
+            const formData = {
                 ...data
             };
-        }
-        for (const v of this.options.columns) {
-            const map = this.itemConfig.typeMap;
-            const option = map.get(v.xType);
 
-            if (v.required) {
-                const rule = this.initRule(v);
-                if (rule) {
-                    this.$set(this.ruleForm, v.dataIndex, rule);
-                    // this.ruleForm[v.dataIndex] = rule;
+            for (const v of this.options.columns) {
+                const map = this.itemConfig.typeMap;
+                const option = map.get(v.xType);
+
+                if (v.required) {
+                    const rule = this.initRule(v);
+                    if (rule) {
+                        this.$set(this.ruleForm, v.dataIndex, rule);
+                        // this.ruleForm[v.dataIndex] = rule;
+                    }
                 }
-            }
 
-            if (v.value) {
-                formData[v.dataIndex] = v.value;
-            }
-            if (utils.isEmpty(formData[v.dataIndex])) {
-                formData[v.dataIndex] = option?.defaultValue(v as any);
-            }
+                if (v.value) {
+                    formData[v.dataIndex] = v.value;
+                }
+                if (utils.isEmpty(formData[v.dataIndex])) {
+                    formData[v.dataIndex] = option?.defaultValue(v as any);
+                }
 
-            v.beforeRender &&
-                (formData[v.dataIndex] = (v.beforeRender as any).call(
-                    this,
-                    formData[v.dataIndex],
-                    v as any,
-                    this.options.columns,
-                    this.MyTable
-                ));
+                v.beforeRender &&
+                    (formData[v.dataIndex] = (v.beforeRender as any).call(
+                        this.thisArg,
+                        formData[v.dataIndex],
+                        formData,
+                        v as any,
+                        this.options.columns,
+                        this.MyTable
+                    ));
+            }
+            this.formData = formData;
+            this.$forceUpdate();
         }
-        this.formData = formData;
-        this.$forceUpdate();
     }
 
     public async commit() {
@@ -141,24 +154,24 @@ export default class extends Vue {
             (this.$refs['my-form'] as ElForm).validate(async (valid) => {
                 if (!valid) {
                     reject(valid);
-                } else {
+                } else if (this.options.type !== 'view') {
                     const { store } = this.options;
                     let params = utils.deepClone(this.formData);
 
-                    if (this.isEditForm(this.options)) {
-                        if (this.options.beforeCommit) {
-                            const format = this.options.beforeCommit.call(
-                                this,
-                                params,
-                                this.options as any,
-                                this.MyTable
-                            );
+                    if (this.options.beforeCommit) {
+                        const format = (this.options.beforeCommit as any).call(
+                            this.thisArg,
+                            params,
+                            this.options as any,
+                            this.MyTable
+                        );
 
+                        if (typeof format === 'boolean') {
                             if (format === false) {
                                 return;
-                            } else {
-                                params = format;
                             }
+                        } else {
+                            params = format;
                         }
                     }
 
@@ -166,7 +179,12 @@ export default class extends Vue {
                         const res = await store(params);
 
                         if (this.options.afterCommit && typeof this.options.afterCommit === 'function') {
-                            await (this.options.afterCommit as any).call(this, res.data, this.options, this.MyTable);
+                            await (this.options.afterCommit as any).call(
+                                this.thisArg,
+                                res.data,
+                                this.options,
+                                this.MyTable
+                            );
                         } else {
                             await this.$alert('提交成功', '提示', {
                                 type: 'success'
@@ -302,14 +320,14 @@ export default class extends Vue {
                   value: any,
                   options: Columns,
                   option: Columns[],
-                  table: Vue & { [x: string]: any }
+                  table?: Vue & { [x: string]: any }
               ) => string | boolean),
         message: string,
         reg?: RegExp
     ): Check {
         if (required instanceof Function) {
             return (rule, value, callback) => {
-                const o = required.call(this, value, v, this.options.columns, this.MyTable);
+                const o = required.call(this.thisArg, value, v, (this.options as any).columns, this.MyTable);
                 if (o === true) callback();
                 else if (typeof o === 'string') {
                     callback(new Error(o as string));

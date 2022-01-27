@@ -1,10 +1,10 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
-import { Permission } from '@src/config/permission';
-import { Controller, Get } from '@src/descriptor/controller';
+import {Permission} from '@src/config/permission';
+import {Controller, Get} from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Util from '@util';
-import { Request, Response } from 'express';
+import {Request, Response} from 'express';
 import admin from '..';
 
 const db = new Db();
@@ -46,8 +46,8 @@ export default class extends admin {
 
     @Middleware(['default'])
     @Get('/get-web-routes')
-    public getWebRoutes(req: Request, res: Response) {
-        this.getWebRoutesHandle(req, res);
+    public async getWebRoutes(req: Request, res: Response) {
+        await this.getWebRoutesHandle(req, res);
     }
 
     // private homePageRender() {
@@ -76,8 +76,8 @@ export default class extends admin {
 
     private permissionHandle(routes: WebRoutes[], permission: Permission) {
         return routes.map<WebFormatRoutesTree>((v) => {
-            let hidden = false;
-            let readonly = false;
+            let hidden: boolean;
+            let readonly: boolean;
             if ((permission & v.write_permission) === v.write_permission) {
                 // 可读写权限
                 hidden = false;
@@ -94,14 +94,13 @@ export default class extends admin {
 
             Reflect.deleteProperty(v, 'read_permission');
             Reflect.deleteProperty(v, 'write_permission');
-            const obj = {
+            return {
                 ...v,
                 meta: {
                     hidden,
                     readonly
                 }
             };
-            return obj;
         });
     }
 
@@ -112,25 +111,27 @@ export default class extends admin {
         while (i < routes.length) {
             const v = routes[i];
 
-            if (v.pid === pid) {
-                routes.splice(i--, 1);
-                const children = this.formatRoutes(routes, v.uid);
+            if (!v.meta.hidden) {
+                if (v.pid === pid) {
+                    routes.splice(i--, 1);
+                    const children = this.formatRoutes(routes, v.uid);
 
-                v.meta.title = v.title;
-                if (!Util.isEmpty(children)) {
-                    v.children = children;
+                    v.meta.title = v.title;
+                    if (!Util.isEmpty(children)) {
+                        v.children = children;
+                    }
+                    if (!v.redirect) {
+                        Reflect.deleteProperty(v, 'redirect');
+                    }
+                    Reflect.deleteProperty(v, 'update_date');
+                    Reflect.deleteProperty(v, 'title');
+                    Reflect.deleteProperty(v, 'create_date');
+                    Reflect.deleteProperty(v, 'uid');
+                    Reflect.deleteProperty(v, 'pid');
+                    Reflect.deleteProperty(v, 'id');
+                    Reflect.deleteProperty(v, 'icon');
+                    routesTree.push(v);
                 }
-                if (!v.redirect) {
-                    Reflect.deleteProperty(v, 'redirect');
-                }
-                Reflect.deleteProperty(v, 'update_date');
-                Reflect.deleteProperty(v, 'title');
-                Reflect.deleteProperty(v, 'create_date');
-                Reflect.deleteProperty(v, 'uid');
-                Reflect.deleteProperty(v, 'pid');
-                Reflect.deleteProperty(v, 'id');
-                Reflect.deleteProperty(v, 'icon');
-                routesTree.push(v);
             }
             i++;
         }
@@ -141,32 +142,34 @@ export default class extends admin {
         const asideTree: AsideTree[] = [];
 
         routes.reduce((a, v, i) => {
-            if (this.excludesAsides.includes(v.name)) {
-                this.excludesAsidesMap.set(v.uid, v);
-            } else {
-                if (v.pid) {
-                    const parent = this.excludesAsidesMap.get(v.pid);
-                    if (parent) {
-                        v.pid = parent.pid;
+            if (!v.meta.hidden) {
+                if (this.excludesAsides.includes(v.name)) {
+                    this.excludesAsidesMap.set(v.uid, v);
+                } else {
+                    if (v.pid) {
+                        const parent = this.excludesAsidesMap.get(v.pid);
+                        if (parent) {
+                            v.pid = parent.pid;
+                        }
                     }
-                }
-                if (v.pid === pid) {
-                    routes.splice(i, 1);
-                    const children = this.formatAside(routes, v.uid);
+                    if (v.pid === pid) {
+                        routes.splice(i, 1);
+                        const children = this.formatAside(routes, v.uid);
 
-                    const obj: AsideTree = {
-                        title: v.title,
-                        path: v.path
-                    };
+                        const obj: AsideTree = {
+                            title: v.title,
+                            path: v.path
+                        };
 
-                    if (!Util.isEmpty(children)) {
-                        obj.children = children;
+                        if (!Util.isEmpty(children)) {
+                            obj.children = children;
+                        }
+
+                        if (v.icon) {
+                            obj.icon = v.icon;
+                        }
+                        a.push(obj);
                     }
-
-                    if (v.icon) {
-                        obj.icon = v.icon;
-                    }
-                    a.push(obj);
                 }
             }
             return a;

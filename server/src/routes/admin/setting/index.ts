@@ -54,12 +54,41 @@ export default class extends admin {
     }
 
     @Validate({
-        nickname: Joi.string().min(4).max(8).required(),
-        username: Joi.string().min(4).max(8).required(),
-        avatar: Joi.string()
-            .regex(/^(((ht|f)tps?):\/\/)?([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/)
-            .message('请填写正确的头像地址')
+        nickname: Joi.string()
+            .min(4)
+            .max(8)
+            .regex(Util.specialSymbolsRegExp(), {
+                invert: true
+            })
             .required()
+            .error((err) =>
+                Util.joiErrorMessage(err, {
+                    min: '昵称不能少于4个字符',
+                    max: '昵称不能大于8个字符',
+                    required: '请输入昵称',
+                    regx: '昵称不能带有特殊符号'
+                })
+            ),
+        username: Joi.string().min(4).max(8).message('请输入用户名').required(),
+        avatar: Joi.string()
+            .required()
+            .regex(/^(((ht|f)tps?):\/\/)?([^!@#$%^&*?.\s-]([^!@#$%^&*?.\s]{0,63}[^!@#$%^&*?.\s])?\.)+[a-z]{2,6}\/?/)
+            .error((err) => {
+                let message;
+                err.forEach((v) => {
+                    switch (v.code) {
+                        case 'any.required':
+                            message = '请输入头像';
+                            break;
+                        case 'string.pattern.base':
+                            message = '请输入正确的头像地址';
+                            break;
+                        default:
+                            message = '请输入正确的头像地址';
+                    }
+                });
+                return new Error(message);
+            })
     })
     @Middleware()
     @Post('/get-setting-user-info/update')

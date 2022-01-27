@@ -9,6 +9,14 @@ import iconv from 'iconv-lite';
 import path from 'path';
 import { Status } from '../config/server_config';
 import variableTypes from './variable_type';
+import Joi from 'joi';
+
+export interface JoiErrorMessageOption {
+    required?: string;
+    regx?: string;
+    min?: string;
+    max?: string;
+}
 
 export enum DescriptorKey {
     CLASS = 'classDescriptor',
@@ -311,15 +319,74 @@ export default class Util {
         }
     }
 
+    public static specialSymbolsRegExp(flags?: string) {
+        const regExpStr = '[`~!@#$^&*()=|{}"\':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]';
+
+        return new RegExp(regExpStr, flags);
+    }
+
     public static isEmpty(obj: unknown) {
         if (typeof obj !== 'object') {
             return !obj;
         } else {
-            // tslint:disable-next-line: forin
+            // tslint:disable-next-line:forin
             for (const i in obj) {
                 return false;
             }
             return true;
+        }
+    }
+
+    public static joiErrorMessage(err: Joi.ErrorReport[], option: JoiErrorMessageOption) {
+        let message;
+        const codeMessage = {};
+        if (option.required) {
+            codeMessage['any.required'] = option.required;
+        }
+        if (option.min) {
+            codeMessage['string.min'] = option.min;
+        }
+        if (option.max) {
+            codeMessage['string.max'] = option.max;
+        }
+        if (option.regx) {
+            codeMessage['string.pattern.base'] = option.regx;
+            codeMessage['string.pattern.invert.base'] = option.regx;
+        }
+        err.forEach((v) => {
+            console.log(v.code);
+            if (codeMessage[v.code]) {
+                message = codeMessage[v.code];
+            }
+        });
+
+        return new Error(message);
+    }
+
+    public static async findFilesRecursively(filename: string, root: string): Promise<string> {
+        const $findFilesRecursively = async (filename: string, root: string): Promise<string | void> => {
+            const fileHash = await fsPromise.readdir(root);
+
+            for (const name of fileHash) {
+                const filePath = path.join(root, name);
+                if (name === filename) {
+                    return filePath;
+                }
+                const stat = await fsPromise.stat(filePath);
+
+                if (stat.isDirectory()) {
+                    const fileRePath = await $findFilesRecursively(filename, filePath);
+                    if (fileRePath) {
+                        return fileRePath;
+                    }
+                }
+            }
+        };
+        const filePath = await $findFilesRecursively(filename, root);
+        if (!filePath) {
+            throw new HttpError(Status.SERVER_ERROR, filename + ' is not found in ' + root);
+        } else {
+            return filePath;
         }
     }
 }

@@ -54,8 +54,8 @@ export const scanController = (dirPath: string, route: express.Application) => {
                     if (controller && controller.prototype) {
                         // 路由懒加载，等待放入下一次事件循环的中间件先完成
                         process.nextTick(() => {
-                            // 判断是否存在basepath 以及路由，如果没有默认理解为不是路由类
-                            // const isController = Reflect.hasMetadata(ControllerMetadata.BASEPATH, controller);
+                            // 判断是否存在base path 以及路由，如果没有默认理解为不是路由类
+                            // const isController = Reflect.hasMetadata(ControllerMetadata.BASE-PATH, controller);
                             // 导入时，方法装饰器挂载的元数据在prototype上
                             const hasRoutes = Reflect.hasMetadata(ControllerMetadata.ROUTES, controller.prototype);
                             const hasHomePath = Reflect.hasMetadata(ControllerMetadata.HOMEPATH, controller);
