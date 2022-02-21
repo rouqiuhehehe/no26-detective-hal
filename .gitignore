@@ -1,7 +1,7 @@
 dist/
 node_modules/
 package-lock.json
-build/
+
 log/
 uploads/
 dump/
@@ -9,5 +9,6 @@ dump/
 .vscode/
 
 !.bin/build
+build/*
 
-.bak
+*.bak

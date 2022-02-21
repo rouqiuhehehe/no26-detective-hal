@@ -8,5 +8,6 @@ dump/
 .idea/
 .vscode/
 
+!.bin/build
 
 .bak
