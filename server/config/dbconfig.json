@@ -1,0 +1,9 @@
+{
+    "host": "localhost",
+    "user": "root",
+    "password": "jianv4as",
+    "database": "no26_detective_hal",
+    "port": 3306,
+    "connectionLimit": 100,
+    "multipleStatements": true
+}

@@ -18,7 +18,7 @@ export default class {
         [
             'radio',
             {
-                component: 'el-radio',
+                component: 'el-radio-group',
                 defaultValue: (item: MyRadio) => '',
                 bind: [],
                 defaultBind: {},
@@ -40,7 +40,8 @@ export default class {
                 component: 'el-checkbox-group',
                 defaultValue: (item: MyCheckboxGroup) => [],
                 defaultBind: {},
-                events: ['change']
+                events: ['change'],
+                bind: ['size', 'disabled', 'min', 'max', 'textColor', 'fill']
             }
         ],
         [
@@ -98,9 +99,34 @@ export default class {
                 component: 'el-select',
                 defaultValue: (item: MySelect) => (item.multiple ? [] : ''),
                 defaultBind: {
-                    clearable: 'true'
+                    clearable: true
                 },
-                events: ['change', 'visible-change', 'remove-tag', 'clear', 'blur', 'focus']
+                events: ['change', 'visible-change', 'remove-tag', 'clear', 'blur', 'focus'],
+                bind: [
+                    'multiple',
+                    'disabled',
+                    'valueKey',
+                    'size',
+                    'clearable',
+                    'multipleLimit',
+                    'autoComplete',
+                    'autocomplete',
+                    'name',
+                    'placeholder',
+                    'filterable',
+                    'allowCreate',
+                    'filterMethod',
+                    'remote',
+                    'remoteMethod',
+                    'loading',
+                    'loadingText',
+                    'noMatchText',
+                    'noDataText',
+                    'popperClass',
+                    'defaultFirstOption',
+                    'popperAppendToBody',
+                    'collapseTags'
+                ]
             }
         ],
         [

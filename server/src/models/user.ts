@@ -58,6 +58,7 @@ export default class User {
 
                         if (bcryptPassword === userInfo.password) {
                             const token = await this.issueToken(userInfo.username);
+                            console.log(avatar);
                             const info = {
                                 uid,
                                 nickname,

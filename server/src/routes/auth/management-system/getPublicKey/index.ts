@@ -13,11 +13,11 @@ const publicKeyPath = path.join(process.cwd() + '/key/rsa_public.key');
 export default class GetUser extends ManagementSystem {
     @Middleware([DefaultMiddleWareType.ANTI_REPLAY, DefaultMiddleWareType.TIMESTAMP])
     @Post('/get-public-key')
-    public async getPublicKey(req: ExpressRequest, res: ExpressResPonse) {
+    public async getPublicKey(req: ExpressRequest, res: ExpressResponse) {
         this.getPublicKeyHandle(req, res);
     }
 
-    private async getPublicKeyHandle(_req: ExpressRequest, res: ExpressResPonse) {
+    private async getPublicKeyHandle(_req: ExpressRequest, res: ExpressResponse) {
         let publicKey = '';
         try {
             publicKey = (await fsPromise.readFile(publicKeyPath)).toString();

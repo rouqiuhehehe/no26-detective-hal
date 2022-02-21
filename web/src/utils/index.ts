@@ -8,7 +8,7 @@ export enum DescriptorType {
     UNDEFINED = 'undefined'
 }
 
-export default class utils {
+export default class Util {
     public static date = Date;
     public static ascllSort<T extends Record<string, any>>(obj: T) {
         const sortkeys = Object.keys(obj).sort();
@@ -22,6 +22,10 @@ export default class utils {
     }
 
     public static _r = _r;
+
+    public static colorSpan(color: string, label: string) {
+        return `<span style="color: ${color}">${label}</span>`;
+    }
 
     public static isEmpty(obj: unknown) {
         if (typeof obj !== 'object') {
@@ -56,7 +60,7 @@ export default class utils {
             if (obj && typeof obj === 'object') {
                 for (const key in obj) {
                     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                        newObj[key] = utils.deepClone(obj[key]);
+                        newObj[key] = Util.deepClone(obj[key]);
                     }
                 }
             }
@@ -78,7 +82,7 @@ export default class utils {
     }
 
     public static getFunctionByDescriptor(descriptor: PropertyDescriptor) {
-        const fnType = utils.getFunctionTypeByDescriptor(descriptor);
+        const fnType = Util.getFunctionTypeByDescriptor(descriptor);
 
         let type: DescriptorType;
         let fn;
@@ -113,6 +117,20 @@ export default class utils {
         return {
             type,
             fn
+        };
+    }
+
+    public static specialSymbolsRegExp() {
+        return new RegExp('[`~!@#$^&*()=|{}"' + "'" + ':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]', 'g');
+    }
+
+    public static runFnComponent(me: any) {
+        return (fn: any, ...arg: any[]) => {
+            if (typeof fn === 'function') {
+                return fn.call(me, ...arg);
+            }
+
+            return fn;
         };
     }
 }

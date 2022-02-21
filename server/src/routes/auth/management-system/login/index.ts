@@ -26,7 +26,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Get('/get-salt')
-    public async getSalt(req: ExpressRequest, res: ExpressResPonse) {
+    public async getSalt(req: ExpressRequest, res: ExpressResponse) {
         const salt = await bcrypt.genSalt(this.SALT_BASE);
 
         req.session.salt = salt;
@@ -42,7 +42,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/verify-code')
-    public async verifyCode(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async verifyCode(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { token } = req.body;
 
         try {
@@ -65,7 +65,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/login')
-    public login(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public login(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         this.loginHandle(req, res, next);
     }
 
@@ -91,7 +91,7 @@ export default class Login extends ManagementSystem {
         });
     }
 
-    private async loginHandle(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    private async loginHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { username, password } = req.body;
         const { salt } = req.session;
 
@@ -111,6 +111,7 @@ export default class Login extends ManagementSystem {
                 ...userInfo
             });
         } catch (e) {
+            console.log(e);
             if (Util.isExtendsHttpError(e)) {
                 if (e.status === Status.PASSWORD_ERROR) {
                     const err = e;
@@ -133,6 +134,8 @@ export default class Login extends ManagementSystem {
                 } else {
                     res.error(e);
                 }
+            } else {
+                res.error(new HttpError(Status.SERVER_ERROR, (e as Error).message, e as Error));
             }
         }
     }

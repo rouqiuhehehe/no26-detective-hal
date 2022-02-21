@@ -1,0 +1,78 @@
+const fs = require('fs');
+const path = require('path');
+const { execSync, spawnSync } = require('child_process');
+
+try {
+    fs.accessSync(path.join(process.cwd(), 'dist'));
+
+    execSync('rd /s /q dist', {
+        cwd: process.cwd()
+    });
+} catch (error) {
+} finally {
+    console.log('run dist');
+    execSync('babel src --out-dir dist --extensions ".ts,.js""', {
+        cwd: process.cwd()
+    });
+
+    try {
+        fs.accessSync(path.join(process.cwd(), 'build'));
+
+        execSync('rd /s /q build', {
+            cwd: process.cwd()
+        });
+    } catch (error) {
+    } finally {
+        console.log('run build');
+        const worker = spawnSync(process.platform === 'win32' ? 'pkg.cmd' : 'pkg', ['-t', 'win', 'package.json'], {
+            cwd: process.cwd(),
+            stdio: 'pipe'
+        });
+
+        console.log(worker.stdout.toString());
+
+        console.log('copy file');
+
+        copyDir('keys');
+        copyDir('uploads');
+        copyDir('config');
+
+        console.log('copy env');
+        copyEnv();
+
+        console.log('delete dist');
+        execSync('rd /s /q dist', {
+            cwd: process.cwd()
+        });
+
+        console.log('finished');
+    }
+}
+
+function copyDir(dirPath) {
+    try {
+        fs.accessSync(path.join(process.cwd(), dirPath));
+
+        fs.mkdirSync(path.join(process.cwd(), 'build', dirPath));
+
+        const keys = fs.readdirSync(path.join(process.cwd(), 'key'));
+
+        keys.forEach((v) => {
+            const copiedPath = path.join(process.cwd(), dirPath, v);
+            fs.copyFileSync(copiedPath, path.join(process.cwd(), 'build', dirPath, v));
+        });
+    } catch (e) {}
+}
+
+function copyEnv() {
+    const reg = /\.env(\.production|\.local)$/;
+
+    const keys = fs.readdirSync(process.cwd());
+
+    keys.forEach((v) => {
+        if (reg.test(v)) {
+            const copiedPath = path.join(process.cwd(), v);
+            fs.copyFileSync(copiedPath, path.join(process.cwd(), 'build', v));
+        }
+    });
+}

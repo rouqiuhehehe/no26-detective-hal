@@ -4,6 +4,7 @@ import Vue, { VNode } from 'vue';
 import VueRouter, { Route } from 'vue-router';
 import { Store } from 'vuex';
 import { AxiosRes } from './types/store';
+
 declare global {
     /**
      * 并集
@@ -67,5 +68,9 @@ declare module 'axios' {
         status: number;
         success: boolean;
         data: T;
+        pagination?: {
+            total: number;
+            page: number;
+        };
     }
 }

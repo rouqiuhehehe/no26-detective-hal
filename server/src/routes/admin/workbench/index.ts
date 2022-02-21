@@ -1,5 +1,5 @@
 import Db from '@src/bin/Db';
-import {Controller, Get} from '@src/descriptor/controller';
+import { Controller, Get } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Validate from '@src/descriptor/validate';
 import Joi from 'joi';
@@ -13,7 +13,7 @@ export default class extends admin {
         types: Joi.array().items(Joi.string()).required()
     })
     @Get('/get-opera-types-count')
-    public async getOperaTypesCount(req: ExpressRequest, res: ExpressResPonse) {
+    public async getOperaTypesCount(req: ExpressRequest, res: ExpressResponse) {
         const { types } = req.query;
 
         const ids = await this.getOperaTypesIdByTypes(types as string[]);

@@ -1,9 +1,13 @@
 <template>
     <el-form :model="formData" :rules="ruleForm" inline v-bind="getMyFormBind" ref="my-form">
-        <el-row :gutter="20">
+        <el-row :gutter="20" class="my-form-container">
             <el-col v-for="item in options.columns" :key="item.dataIndex" :span="item.box || 8">
                 <el-form-item v-bind="getMyFormItemBind(item)">
-                    <ItemComponent v-model="formData[item.dataIndex]" :option="item"></ItemComponent>
+                    <ItemComponent
+                        v-model="formData[item.dataIndex]"
+                        :formdata="formData"
+                        :option="item"
+                    ></ItemComponent>
                 </el-form-item>
             </el-col>
         </el-row>
@@ -11,15 +15,16 @@
 </template>
 
 <script lang="ts">
-import { Check, Columns, EditForm, elRuleObject, MyDialogForm, RequiredRule } from '@/types/components';
+import { Check, Columns, EditForm, elRuleObject, MyDialogForm, RequiredRule, ViewForm } from '@/types/components';
 import utils from '@/utils';
-import { Component, InjectReactive, Prop, ProvideReactive, Vue, Watch } from 'vue-property-decorator';
+import { Component, Inject, InjectReactive, Prop, ProvideReactive, Vue } from 'vue-property-decorator';
 import Config from './config';
 import ItemConfig from './itemConfig';
 import ItemComponent from './item.vue';
 import { ElForm } from 'element-ui/types/form';
 
 @Component({
+    name: 'myForm',
     components: {
         ItemComponent
     }
@@ -32,16 +37,31 @@ export default class extends Vue {
     public option!: MyDialogForm;
 
     @InjectReactive({
-        from: 'MyTable',
+        from: 'myTable',
+        default: {}
+    })
+    public readonly MyTable?: Vue & { [K in keyof any]: any };
+
+    @InjectReactive({
+        from: 'tableColumnData',
+        default: {}
+    })
+    public readonly tableColumnData?: Record<string, any>;
+
+    @Inject({
+        from: 'thisArg',
         default: null
     })
-    public readonly MyTable!: Vue & { [K in keyof any]: any };
+    private readonly controller?: Vue;
 
     @ProvideReactive('myForm')
-    public myForm = this;
+    public myForm = this.option;
 
-    @ProvideReactive('formOptions')
-    public options!: MyDialogForm;
+    public thisArg!: Vue;
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    public options: MyDialogForm = {};
 
     public formData: Record<string, any> = {};
 
@@ -50,6 +70,8 @@ export default class extends Vue {
     private config;
 
     private itemConfig;
+
+    private init = false;
 
     // 代办
     // tableData 表格数据
@@ -71,69 +93,67 @@ export default class extends Vue {
         return obj;
     }
 
-    // tableDataIndex 当前操作栏index
-    @Watch('option', { immediate: true, deep: true })
-    public async onOptionChange() {
+    // @Watch('option', { immediate: true, deep: true })
+    public async mounted() {
         this.options = utils.deepClone(this.option);
         this.formData = {};
-        let formData = {};
+        let data = {};
+        this.thisArg = this.controller ?? this;
 
-        if (this.isEditForm(this.options)) {
-            let params;
-            let tableData;
-            let tableDataIndex;
-            if (this.MyTable) {
-                tableData = this.MyTable.tableData;
-                tableDataIndex = this.MyTable.tableDataIndex;
-            }
-            if (this.options.viewParams) {
-                if (typeof this.options.viewParams === 'function') {
-                    params = await this.options.viewParams.call(this, tableData, tableDataIndex);
-                } else {
-                    params = this.options.viewParams;
+        if (!this.init) {
+            this.init = true;
+            if (this.options.type !== 'del') {
+                if (this.isEditOrViewForm(this.options)) {
+                    let params;
+
+                    if (this.options.viewParams) {
+                        if (typeof this.options.viewParams === 'function') {
+                            params = await this.options.viewParams.call(
+                                this.thisArg,
+                                this.tableColumnData,
+                                this.MyTable
+                            );
+                        } else {
+                            params = this.options.viewParams;
+                        }
+                    }
+
+                    data = (await this.options.viewStore(params)).data;
                 }
-            }
 
-            let { data } = await this.options.viewStore(params);
-
-            if (this.options.beforeRender) {
-                data = await this.options.beforeRender.call(this, data);
-            }
-
-            formData = {
-                ...data
-            };
-        }
-        for (const v of this.options.columns) {
-            const map = this.itemConfig.typeMap;
-            const option = map.get(v.xType);
-
-            if (v.required) {
-                const rule = this.initRule(v);
-                if (rule) {
-                    this.$set(this.ruleForm, v.dataIndex, rule);
-                    // this.ruleForm[v.dataIndex] = rule;
+                if (this.options.beforeRender) {
+                    data = await this.options.beforeRender.call(this.thisArg, data, this.options);
                 }
-            }
 
-            if (v.value) {
-                formData[v.dataIndex] = v.value;
-            }
-            if (utils.isEmpty(formData[v.dataIndex])) {
-                formData[v.dataIndex] = option?.defaultValue(v as any);
-            }
+                const formData = {
+                    ...data
+                };
 
-            v.beforeRender &&
-                (formData[v.dataIndex] = (v.beforeRender as any).call(
-                    this,
-                    formData[v.dataIndex],
-                    v as any,
-                    this.options.columns,
-                    this.MyTable
-                ));
+                for (const v of this.options.columns) {
+                    const map = this.itemConfig.typeMap;
+                    const option = map.get(v.xType);
+
+                    if (v.xType !== 'component') {
+                        if (v.required) {
+                            const rule = this.initRule(v);
+                            if (rule) {
+                                this.$set(this.ruleForm, v.dataIndex, rule);
+                                // this.ruleForm[v.dataIndex] = rule;
+                            }
+                        }
+
+                        if (v.value) {
+                            formData[v.dataIndex] = v.value;
+                        }
+                        if (utils.isEmpty(formData[v.dataIndex]) && formData[v.dataIndex] !== 0) {
+                            formData[v.dataIndex] = option?.defaultValue(v as any);
+                        }
+                    }
+                }
+                this.formData = formData;
+                this.$forceUpdate();
+            }
         }
-        this.formData = formData;
-        this.$forceUpdate();
     }
 
     public async commit() {
@@ -141,24 +161,24 @@ export default class extends Vue {
             (this.$refs['my-form'] as ElForm).validate(async (valid) => {
                 if (!valid) {
                     reject(valid);
-                } else {
+                } else if (this.options.type !== 'view') {
                     const { store } = this.options;
                     let params = utils.deepClone(this.formData);
 
-                    if (this.isEditForm(this.options)) {
-                        if (this.options.beforeCommit) {
-                            const format = this.options.beforeCommit.call(
-                                this,
-                                params,
-                                this.options as any,
-                                this.MyTable
-                            );
+                    if (this.options.beforeCommit) {
+                        const format = (this.options.beforeCommit as any).call(
+                            this.thisArg,
+                            params,
+                            this.options as any,
+                            this.MyTable
+                        );
 
-                            if (format === false) {
+                        if (typeof format === 'boolean') {
+                            if (!format) {
                                 return;
-                            } else {
-                                params = format;
                             }
+                        } else {
+                            params = format;
                         }
                     }
 
@@ -166,7 +186,12 @@ export default class extends Vue {
                         const res = await store(params);
 
                         if (this.options.afterCommit && typeof this.options.afterCommit === 'function') {
-                            await (this.options.afterCommit as any).call(this, res.data, this.options, this.MyTable);
+                            await (this.options.afterCommit as any).call(
+                                this.thisArg,
+                                res.data,
+                                this.options,
+                                this.MyTable
+                            );
                         } else {
                             await this.$alert('提交成功', '提示', {
                                 type: 'success'
@@ -188,26 +213,30 @@ export default class extends Vue {
                 obj[i] = item[i];
             }
         }
-
+        if (this.options.type !== 'del' && this.options.labelWithColon) {
+            obj['label'] = obj['label'] + '：';
+        }
         obj['prop'] = item.dataIndex;
         return obj;
     }
 
-    private isEditForm(obj: any): obj is EditForm {
-        return obj.type === 'edit';
+    private isEditOrViewForm(obj: any): obj is EditForm | ViewForm {
+        return obj.type === 'edit' || obj.type === 'view';
     }
 
     private initRule(v: Columns) {
-        if (typeof v.required === 'object') {
-            const { handle, trigger, message } = v.required;
-            return [this.getRule(v, handle as any, message, trigger)];
-        } else {
-            return [this.getRule(v, v.required as any)];
+        if (v.xType !== 'component') {
+            if (typeof v.required === 'object') {
+                const { handle, trigger, message } = v.required;
+                return [this.getRule(v, handle as any, message, trigger)];
+            } else {
+                return [this.getRule(v, v.required as any)];
+            }
         }
     }
 
     private getRule<T>(v: Columns, handle: RequiredRule<T>, message?: string, trigger = 'blur'): elRuleObject | false {
-        message = message ?? `请输入${v.label.replace('：', '')}`;
+        message = message ?? `请输入正确的${v.label.replace('：', '')}`;
         if (typeof handle === 'boolean' && handle) {
             return {
                 required: true,
@@ -302,14 +331,14 @@ export default class extends Vue {
                   value: any,
                   options: Columns,
                   option: Columns[],
-                  table: Vue & { [x: string]: any }
+                  table?: Vue & { [x: string]: any }
               ) => string | boolean),
         message: string,
         reg?: RegExp
     ): Check {
         if (required instanceof Function) {
             return (rule, value, callback) => {
-                const o = required.call(this, value, v, this.options.columns, this.MyTable);
+                const o = required.call(this.thisArg, value, v, (this.options as any).columns, this.MyTable);
                 if (o === true) callback();
                 else if (typeof o === 'string') {
                     callback(new Error(o as string));
@@ -340,5 +369,10 @@ export default class extends Vue {
 <style lang="less" scoped>
 .el-form-item {
     display: flex;
+}
+
+.my-form-container {
+    display: flex;
+    flex-wrap: wrap;
 }
 </style>

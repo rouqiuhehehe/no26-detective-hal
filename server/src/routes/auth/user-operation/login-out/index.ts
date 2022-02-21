@@ -8,11 +8,11 @@ const user = new User();
 export default class extends UserOperation {
     @Middleware(['default'])
     @Post('/login-out')
-    public async loginOut(req: ExpressRequest, res: ExpressResPonse) {
+    public async loginOut(req: ExpressRequest, res: ExpressResponse) {
         this.loginOutHandle(req, res);
     }
 
-    private async loginOutHandle(req: ExpressRequest, res: ExpressResPonse) {
+    private async loginOutHandle(req: ExpressRequest, res: ExpressResponse) {
         try {
             const isSuccess = await user.loginOut(req);
 

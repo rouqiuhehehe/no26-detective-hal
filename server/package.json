@@ -6,20 +6,22 @@
     "typings": "./types/*.d.ts",
     "scripts": {
         "tsc": "tsc",
-        "dev": "cross-env NODE_ENV=development NODE_RUN=dev nodemon -e ts,tsx --exec node --trace-warnings -r ./bin.js src/app.ts",
-        "bulid": "node ./.bin/bulid",
+        "serve": "cross-env NODE_ENV=development NODE_RUN=dev nodemon -e ts,tsx --exec node --trace-warnings -r ./bin.js src/app.ts",
+        "build": "node .bin/build",
         "debugger": "cross-env NODE_ENV=development NODE_RUN=debugger nodemon -e ts,tsx --exec node --inspect --expose-gc --trace-warnings -r ./bin.js src/app.ts",
         "test": "mocha -w --recursive -r ./bin.js ./test/**/*.spec.ts",
         "concurrent-test": "autocannon -c 1000 -p 5 http://127.0.0.1:1337/admin"
     },
     "pkg": {
         "assets": [
-            "key/**/*"
+            "key/**/*",
+            "uploads/**/*",
+            "config/**/*"
         ],
         "scripts": [
             "dist/**/*.js"
         ],
-        "outputPath": "bulid"
+        "outputPath": "build"
     },
     "bin": "dist/app.js",
     "author": "yoshiki",

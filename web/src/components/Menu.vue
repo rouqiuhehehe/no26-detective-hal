@@ -5,7 +5,9 @@
             :key="value.name"
             :is="value.children && value.children.length ? 'el-submenu' : 'el-menu-item'"
             :index="value.path"
-            :class="$route.path.includes(value.path) ? 'is-active' : ''"
+            :class="{
+                'has-child-router': value.children && value.children.length
+            }"
         >
             <template slot="title">
                 <i :class="value.icon"></i>
@@ -39,5 +41,19 @@ export default class extends Vue {
 <style lang="less" scoped>
 .el-menu {
     text-align: center;
+}
+.has-child-router {
+    background: #eeeeee33;
+}
+/deep/ .el-submenu.is-opened > .el-submenu__title .el-submenu__icon-arrow {
+    display: none;
+}
+
+/deep/ .el-submenu > .el-submenu__title .el-submenu__icon-arrow {
+    display: none;
+}
+
+/deep/ .el-menu-item {
+    padding: 0 20px !important;
 }
 </style>
