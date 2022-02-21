@@ -1,7 +1,12 @@
 dist/
 node_modules/
 package-lock.json
-bulid/
+build/
 log/
 uploads/
 dump/
+.idea/
+.vscode/
+
+
+.bak

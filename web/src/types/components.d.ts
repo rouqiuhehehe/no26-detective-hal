@@ -6,7 +6,6 @@ import { ElDatePicker } from 'element-ui/types/date-picker';
 import { FormItemLabelPosition } from 'element-ui/types/form';
 import { ElInput } from 'element-ui/types/input';
 import { ElInputNumber } from 'element-ui/types/input-number';
-import { ElRadio } from 'element-ui/types/radio';
 import { ElSelect } from 'element-ui/types/select';
 import { ElSwitch } from 'element-ui/types/switch';
 import { ElUpload } from 'element-ui/types/upload';
@@ -30,16 +29,43 @@ import {
     TableColumnType
 } from 'element-ui/types/table-column';
 import { ElMessageBoxOptions } from 'element-ui/types/message-box';
+import { ElRadioGroup } from 'element-ui/types/radio-group';
+import { ButtonType } from 'element-ui/types/button';
 
 /* eslint-disable @typescript-eslint/ban-types */
 /** Table Component */
 export interface MyTable {
-    search?: DefaultForm;
+    header?: {
+        path?: string;
+        label: string;
+    }[];
+
+    title: string;
+
+    buttons?: Buttons[];
+
+    search?: Omit<MyForm, 'type'>;
     store: ColumnsStore;
+
+    page?: MyPagination;
 
     columns: MyTableColumns[];
 
-    operation: MyTableColumnsOperation;
+    operation?: MyTableColumnsOperation;
+
+    beforeSearch?: (
+        this: Vue,
+        formData: Record<string, any>,
+        options: MyTable,
+        table: Vue & { [K in keyof any]: any }
+    ) => Record<string, any> | boolean;
+
+    afterSearch?: (
+        this: Vue,
+        formData: Record<string, any>,
+        options: MyTable,
+        table: Vue & { [K in keyof any]: any }
+    ) => Record<string, any> | boolean;
 
     /** Table's height. By default it has an auto height. If its value is a number, the height is measured in pixels; if its value is a string, the height is affected by external styles */
     height?: string | number;
@@ -130,12 +156,7 @@ export interface MyTable {
 }
 
 export interface MyTableColumns {
-    beforeRender?: (
-        v: any,
-        row: Record<string, any>,
-        options: MyTableColumns,
-        tableOptions: MyTable
-    ) => Record<string, any>;
+    beforeRender?: (v: any, row: Record<string, any>, options: MyTableColumns, tableOptions: MyTable) => any;
 
     component?: ComponentBase<any, MyTableColumns, MyTable>;
 
@@ -212,14 +233,91 @@ export interface MyTableColumns {
     filteredValue?: TableColumnFilter[];
 }
 
+export interface MyPagination {
+    /** Whether to use small pagination */
+    small?: boolean;
+
+    background?: boolean;
+
+    /** Item count of each page */
+    pageSize?: number;
+
+    /** Total item count */
+    total?: number;
+
+    /** Total page count. Set either total or page-count and pages will be displayed; if you need page-sizes, total is required */
+    pageCount?: number;
+
+    /** Number of pagers */
+    pagerCount?: number;
+
+    /** Current page number */
+    currentPage?: number;
+
+    /**
+     * Layout of Pagination. Elements separated with a comma.
+     * Accepted values: `sizes`, `prev`, `pager`, `next`, `jumper`, `->`, `total`, `slot`
+     */
+    layout?: string;
+
+    /** Options of item count per page */
+    pageSizes?: number[];
+
+    /** Custom class name for the page size Select's dropdown */
+    popperClass?: string;
+
+    /** Text for the prev button */
+    prevText?: string;
+
+    /** Text for the prev button */
+    nextText?: string;
+
+    /** Whether to hide when thers's only one page */
+    hideOnSinglePage?: boolean;
+}
+
+type Buttons =
+    | {
+          type?: ButtonType;
+          icon?: string;
+          dataIndex: string;
+          component: Omit<ComponentBase<null, Buttons, MyTable>, 'label'>;
+          dialog?: MyDialog;
+          show?: boolean | ((this: Vue) => boolean);
+      }
+    | {
+          type?: ButtonType;
+          icon?: string;
+          dataIndex: string;
+          dialog?: MyDialog;
+
+          label: string | ((formdata: Record<string, any>, option: U) => string);
+
+          click?: (option: Buttons, options: MyTable) => void;
+          show?: boolean | ((this: Vue) => boolean);
+      };
+
+type Button =
+    | Merge<
+          MyDialog,
+          {
+              dataIndex: string;
+              beforeRender?: (value: null, row: Record<string, any>, option: Button, options: MyTable) => string;
+              label?: string;
+              click?: (row: Record<string, any>, option: Button, options: MyTable) => void | boolean;
+              show?: boolean | ((this: Vue) => boolean);
+          }
+      >
+    | ComponentBase;
+
 export type MyTableColumnsOperation = Omit<
     Merge<
         MyTableColumns,
         {
-            button: MyDialog[];
+            button: Button[];
         }
     >,
-    'label'
+    'label' | 'dataIndex'
 >;
 
 export interface MyDialog {
@@ -238,10 +336,10 @@ export interface MyDialog {
     center?: boolean;
     destroyOnClose?: boolean;
     ref?: string;
-    form?: MyDialogForm[];
+    form?: MyDialogForm;
 }
 
-export type FormType = 'edit' | 'del' | 'view';
+export type FormType = 'edit' | 'del' | 'view' | 'add' | 'default';
 
 export type Columns =
     | MyInput
@@ -260,6 +358,8 @@ export type Columns =
 export interface MyForm {
     /** Whether the form is disabled */
     disabled?: boolean;
+
+    labelWithColon?: boolean;
 
     /** Position of label */
     labelPosition?: FormItemLabelPosition;
@@ -288,11 +388,6 @@ export interface MyForm {
     ref?: string;
 
     columns: Columns[];
-
-    /**
-     * 提交接口
-     */
-    store: FormStore;
 
     type: FormType;
 
@@ -324,6 +419,11 @@ export interface EditForm extends MyForm {
         options: EditForm,
         table: Vue & { [K in keyof any]: any }
     ) => void;
+
+    /**
+     * 提交接口
+     */
+    store: FormStore;
 }
 
 export interface ViewForm extends MyForm {
@@ -342,7 +442,7 @@ export interface ViewForm extends MyForm {
 export interface DelForm {
     type: 'del';
     store: FormStore;
-    confirm: ElMessageBoxOptions;
+    confirm?: ElMessageBoxOptions;
     beforeCommit?: (
         this: Vue,
         tableColumnData?: Record<string, any>,
@@ -358,7 +458,27 @@ export interface DelForm {
     ) => void;
 }
 
+export interface AddForm extends MyForm {
+    type: 'add';
+    store: FormStore;
+    beforeCommit?: (
+        this: Vue,
+        tableColumnData?: Record<string, any>,
+        options: AddForm,
+        table?: Vue & { [K in keyof any]: any }
+    ) => Record<string, any> | boolean;
+
+    afterCommit?: (
+        this: Vue,
+        res: T | AxiosError<any>,
+        options: AddForm,
+        table?: Vue & { [K in keyof any]: any }
+    ) => void;
+}
+
 export interface DefaultForm extends MyForm {
+    type: 'default';
+
     afterCommit?: (
         this: Vue,
         res: T | AxiosError<any>,
@@ -372,9 +492,14 @@ export interface DefaultForm extends MyForm {
         options: DefaultForm,
         table: Vue & { [K in keyof any]: any }
     ) => Record<string, any> | boolean;
+
+    /**
+     * 提交接口
+     */
+    store: FormStore;
 }
 
-export type MyDialogForm = EditForm | DefaultForm | ViewForm | DelForm;
+export type MyDialogForm = EditForm | DefaultForm | ViewForm | DelForm | AddForm;
 
 export interface MyFormItem {
     /** Label */
@@ -453,16 +578,21 @@ export type XType =
 export interface ComponentBase<T = any, U = ComponentBase, A = any> {
     component:
         | Component
-        | ((value: T, option: U) => Component)
-        | ((value: T, row: Record<string, any>, option: U, options?: A) => Component);
-    bind:
+        | ((value?: T, formdata: Record<string, any>, option: U) => Component)
+        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component)
+        | string;
+    bind?:
         | Record<string, any>
-        | ((value: T, option: U) => Record<string, any>)
-        | ((value: T, row: Record<string, any>, option: U, options?: A) => Component);
-    events:
+        | ((value?: T, formdata: Record<string, any>, option: U) => Record<string, any>)
+        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component);
+    events?:
         | Record<string, any>
-        | ((value: T, option: U) => Record<string, any>)
-        | ((value: T, row: Record<string, any>, option: U, options?: A) => Component);
+        | ((value?: T, formdata: Record<string, any>, option: U) => Record<string, any>)
+        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component);
+    label?:
+        | string
+        | ((value?: T, formdata: Record<string, any>, option: U) => string)
+        | ((value?: T, row: Record<string, any>, option: U, options?: A) => string);
 }
 /**
  * 获取不继承自vue的单独接口
@@ -478,7 +608,13 @@ type MyElementUIComponentType<T extends ElementUIComponent, U extends XType> = O
     { xType: U }
 >;
 
-type Render<T> = (value: any, item: T, option: Columns[], table: Vue & { [K in keyof any]: any }) => string;
+type Render<T> = (
+    value: any,
+    row: Record<string, any>,
+    item: T,
+    option: Columns[],
+    table: Vue & { [K in keyof any]: any }
+) => any;
 type MyElementUIComponentTypeWithBeforeRender<T extends ElementUIComponent, U extends XType, ELEvent> = Merge<
     Merge<MyFormItem, MyElementUIComponentType<T, U>>,
     {
@@ -509,7 +645,12 @@ export type MyInput = MyElementUIComponentTypeWithBeforeRender<
     Pick<ELEvent, 'change' | 'blur' | 'focus' | 'clear' | 'input'>
 >;
 export type MySelect = MyElementUIComponentTypeWithBeforeRender<
-    ElSelect,
+    Merge<
+        ElSelect,
+        {
+            collapseTags: Boolean;
+        }
+    >,
     'select',
     Pick<ELEvent, 'change' | 'blur' | 'clear' | 'focus' | 'remove-tag' | 'visible-change'>
 > &
@@ -523,7 +664,12 @@ export type MyCheckboxGroup = MyElementUIComponentTypeWithBeforeRender<
 > &
     StoreBase<MyCheckboxGroup>;
 
-export type MyRadio = MyElementUIComponentTypeWithBeforeRender<ElRadio, 'radio', Pick<ELEvent, 'change'>>;
+export type MyRadio = MyElementUIComponentTypeWithBeforeRender<
+    ElRadioGroup & { value: string | number },
+    'radio',
+    Pick<ELEvent, 'change'>
+> &
+    StoreBase<MyCheckboxGroup>;
 export type MyInputNumber = MyElementUIComponentTypeWithBeforeRender<
     ElInputNumber,
     'number',
@@ -570,4 +716,7 @@ export type MyText = Overwrite<
           };
 };
 
-export type MyComponent = Overwrite<Merge<BaseItemComponent, ComponentBase<any, MyComponent>>, { xType: 'component' }>;
+export type MyComponent = Overwrite<
+    Merge<Merge<BaseItemComponent, MyFormItem>, { component: Omit<ComponentBase, 'label'> }>,
+    { xType: 'component' }
+>;

@@ -1,10 +1,10 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
-import {Permission} from '@src/config/permission';
-import {Controller, Get} from '@src/descriptor/controller';
+import { Permission } from '@src/config/permission';
+import { Controller, Get } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Util from '@util';
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import admin from '..';
 
 const db = new Db();

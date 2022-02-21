@@ -1,6 +1,7 @@
 import routes from '@/api/routes';
 import { AsideTree, formatRoutesTree, WebRoutesTree } from '@/types/routes';
 import { ActionTree, GetterTree, MutationTree } from 'vuex';
+import { CreateElement } from 'vue/types/vue';
 
 interface State {
     routesTree: Partial<WebRoutesTree>[];
@@ -31,7 +32,10 @@ const mutations: MutationTree<State> = {
 
 function formatRoutes(params: Partial<WebRoutesTree>[]): formatRoutesTree[] {
     return params.map<formatRoutesTree>((v) => {
-        const component = () => import(`@/views${v.component}`);
+        const component =
+            v.component === null
+                ? { render: (e: CreateElement) => e('router-view') }
+                : () => import(`@/views${v.component}`);
         let children: formatRoutesTree[] = [];
         if (v.children && v.children.length) {
             children = formatRoutes(v.children);

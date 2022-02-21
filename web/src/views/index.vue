@@ -21,7 +21,7 @@
             <el-aside style="width: 250px; overflow: hidden">
                 <Menu :menu-tree="asideTree"></Menu>
             </el-aside>
-            <el-main class="my-el-container-loading">
+            <el-main>
                 <router-view />
             </el-main>
         </el-container>

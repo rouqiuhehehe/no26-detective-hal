@@ -138,24 +138,25 @@ axios.interceptors.response.use(
                     throw new Error(response.data.message);
                 }
 
-                if (!excludes.includes(response.config.url ?? '') && response.request.responseType !== 'blob') {
-                    if (response.headers?.authorization) {
-                        const { authorization } = response.headers;
-                        const decrypt = HmacSHA256(
-                            JSON.stringify(response.data.data ?? response.data),
-                            HMACSHA256KEY
-                        ).toString();
-                        if (decrypt === authorization) {
-                            return response.data;
+                if (cfg.encrypt) {
+                    if (!excludes.includes(response.config.url ?? '') && response.request.responseType !== 'blob') {
+                        if (response.headers?.authorization) {
+                            const { authorization } = response.headers;
+                            const decrypt = HmacSHA256(
+                                JSON.stringify(response.data.data ?? response.data),
+                                HMACSHA256KEY
+                            ).toString();
+                            if (decrypt === authorization) {
+                                return response.data;
+                            } else {
+                                throw new Error('数据被篡改了');
+                            }
                         } else {
-                            throw new Error('数据被篡改了');
+                            throw new Error('请设置参数加密响应头');
                         }
-                    } else {
-                        throw new Error('请设置参数加密响应头');
                     }
-                } else {
-                    return response.data;
                 }
+                return response.data;
             } catch (err: any) {
                 MessageBox.alert(err.message, '错误', {
                     type: 'error'

@@ -8,11 +8,11 @@ const user = new User();
 export default class GetUser extends UserOperation {
     @Middleware(['default'])
     @Get('/get-user')
-    public async getUser(req: ExpressRequest, res: ExpressResPonse) {
+    public async getUser(req: ExpressRequest, res: ExpressResponse) {
         this.getUserHandle(req, res);
     }
 
-    private async getUserHandle(req: ExpressRequest, res: ExpressResPonse) {
+    private async getUserHandle(req: ExpressRequest, res: ExpressResponse) {
         try {
             const userInfo = await user.getUserInfoByToken(req);
             const { nickname, avatar, create_date, username, update_date } = userInfo;

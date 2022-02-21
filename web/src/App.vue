@@ -1,10 +1,13 @@
 <template>
     <div id="app">
-        <router-view />
+        <el-scrollbar style="height: 100%">
+            <router-view />
+        </el-scrollbar>
     </div>
 </template>
 
-<style>
+<style lang="less">
+@import url(assets/css/main);
 * {
     margin: 0;
     padding: 0;
@@ -23,17 +26,10 @@ body {
     color: #2c3e50;
     height: 100%;
 }
-
-#nav {
-    padding: 30px;
+.el-scrollbar__wrap {
+    overflow-x: hidden;
 }
-
-#nav a {
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-    color: #42b983;
+.el-scrollbar__view {
+    height: 100%;
 }
 </style>

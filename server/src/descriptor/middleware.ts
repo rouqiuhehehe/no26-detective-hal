@@ -6,7 +6,7 @@ import Log from './middleware/log';
 import timestamp from './middleware/timestamp';
 import { classLogHandler, DefaultMiddleWareType, methodLogHandler } from './middlewareHandle';
 
-type Callback = (req: ExpressRequest, res: ExpressResPonse, next: NextFunction) => void;
+type Callback = (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => void;
 
 export function validateController(middleWare: Callback, type: DefaultMiddleWareType) {
     return (target: Object, propertyKey?: string | symbol, descriptor?: PropertyDescriptor) => {
@@ -27,7 +27,6 @@ export default function Middleware(
         params = ['default'];
     }
     params.forEach((v, i) => {
-        v === DefaultMiddleWareType.CUSTOM;
         if (v === 'default') {
             params!.splice(
                 i,

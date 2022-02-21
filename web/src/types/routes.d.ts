@@ -1,3 +1,5 @@
+import { Component } from 'vue';
+
 interface WebRoutes {
     id: number;
     uid: string;
@@ -24,5 +26,5 @@ export type AsideTree = Pick<WebRoutes, 'title' | 'path' | 'icon'> & {
 export type formatRoutesTree = Partial<Omit<WebRoutes, 'component'>> & {
     meta?: { hidden: boolean; readonly: boolean };
     children?: formatRoutesTree[];
-    component?: () => Promise<any>;
+    component?: (() => Promise<Component>) | Component;
 };

@@ -1,4 +1,4 @@
-import { MyTable } from '@/types/components';
+import { MyPagination, MyTable, MyTableColumns } from '@/types/components';
 
 export default class {
     public tableBind = [
@@ -59,7 +59,33 @@ export default class {
         'filteredValue'
     ];
 
+    public paginationBind = [
+        'small',
+        'background',
+        'pageSize',
+        'total',
+        'pageCount',
+        'pagerCount',
+        'currentPage',
+        'layout',
+        'pageSizes',
+        'popperClass',
+        'prevText',
+        'nextText',
+        'hideOnSinglePage'
+    ];
+
     public defaultTableBind: Partial<MyTable> = {
         border: true
+    };
+
+    public defaultTableItemBind: Partial<MyTableColumns> = {
+        align: 'center'
+    };
+
+    public defaultPaginationBind: Partial<MyPagination> = {
+        pageSizes: [10, 20, 30, 40],
+        pageSize: 10,
+        layout: 'total, sizes, prev, pager, next, jumper'
     };
 }

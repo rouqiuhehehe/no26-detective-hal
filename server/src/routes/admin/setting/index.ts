@@ -18,7 +18,7 @@ const user = new User();
 export default class extends admin {
     @Middleware()
     @Get('/get-setting-user-info')
-    public async getSettingUserInfo(req: ExpressRequest, res: ExpressResPonse) {
+    public async getSettingUserInfo(req: ExpressRequest, res: ExpressResponse) {
         const userInfo = await user.getUserInfoByToken(req);
         const { uid, username, nickname, avatar, permission, create_date, update_date } = userInfo;
         let permissionLabel = '';
@@ -42,7 +42,7 @@ export default class extends admin {
 
     @Middleware()
     @Get('/get-setting-user-info/view')
-    public async getSettingUserInfoView(req: ExpressRequest, res: ExpressResPonse) {
+    public async getSettingUserInfoView(req: ExpressRequest, res: ExpressResponse) {
         const userInfo = await user.getUserInfoByToken(req);
         const { uid, username, nickname, avatar } = userInfo;
         res.success({
@@ -92,7 +92,7 @@ export default class extends admin {
     })
     @Middleware()
     @Post('/get-setting-user-info/update')
-    public async updateSettingUserInfo(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async updateSettingUserInfo(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { nickname, username, avatar } = req.body;
         const userInfo = await user.getUserInfoByToken(req);
         const { uid } = userInfo;
@@ -126,7 +126,7 @@ export default class extends admin {
 
     @Middleware()
     @Post('/get-setting-user-info/update-opera-list')
-    public async updateOperaList(_req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async updateOperaList(_req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const opera = new Opera();
 
         try {

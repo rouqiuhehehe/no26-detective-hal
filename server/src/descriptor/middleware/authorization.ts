@@ -26,7 +26,7 @@ export default function authorization(target: Object, propertyKey?: string | sym
     });
 }
 
-export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+export function authorizationMiddleware(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
     const originalUrl = Util.getNoParamsUrl(req);
     if (!excludesArr.includes(originalUrl)) {
         // 读取请求头消息
@@ -70,7 +70,7 @@ export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPons
                         if (decryptText === hashed) {
                             const success = res.success;
                             // 修改响应，添加响应头
-                            res.success = (body: any) => {
+                            res.success = (body: any, pagination?) => {
                                 // tslint:disable-next-line: no-parameter-reassignment
                                 body = body ?? {
                                     value: true
@@ -83,7 +83,7 @@ export function authorizationMiddleware(req: ExpressRequest, res: ExpressResPons
                                         .digest()
                                         .toString('hex')
                                 );
-                                return success(body);
+                                return success(body, pagination);
                             };
                             next();
                         } else {

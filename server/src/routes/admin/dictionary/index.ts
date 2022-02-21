@@ -8,7 +8,7 @@ const dictionary = new Dictionary();
 export default class extends admin {
     @Middleware()
     @Get('/get-opera-types')
-    public async getOperaTypes(req: ExpressRequest, res: ExpressResPonse) {
+    public async getOperaTypes(req: ExpressRequest, res: ExpressResponse) {
         const types = await dictionary.getOperaTypes(req);
 
         res.success(types);

@@ -15,7 +15,7 @@ export default class extends dictionary {
     // })
     @Middleware()
     @Post('/img')
-    public async uploadImg(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async uploadImg(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const upload = new Upload('/uploads', {
             fileId: 'file',
             fileType: 'img'

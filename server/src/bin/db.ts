@@ -1,13 +1,14 @@
-import dbconfig from '@src/config/db_config';
 import serverError from '@src/util/serverError';
 import Util from '@util';
 import events from 'events';
-import {Request} from 'express';
+import { Request } from 'express';
 import FileStreamRotator from 'file-stream-rotator';
 import mysql from 'mysql';
 import mysqldump from 'mysqldump';
 import path from 'path';
+import fsPromise from 'fs/promises';
 
+const dbconfig = fsPromise.readFile(path.join(process.cwd(), 'config', 'dbconfig.json'));
 // a bunch of session variables we use to make the import work smoothly
 const HEADER_VARIABLES = [
     // Add commands to store the client encodings used when importing and set to UTF8 to preserve data
@@ -34,16 +35,22 @@ const FOOTER_VARIABLES = [
 type Callback<T> = (results: T, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
     private status = 'ready';
-    private pool = mysql.createPool(dbconfig);
+    private pool!: mysql.Pool;
 
     public constructor() {
         super();
         this.setMaxListeners(0);
+
+        (async () => {
+            const config = (await dbconfig).toString();
+
+            this.pool = mysql.createPool(JSON.parse(config));
+        })();
     }
 
     public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
         return new Promise((resolve, reject) => {
-            this.pool.getConnection((err, connection) => {
+            this.pool!.getConnection((err, connection) => {
                 if (err) {
                     return reject(err);
                 } else {
@@ -82,7 +89,7 @@ export default class extends events.EventEmitter {
         }
 
         return new Promise((resolve, reject) => {
-            this.pool.getConnection((err, conn) => {
+            this.pool!.getConnection((err, conn) => {
                 if (err) {
                     conn.release();
                     reject(err);
@@ -164,8 +171,9 @@ export default class extends events.EventEmitter {
      * 数据库备份方法
      */
     public async databaseBackup() {
+        const config = (await dbconfig).toString();
         const res = await mysqldump({
-            connection: dbconfig
+            connection: JSON.parse(config)
         });
 
         const stream = FileStreamRotator.getStream({

@@ -18,7 +18,7 @@ export default function antiReplay(target: Object, propertyKey?: string | symbol
     });
 }
 
-export async function redisPushReplay(req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) {
+export async function redisPushReplay(req: ExpressRequest, _res: ExpressResponse, next: NextFunction) {
     const { _r } = req.query;
 
     if (!_r) {

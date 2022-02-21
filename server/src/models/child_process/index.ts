@@ -17,14 +17,19 @@ export default class ChildProcess {
     protected server = net.createServer();
     private workerMap = new Map();
     private workerCount = 0;
-    private arr = [0, 0];
-    private len = this.arr.length || this.cpus.length;
+    private len = this.cpus.length;
     private limit = 10;
     // 10次重启的超时时间
     private during = 60000;
     private restart: number[] = [];
 
     public constructor() {
+        if (process.env.NODE_ENV === 'development') {
+            // 如果是开发环境，不需要起太多进程
+
+            this.len = 2;
+        }
+
         // 创建tcp服务，发射给子进程
         this.server.listen(port, this.forkChildProcess);
 
@@ -43,9 +48,11 @@ export default class ChildProcess {
             processFilePath = '/work.ts';
         }
 
-        this.arr.forEach((_v, index) => {
+        let index = this.len;
+
+        while (index--) {
             this.createWorker(processFilePath, index);
-        });
+        }
     }
 
     private createWorker(path: string, index: number) {

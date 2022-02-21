@@ -7,12 +7,26 @@ import { methodMiddleware } from './middlewareHandle';
 const callback =
     <T = any, isStrict = false>(
         params: Joi.SchemaMap<T, isStrict>,
+        isLimitPage = false,
+        acceptUnknownParameters = true,
         validateCb?: () => void,
         errcb?: (err: Joi.ValidationError) => void
     ) =>
     (method: RouteMethod) =>
-    async (req: ExpressRequest, _res: ExpressResPonse, next: NextFunction) => {
-        const schema = Joi.object(params).unknown();
+    async (req: ExpressRequest, _res: ExpressResponse, next: NextFunction) => {
+        let joiObj = params;
+        if (isLimitPage) {
+            joiObj = {
+                ...joiObj,
+                page: Joi.number(),
+                limit: Joi.number()
+            };
+        }
+        let schema = Joi.object(joiObj);
+
+        if (acceptUnknownParameters) {
+            schema = schema.unknown();
+        }
 
         const { error } = schema.validate(method === 'get' ? req.query : req.body);
 

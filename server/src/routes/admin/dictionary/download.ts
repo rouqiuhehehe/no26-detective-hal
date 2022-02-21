@@ -17,7 +17,7 @@ export default class extends dictionary {
     })
     @Middleware()
     @Post('/')
-    public async downloadFile(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async downloadFile(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         let { filename } = req.body;
 
         const extname = path.extname(filename);
@@ -45,7 +45,7 @@ export default class extends dictionary {
     })
     @Middleware()
     @Get('/')
-    public async downloadFileGet(req: ExpressRequest, res: ExpressResPonse, next: NextFunction) {
+    public async downloadFileGet(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { filename } = req.query;
 
         try {

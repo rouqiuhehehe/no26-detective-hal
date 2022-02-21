@@ -6,14 +6,14 @@
     >
         <MyForm ref="myForm" :option="options.form"></MyForm>
         <span slot="footer" class="dialog-footer">
-            <el-button @click="beforeClose()()">取 消</el-button>
+            <el-button @click="beforeClose(options.beforeClose)()">取 消</el-button>
             <el-button type="primary" @click="commitForm">确 定</el-button>
         </span>
     </el-dialog>
 </template>
 
 <script lang="ts">
-import { Component, InjectReactive, Prop, ProvideReactive, Vue, Watch } from 'vue-property-decorator';
+import { Component, Inject, InjectReactive, Prop, ProvideReactive, Vue, Watch } from 'vue-property-decorator';
 import { DelForm, MyDialog } from '@/types/components';
 import utils from '@/utils';
 import Config from './config';
@@ -45,7 +45,7 @@ export default class extends Vue {
     })
     public tableColumnData?: Record<string, any>;
 
-    @InjectReactive({
+    @Inject({
         from: 'thisArg',
         default: null
     })
@@ -69,48 +69,79 @@ export default class extends Vue {
     }
 
     @Watch('option', { immediate: true, deep: true })
-    public async onOptionChange() {
+    public onOptionChange() {
         this.options = utils.deepClone(this.option);
         const form = this.options.form;
         this.thisArg = this.controller ?? this;
-
         if (this.isDelForm(form)) {
-            try {
-                await this.$msgbox({
-                    type: 'warning',
-                    message: '确定要删除此项吗',
-                    title: '提示',
-                    ...form.confirm
-                });
-                const { store, beforeCommit, afterCommit } = form;
+            this.show = async () => {
+                try {
+                    await this.$msgbox({
+                        type: 'warning',
+                        message: '确定要删除此项吗',
+                        title: '提示',
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        showCancelButton: true,
+                        ...form.confirm,
+                        beforeClose: (action, instance, done) => {
+                            if (action === 'cancel' || action === 'close') {
+                                if (typeof this.options.beforeClose === 'function') {
+                                    const res = this.options.beforeClose.call(this.thisArg, this.options);
+                                    if (!res) {
+                                        return;
+                                    }
+                                }
+                            }
+                            done();
+                        }
+                    });
+                    const { store, beforeCommit, afterCommit } = form;
 
-                const params =
-                    (beforeCommit &&
-                        beforeCommit.call(this.thisArg, this.tableColumnData, this.options as DelForm, this.myTable)) ||
-                    null;
+                    const params =
+                        (beforeCommit &&
+                            beforeCommit.call(
+                                this.thisArg,
+                                this.tableColumnData,
+                                this.options as DelForm,
+                                this.myTable
+                            )) ||
+                        null;
 
-                const res = await store(params);
+                    const res = await store(params);
 
-                afterCommit && afterCommit.call(this.thisArg, res, this.options as DelForm, this.myTable);
-            } catch (e) {
-                //
-            }
+                    afterCommit && afterCommit.call(this.thisArg, res, this.options as DelForm, this.myTable);
+                } catch (e) {
+                    //
+                }
+            };
         }
     }
 
     public get getDialogOptionsBind() {
         const obj = utils.deepClone(this.config.default);
+        if (!utils.isEmpty(this.options.form)) {
+            switch (this.options.form!.type) {
+                case 'view':
+                    obj.title = '查看';
+                    break;
+                case 'edit':
+                    obj.title = '编辑';
+                    break;
+                case 'add':
+                    obj.title = '新增';
+                    break;
+            }
+        }
         for (const i in this.options) {
             if (this.config.bind.includes(i)) {
                 if (i === 'beforeClose') {
                     obj[i] = this.beforeClose.call(this.thisArg, this.options.beforeClose as any);
-                    this.beforeClose = this.beforeClose.bind(this, this.options.beforeClose as any);
                 } else {
                     obj[i] = this.options[i];
                 }
             }
         }
-
         return obj;
     }
 

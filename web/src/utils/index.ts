@@ -23,6 +23,10 @@ export default class Util {
 
     public static _r = _r;
 
+    public static colorSpan(color: string, label: string) {
+        return `<span style="color: ${color}">${label}</span>`;
+    }
+
     public static isEmpty(obj: unknown) {
         if (typeof obj !== 'object') {
             return !obj;
@@ -118,5 +122,15 @@ export default class Util {
 
     public static specialSymbolsRegExp() {
         return new RegExp('[`~!@#$^&*()=|{}"' + "'" + ':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]', 'g');
+    }
+
+    public static runFnComponent(me: any) {
+        return (fn: any, ...arg: any[]) => {
+            if (typeof fn === 'function') {
+                return fn.call(me, ...arg);
+            }
+
+            return fn;
+        };
     }
 }

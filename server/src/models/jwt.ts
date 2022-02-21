@@ -21,7 +21,7 @@ export class Jwt {
                     // JsonWebTokenError 报错，无效token
                     reject(err);
                 } else {
-                    resolve(decoded!);
+                    resolve(decoded as Jsonwebtoken.JwtPayload);
                 }
             });
         });

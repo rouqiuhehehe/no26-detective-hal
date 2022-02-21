@@ -2,19 +2,17 @@
     <!--suppress JSUnresolvedVariable -->
     <component
         v-if="options.xType === 'component'"
-        :is="
-            typeof options.component === 'function'
-                ? options.component.call(this.thisArg, value, options)
-                : options.component
-        "
-        v-bind="typeof options.bind === 'function' ? options.bind.call(this.thisArg, value, options) : options.bind"
-        v-on="typeof options.events === 'function' ? options.events.call(this.thisArg, value, options) : options.events"
+        :is="runFnComponent(options.component.component, value, formdata, options)"
+        v-bind="runFnComponent(options.component.bind, value, formdata, options)"
+        v-on="runFnComponent(options.component.events, value, formdata, options)"
+        :value="value"
+        @input="$listeners.input"
     ></component>
-    <div v-else-if="itemConfig.component === 'div'" v-html="value"></div>
+    <div v-else-if="itemConfig.component === 'div'" v-html="thisVal"></div>
     <component
         v-else
         :is="itemConfig.component"
-        :value="value"
+        :value="thisVal"
         @input="$listeners.input"
         v-on="getMyItemEvents"
         v-bind="getMyItemBind"
@@ -36,13 +34,22 @@
                 >{{ options.formatKey ? item[options.formatKey.value] : item.value }}</el-checkbox
             >
         </template>
+        <template v-if="this.options.xType === 'radio'">
+            <el-radio
+                v-for="item in allData"
+                :key="options.formatKey ? item[options.formatKey.key] : item.key"
+                :label="options.formatKey ? item[options.formatKey.key] : item.key"
+            >
+                {{ options.formatKey ? item[options.formatKey.value] : item.value }}
+            </el-radio>
+        </template>
     </component>
 </template>
 
 <script lang="ts">
 import { Columns, ELEvent, MyDialogForm } from '@/types/components';
 import utils from '@/utils';
-import { Component, InjectReactive, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Inject, InjectReactive, Prop, Vue, Watch } from 'vue-property-decorator';
 import ItemConfig from './itemConfig';
 import imgUpload from '../ImgUpload.vue';
 
@@ -62,25 +69,52 @@ export default class extends Vue {
     @Prop()
     public value!: any;
 
+    @Prop()
+    public formdata!: Record<string, any>;
+
     @InjectReactive({
         from: 'myForm',
         default: {}
     })
     private readonly myForm!: MyDialogForm;
 
-    @InjectReactive({
+    @Inject({
         from: 'thisArg',
         default: null
     })
     private controller?: Vue;
 
+    @InjectReactive({
+        from: 'myTable',
+        default: {}
+    })
+    public readonly MyTable?: Vue & { [K in keyof any]: any };
+
     public thisArg!: Vue;
 
-    public allData?: any[];
+    public allData?: any[] = [];
 
     public options!: Columns;
 
     public itemConfig: ReturnType<typeof itemConfig.typeMap.get>;
+
+    public thisVal = '';
+
+    @Watch('value', { immediate: true })
+    public onValueChange(v: any) {
+        (this.options &&
+            this.options.xType !== 'component' &&
+            this.options.beforeRender &&
+            (this.thisVal = (this.options.beforeRender as any).call(
+                this.thisArg,
+                utils.deepClone(v),
+                utils.deepClone(this.formdata),
+                this.options,
+                this.myForm,
+                this.MyTable
+            ))) ||
+            (this.thisVal = v);
+    }
 
     @Watch('option', { immediate: true, deep: true })
     public async onOptionChange() {
@@ -92,7 +126,8 @@ export default class extends Vue {
         if (
             this.options.xType === 'select' ||
             this.options.xType === 'cascader' ||
-            this.options.xType === 'checkboxGroup'
+            this.options.xType === 'checkboxGroup' ||
+            this.options.xType === 'radio'
         ) {
             if (typeof this.options.store === 'function') {
                 let params;
@@ -118,7 +153,7 @@ export default class extends Vue {
     public get getMyItemEvents() {
         const obj = {} as ELEvent;
 
-        if (this.options.xType !== 'text') {
+        if (this.options.xType !== 'text' && this.options.xType !== 'component') {
             for (const i in this.options.events) {
                 if ((this.itemConfig?.events as string[])?.includes(i)) {
                     obj[i] = this.options.events[i];
@@ -137,8 +172,14 @@ export default class extends Vue {
                 obj[i] = this.options[i];
             }
         }
-
+        if (this.myForm.type === 'view' && (this.itemConfig?.bind as string[])?.includes('disabled')) {
+            obj['disabled'] = obj['disabled'] ?? true;
+        }
         return obj;
+    }
+
+    public runFnComponent(fn: any, ...arg: any[]) {
+        return utils.runFnComponent(this.thisArg)(fn, ...arg);
     }
 }
 </script>
