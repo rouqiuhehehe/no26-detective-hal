@@ -35,6 +35,7 @@ try {
 
         copyDir('keys');
         copyDir('uploads');
+        copyDir('config');
 
         console.log('copy env');
         copyEnv();

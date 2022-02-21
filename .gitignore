@@ -8,7 +8,7 @@ dump/
 .idea/
 .vscode/
 
-!.bin/build
+!.bin/*
 build/*
 
 *.bak
