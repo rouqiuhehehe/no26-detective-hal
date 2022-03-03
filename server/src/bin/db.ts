@@ -1,12 +1,12 @@
-import serverError from '@src/util/serverError';
-import Util from '@util';
-import events from 'events';
-import { Request } from 'express';
-import FileStreamRotator from 'file-stream-rotator';
-import mysql from 'mysql';
-import mysqldump from 'mysqldump';
-import path from 'path';
-import fsPromise from 'fs/promises';
+import serverError from "@src/util/serverError";
+import Util from "@util";
+import events from "events";
+import { Request } from "express";
+import FileStreamRotator from "file-stream-rotator";
+import mysql from "mysql";
+import mysqldump from "mysqldump";
+import path from "path";
+import fsPromise from "fs/promises";
 
 const dbconfig = fsPromise.readFile(path.join(process.cwd(), 'config', 'dbconfig.json'));
 // a bunch of session variables we use to make the import work smoothly
@@ -72,7 +72,7 @@ export default class extends events.EventEmitter {
      */
     public beginTransaction<T>(sql: string, values?: unknown[], cb?: Callback<T>): Promise<boolean>;
     // noinspection JSUnusedGlobalSymbols
-    public beginTransaction<T>(sql: string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(sql: string | string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
     public beginTransaction<T>(
         sql: string | string[] | [string, unknown[]][],
         values?: unknown[] | Callback<T>,
@@ -80,7 +80,7 @@ export default class extends events.EventEmitter {
     ): Promise<boolean> {
         let callback: Callback<T> | undefined;
         let sqlVal: unknown[];
-        if (typeof sql !== 'string') {
+        if (arguments.length === 2) {
             callback = values as Callback<T>;
             sqlVal = [];
         } else {
@@ -116,13 +116,14 @@ export default class extends events.EventEmitter {
                                         conn.rollback((e) => {
                                             console.log('事务回滚');
                                             if (e) {
-                                                throw e;
+                                                reject(e);
                                             }
                                             conn.release();
                                         });
                                         reject(error);
                                     }
-                                } else {
+                                }
+                                else {
                                     const allPromise = [];
                                     for (const value of sql) {
                                         if (typeof value === 'string') {
@@ -178,14 +179,18 @@ export default class extends events.EventEmitter {
 
         const stream = FileStreamRotator.getStream({
             date_format: 'YYYYMMDD',
-            filename: path.join(process.cwd(), 'dump/%DATE%', Date.now() + '.sql'),
+            filename: path.join(process.cwd(), 'dump/%DATE%', `${Date.now()}.sql`),
             frequency: 'daily',
             verbose: false,
             max_logs: '10d'
         });
 
         stream.write(
-            HEADER_VARIABLES + '\n' + res.dump.schema + '\n' + res.dump.data + '\n\n' + FOOTER_VARIABLES,
+            `${HEADER_VARIABLES}
+            ${res.dump.schema}
+            ${res.dump.data}
+                    
+            ${FOOTER_VARIABLES}`,
             'utf-8',
             (err) => {
                 if (err) {

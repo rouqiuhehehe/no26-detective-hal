@@ -2,7 +2,7 @@ import Morgan from '@src/middleware/morgan';
 import Util, { DescriptorKey } from '@util';
 import { classLogHandler, DefaultMiddleWareType, methodLogHandler } from '../middlewareHandle';
 
-const logger = new Morgan(process.cwd() + '/log/info');
+const logger = new Morgan(`${ process.cwd() }/log/info`);
 const loggerMiddleware = logger.useLogger();
 
 function Log(dev?: 'dev') {

@@ -75,7 +75,7 @@ export default class Util {
             if (hasHomePath) {
                 fn(DescriptorKey.CLASS);
             } else {
-                throw new HttpError(Status.SERVER_ERROR, (target as Function).name + ' does not has homePath');
+                throw new HttpError(Status.SERVER_ERROR, `${(target as Function).name} does not has homePath`);
             }
         }
     }
@@ -136,14 +136,14 @@ export default class Util {
         };
 
         if (/(y+)/.test(_format)) {
-            _format = _format.replace(RegExp.$1, (dateObj.getFullYear() + '').substr(4 - RegExp.$1.length));
+            _format = _format.replace(RegExp.$1, (`${ dateObj.getFullYear() }`).substr(4 - RegExp.$1.length));
         }
 
         for (k in o) {
-            if (new RegExp('(' + k + ')').test(_format)) {
+            if (new RegExp(`(${ k })`).test(_format)) {
                 _format = _format.replace(
                     RegExp.$1,
-                    RegExp.$1.length === 1 ? `${o[k]}` : ('00' + o[k]).substr(('' + o[k]).length)
+                    RegExp.$1.length === 1 ? `${o[k]}` : (`00${ o[k] }`).substr((o[k].toString()).length)
                 );
             }
         }
@@ -185,7 +185,7 @@ export default class Util {
      * 获取没有参数的完整url
      */
     public static getNoParamsUrl(req: Request) {
-        const urlObj = new URL(req.url, req.protocol + '://' + req.get('host'));
+        const urlObj = new URL(req.url, `${ req.protocol }://${ req.get('host') }`);
         return urlObj.pathname;
     }
 
@@ -233,17 +233,17 @@ export default class Util {
         switch (fnType) {
             case DescriptorType.DATA:
                 if (typeof descriptor.value !== 'function') {
-                    throw new TypeError(descriptor.value + ' is not a function');
+                    throw new TypeError(`${ descriptor.value } is not a function`);
                 }
                 type = DescriptorType.DATA;
                 fn = descriptor.value;
                 break;
             case DescriptorType.ACCESSOR:
                 if (typeof descriptor.set !== 'function') {
-                    throw new TypeError(descriptor.set!.name + ' is not a function');
+                    throw new TypeError(`${ descriptor.set!.name } is not a function`);
                 }
                 if (typeof descriptor.get !== 'function') {
-                    throw new TypeError(descriptor.get!.name + ' is not a function');
+                    throw new TypeError(`${ descriptor.get!.name } is not a function`);
                 }
                 type = DescriptorType.ACCESSOR;
                 fn = {
@@ -384,7 +384,7 @@ export default class Util {
         };
         const filePath = await $findFilesRecursively(filename, root);
         if (!filePath) {
-            throw new HttpError(Status.SERVER_ERROR, filename + ' is not found in ' + root);
+            throw new HttpError(Status.SERVER_ERROR, `${filename} is not found in ${root}`);
         } else {
             return filePath;
         }

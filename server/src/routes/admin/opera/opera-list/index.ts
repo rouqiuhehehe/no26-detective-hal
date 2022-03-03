@@ -5,10 +5,10 @@ import Middleware from '@src/descriptor/middleware';
 import Required from '@src/descriptor/required';
 import Validate from '@src/descriptor/validate';
 import Joi from 'joi';
-import Sql from '@src/routes/admin/opera/opera-list/sql';
+import Sql from '@src/routes/admin/opera/opera-list/Dao';
 import HttpError from '@src/models/httpError';
 import { Status } from '@src/config/server_config';
-import {spawnSync} from 'child_process'
+import Handler from '@src/routes/admin/opera/opera-list/Handler';
 
 interface OperaListType {
     opera_id: number;
@@ -27,6 +27,7 @@ interface OperaListType {
 
 const db = new Db();
 const SQL = new Sql();
+const handler = new Handler();
 @Controller('/opera')
 export default class extends admin {
     /*
@@ -45,7 +46,7 @@ export default class extends admin {
     @Middleware()
     @Get('/opera-list')
     public async getOperaList(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await this.getOperaListHandle(req, res, next);
+        await handler.listAction(req, res, next);
     }
 
     @Required(['!id'])
@@ -53,26 +54,6 @@ export default class extends admin {
     @Get('/opera-list/view')
     public async getOperaListView(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         await this.getOperaListViewHandle(req, res, next);
-    }
-
-    /*
-     *  handle
-     * */
-    private async getOperaListHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        const sql = SQL.getOperaListSql(req);
-        const { page = 1 } = req.query;
-
-        try {
-            const [list, total] = await db.asyncQueryBySock<
-                [Omit<OperaListType, 'default_catalogs_names' | 'recommend'>[], Pagination]
-            >(req, sql);
-            res.success(list, {
-                total: total[0]['FOUND_ROWS()'],
-                page: +page
-            });
-        } catch (e: any) {
-            next(new HttpError(Status.SERVER_ERROR, e.message, e));
-        }
     }
 
     private async getOperaListViewHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {

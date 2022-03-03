@@ -46,7 +46,7 @@ export default class User {
                         dbUserInfo;
 
                     await redis(async (client, quit) => {
-                        const errorNum = await client.get('password_error_num:user#' + uid);
+                        const errorNum = await client.get(`password_error_num:user#${ uid }`);
 
                         if (errorNum && +errorNum === 5) {
                             reject(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
@@ -69,9 +69,9 @@ export default class User {
                                 username,
                                 update_date
                             };
-                            await client.hSet('user:' + token, info);
-                            await client.expire('user:' + token, Jwt_Config.JWT_EXPIRED);
-                            await client.del('password_error_num:user#' + uid);
+                            await client.hSet(`user:${ token }`, info);
+                            await client.expire(`user:${ token }`, Jwt_Config.JWT_EXPIRED);
+                            await client.del(`password_error_num:user#${ uid }`);
                             resolve(info);
                         } else {
                             await quit();
@@ -100,7 +100,7 @@ export default class User {
             } else {
                 try {
                     await redis(async (client) => {
-                        const hasToken = await client.EXISTS('user:' + req.token);
+                        const hasToken = await client.EXISTS(`user:${ req.token }`);
                         if (hasToken) {
                             try {
                                 const decoded = await Jwt.vailToken(token!, Jwt_Config.SECRET);
@@ -129,7 +129,7 @@ export default class User {
         return new Promise(async (resolve, reject) => {
             try {
                 await redis(async (client, quit) => {
-                    const dbUserInfo = await client.hGetAll('user:' + req.token);
+                    const dbUserInfo = await client.hGetAll(`user:${ req.token }`);
 
                     await quit();
                     if (dbUserInfo) {
@@ -148,7 +148,7 @@ export default class User {
         return new Promise(async (resolve, reject) => {
             try {
                 await redis(async (client) => {
-                    const remove = await client.del('user:' + req.token);
+                    const remove = await client.del(`user:${ req.token }`);
 
                     if (remove === 1) {
                         resolve({

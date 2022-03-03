@@ -9,7 +9,7 @@ export default class GetUser extends UserOperation {
     @Middleware(['default'])
     @Get('/get-user')
     public async getUser(req: ExpressRequest, res: ExpressResponse) {
-        this.getUserHandle(req, res);
+        await this.getUserHandle(req, res);
     }
 
     private async getUserHandle(req: ExpressRequest, res: ExpressResponse) {

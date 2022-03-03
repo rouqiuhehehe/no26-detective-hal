@@ -2,12 +2,12 @@ declare module 'express-session' {
     interface Success {
         message: string;
     }
-    interface sessionMessages {
+    interface SessionMessages {
         type: string;
         message: string;
     }
     export interface SessionData {
-        messages: sessionMessages[];
+        messages: SessionMessages[];
         uid: string;
         authorization: string;
         success: Success;

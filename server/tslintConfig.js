@@ -933,7 +933,7 @@ module.exports = {
          * @description 必须使用模版字符串而不是字符串连接
          * @reason 字符串连接很常用
          */
-        'prefer-template': false,
+        'prefer-template': true,
         /**
          * @category style
          * @description 当没有初始值的时候，必须使用 while 而不是 for

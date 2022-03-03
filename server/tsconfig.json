@@ -31,5 +31,5 @@
         "plugins": []
     },
     "exclude": ["node_modules"],
-    "include": ["src/**/*.ts", "types/*", "test/*"]
+    "include": ["src/**/*.ts", "types/*", "test/**/*.ts"]
 }

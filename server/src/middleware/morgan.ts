@@ -24,19 +24,19 @@ export default class Morgan {
         });
 
         morgan.token('requestHeaders', (req: Request, _res: Response) => {
-            return 'headers: ' + JSON.stringify(req.headers) || '-';
+            return `headers: ${ JSON.stringify(req.headers) }` || '-';
         });
 
         morgan.token('requestRouteParameters', (req: Request, _res: Response) => {
-            return 'params: ' + JSON.stringify(req.params) || '-';
+            return `params: ${ JSON.stringify(req.params) }` || '-';
         });
 
         morgan.token('requestParameters', (req: Request, _res: Response) => {
-            return 'query: ' + JSON.stringify(req.query) || '-';
+            return `query: ${ JSON.stringify(req.query) }` || '-';
         });
 
         morgan.token('requestBody', (req: Request, _res: Response) => {
-            return 'body: ' + JSON.stringify(req.body) || '-';
+            return `body: ${ JSON.stringify(req.body) }` || '-';
         });
 
         morgan.format(

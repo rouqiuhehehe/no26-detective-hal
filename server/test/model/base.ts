@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 import axios from 'axios';
 import chai from 'chai';
 import crypto from 'crypto';
@@ -34,7 +36,7 @@ export default class {
     protected authToken = '';
     private allExcludes = ['/auth', '/admin'];
     private tokenExcludes = ['/auth/management-system'];
-    private cookieserver = [];
+    private cookieserver: string[] = [];
 
     // hmac_sha256秘钥
     private HMACSHA256KEY = '1001';
@@ -71,7 +73,7 @@ export default class {
     }
 
     protected encodedDataByPublicKey(obj: Record<string, any>) {
-        const publicKey = fs.readFileSync(path.join(process.cwd() + '/key/rsa_public.key'));
+        const publicKey = fs.readFileSync(path.join(`${process.cwd()}/key/rsa_public.key`));
         const hash = crypto.createHmac('sha256', this.HMACSHA256KEY);
 
         const stringData = JSON.stringify(this.ascllSort(obj));
@@ -102,7 +104,7 @@ export default class {
     }
 
     protected _r(a: number) {
-        const c = Math.abs(parseInt(new Date().getTime() * Math.random() * 10000 + '', 10)).toString();
+        const c = Math.abs(parseInt(`${new Date().getTime() * Math.random() * 10000}`, 10)).toString();
         let d = 0;
         for (const b of c) {
             d += parseInt(b, 10);
@@ -123,7 +125,7 @@ export default class {
             (config) => {
                 const { url } = config;
                 if (url) {
-                    if (this.allExcludes.some((v) => new RegExp('^' + v).test(url))) {
+                    if (this.allExcludes.some((v) => new RegExp(`^${v}`).test(url))) {
                         let params = config.params ?? {};
                         let data = config.data ?? {};
                         const _r = this._r(1);
@@ -161,7 +163,7 @@ export default class {
                         }
                     }
                 }
-                config.headers.Cookie = this.cookieserver.join('');
+                config.headers!.Cookie = this.cookieserver.join('');
                 return config;
             },
             (err) => {
@@ -173,7 +175,7 @@ export default class {
             if (!response.data.success) {
                 throw new Error(response.data.message);
             }
-            this.cookieserver = response.headers['set-cookie'];
+            this.cookieserver = response.headers['set-cookie'] ?? [];
             return response.data;
         });
     }
@@ -239,6 +241,6 @@ export default class {
     }
 
     private isTokenExcludes(url: string) {
-        return this.tokenExcludes.some((v) => new RegExp('^' + v).test(url));
+        return this.tokenExcludes.some((v) => new RegExp(`^${v}`).test(url));
     }
 }

@@ -40,7 +40,7 @@ function createRouterDecorator(method: RouteMethod) {
             } else if (propertyKey in (target as Function).prototype) {
                 constructor = (target as Function).prototype;
             } else {
-                throw new HttpError(Status.SERVER_ERROR, propertyKey.toString() + 'does not in ' + target);
+                throw new HttpError(Status.SERVER_ERROR, `${ propertyKey.toString() }does not in ${ target }`);
             }
 
             if (!Reflect.hasOwnMetadata(ControllerMetadata.ROUTES, constructor)) {

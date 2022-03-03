@@ -57,8 +57,8 @@
 <script lang="ts">
 import Dictionary from '@/api/dictionary';
 import utils from '@/utils';
-import {ElUploadInternalFileDetail, FileListItem, HttpRequestOptions} from 'element-ui/types/upload';
-import {Component, Prop, Vue, Watch} from 'vue-property-decorator';
+import { ElUploadInternalFileDetail, FileListItem, HttpRequestOptions } from 'element-ui/types/upload';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({
     inheritAttrs: false

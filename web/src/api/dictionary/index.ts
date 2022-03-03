@@ -25,7 +25,6 @@ export default class Dictionary {
 
     /**
      * 下载文件接口
-     * @param filename 文件md5名
      */
     public static downloadFile(params: { filename: string }) {
         return axios.post<Blob>('/admin/dictionary/download', params, {

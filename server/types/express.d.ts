@@ -5,6 +5,7 @@ import express from 'express';
 import { SinonAssert } from 'sinon';
 
 declare global {
+    type Consturctor = abstract new (...args: any[]) => any;
     type ExpressResponse = express.Response;
     type ExpressRequest = express.Request;
     type NextFunction = express.NextFunction;

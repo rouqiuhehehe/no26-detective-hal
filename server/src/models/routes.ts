@@ -11,7 +11,9 @@ const loadTs = (dirPath: string): Promise<any[]> => {
     return new Promise(async (resolve, reject) => {
         try {
             // 检测目录是否存在
-            // await fsPromise.access(dirPath);
+            if (process.env.NODE_ENV === 'development') {
+                await fsPromise.access(dirPath);
+            }
             const fileName = await fsPromise.readdir(dirPath);
 
             try {
@@ -37,7 +39,7 @@ const loadTs = (dirPath: string): Promise<any[]> => {
                 reject(error);
             }
         } catch (error) {
-            reject(dirPath + ' does not exist');
+            reject(`${ dirPath } does not exist`);
         }
     });
 };

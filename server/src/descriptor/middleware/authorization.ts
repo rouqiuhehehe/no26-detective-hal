@@ -9,7 +9,7 @@ import path from 'path';
 import qs from 'qs';
 import { classLogHandler, DefaultMiddleWareType, methodLogHandler } from '../middlewareHandle';
 
-const privateKeyPath = path.join(process.cwd() + '/key/rsa_private.key');
+const privateKeyPath = path.join(`${ process.cwd() }/key/rsa_private.key`);
 // hmac_sha256秘钥
 export const HMACSHA256KEY = '1001';
 

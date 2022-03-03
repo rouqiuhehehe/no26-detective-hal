@@ -65,8 +65,8 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/login')
-    public login(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        this.loginHandle(req, res, next);
+    public async login(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+        await this.loginHandle(req, res, next);
     }
 
     private async verifyCodeHandle(token: string): Promise<
@@ -117,12 +117,12 @@ export default class Login extends ManagementSystem {
                     const err = e;
                     try {
                         await redis(async (client) => {
-                            const num = await client.incr('password_error_num:user#' + err.query!.uid);
+                            const num = await client.incr(`password_error_num:user#${err.query!.uid}`);
 
                             if (+num === 5) {
                                 return res.error(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
                             }
-                            err.message = err.message + '，还剩' + (5 - num) + '次机会';
+                            err.message = `${err.message}，还剩${5 - +num}次机会`;
 
                             res.error(err);
                         });

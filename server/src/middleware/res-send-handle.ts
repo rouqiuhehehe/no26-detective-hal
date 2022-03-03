@@ -9,12 +9,12 @@ export default function resSendHandle(req: ExpressRequest, res: ExpressResponse,
                 ? {
                       status: err.status,
                       success: false,
+                      data,
                       message: err.message
                   }
                 : {
                       status: err.status,
                       success: false,
-                      data,
                       message: err.message
                   }
         );

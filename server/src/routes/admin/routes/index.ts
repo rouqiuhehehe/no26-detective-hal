@@ -58,7 +58,7 @@ export default class extends admin {
         const token = req.header('authorization')?.replace('Bearer ', '');
 
         await redis(async (client) => {
-            const { permission } = await client.hGetAll('user:' + token);
+            const { permission } = await client.hGetAll(`user:${ token }`);
 
             const webRoutes = await this.getDatabaseWebRoutes(req);
 

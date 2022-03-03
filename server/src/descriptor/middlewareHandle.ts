@@ -4,7 +4,7 @@ import { Status } from '@src/config/server_config';
 import HttpError from '@src/models/httpError';
 import { Middleware } from '@src/types/middleware_type';
 import { NextFunction, Request, Response } from 'express';
-import { ControllerMetadata, Route, RouteMethod } from './controller';
+import { ControllerMetadata, RouteMethod } from './controller';
 
 const repeatDefineError = new HttpError(Status.SERVER_ERROR, '父路由定义过的中间件不允许在子路由重复定义');
 export enum DefaultMiddleWareType {
@@ -114,7 +114,7 @@ export const methodLogHandler = (
     } else {
         throw new HttpError(
             Status.SERVER_ERROR,
-            routes + ' is not an array, is maybe that the descriptor in the wrong order'
+            `${routes} is not an array, is maybe that the descriptor in the wrong order`
         );
     }
 };
@@ -140,7 +140,7 @@ export const methodMiddleware = (
         } else {
             throw new HttpError(
                 Status.SERVER_ERROR,
-                routes + ' is not an array, is maybe that the descriptor in the wrong order'
+                `${routes} is not an array, is maybe that the descriptor in the wrong order`
             );
         }
     });
