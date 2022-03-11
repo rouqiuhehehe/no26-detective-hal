@@ -133,4 +133,12 @@ export default class Util {
             return fn;
         };
     }
+
+    // 判断浏览器函数
+    // true为移动端，false为pc端
+    public static isMobile() {
+        return !!window.navigator.userAgent.match(
+            /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
+        );
+    }
 }

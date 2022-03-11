@@ -39,4 +39,9 @@ export default class extends Admin {
     public async bulkUpdateTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         await handler.bulkUpdateAction(req, res, next);
     }
+
+    @Post('/update')
+    public async updateTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+        await handler.updateAction(req, res, next);
+    }
 }

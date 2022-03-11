@@ -11,7 +11,7 @@ const sendHttpError = (e: unknown, next: NextFunction) => {
         next(new HttpError(Status.SERVER_ERROR, String(e)));
     }
 };
-const proxy: ProxyHandler<BaseHandler<any>> = {
+const proxy: ProxyHandler<BaseHandler<BaseDao>> = {
     get(target, key) {
         const fn = target[key];
 
@@ -69,8 +69,13 @@ export default abstract class BaseHandler<T extends BaseDao> {
         res.success();
     }
 
+    public async updateAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {
+        await this.dao.updateRows(req.body);
+
+        res.success();
+    }
+
     public async bulkUpdateAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {
-        console.log(arguments);
         await this.dao.bulkUpdateRows(req.body);
 
         res.success();

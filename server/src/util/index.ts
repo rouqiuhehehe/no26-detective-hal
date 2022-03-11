@@ -136,14 +136,14 @@ export default class Util {
         };
 
         if (/(y+)/.test(_format)) {
-            _format = _format.replace(RegExp.$1, (`${ dateObj.getFullYear() }`).substr(4 - RegExp.$1.length));
+            _format = _format.replace(RegExp.$1, `${dateObj.getFullYear()}`.substr(4 - RegExp.$1.length));
         }
 
         for (k in o) {
-            if (new RegExp(`(${ k })`).test(_format)) {
+            if (new RegExp(`(${k})`).test(_format)) {
                 _format = _format.replace(
                     RegExp.$1,
-                    RegExp.$1.length === 1 ? `${o[k]}` : (`00${ o[k] }`).substr((o[k].toString()).length)
+                    RegExp.$1.length === 1 ? `${o[k]}` : `00${o[k]}`.substr(o[k].toString().length)
                 );
             }
         }
@@ -185,7 +185,7 @@ export default class Util {
      * 获取没有参数的完整url
      */
     public static getNoParamsUrl(req: Request) {
-        const urlObj = new URL(req.url, `${ req.protocol }://${ req.get('host') }`);
+        const urlObj = new URL(req.url, `${req.protocol}://${req.get('host')}`);
         return urlObj.pathname;
     }
 
@@ -233,17 +233,17 @@ export default class Util {
         switch (fnType) {
             case DescriptorType.DATA:
                 if (typeof descriptor.value !== 'function') {
-                    throw new TypeError(`${ descriptor.value } is not a function`);
+                    throw new TypeError(`${descriptor.value} is not a function`);
                 }
                 type = DescriptorType.DATA;
                 fn = descriptor.value;
                 break;
             case DescriptorType.ACCESSOR:
                 if (typeof descriptor.set !== 'function') {
-                    throw new TypeError(`${ descriptor.set!.name } is not a function`);
+                    throw new TypeError(`${descriptor.set!.name} is not a function`);
                 }
                 if (typeof descriptor.get !== 'function') {
-                    throw new TypeError(`${ descriptor.get!.name } is not a function`);
+                    throw new TypeError(`${descriptor.get!.name} is not a function`);
                 }
                 type = DescriptorType.ACCESSOR;
                 fn = {
@@ -363,6 +363,21 @@ export default class Util {
         return new Error(message);
     }
 
+    // 生成随机中文的字符串
+    public static async randomChinese(len: number) {
+        return new Array(len).fill('').reduce((a) => {
+            // tslint:disable-next-line:no-magic-numbers no-parameter-reassignment
+            a += String.fromCodePoint(Math.round(Math.random() * 20901) + 19968);
+            return a;
+        }, '');
+    }
+
+    // 生成一个随机数字，输入最大数和最小数
+    public static randomNumber(max: number, min: number) {
+        return parseInt((Math.random() * (max - min + 1) + min).toString(), 10);
+    }
+
+    // 根据文件名找文件
     public static async findFilesRecursively(filename: string, root: string): Promise<string> {
         const $findFilesRecursively = async (filename: string, root: string): Promise<string | void> => {
             const fileHash = await fsPromise.readdir(root);

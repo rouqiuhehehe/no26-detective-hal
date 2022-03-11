@@ -31,4 +31,11 @@ export default class Dictionary {
             responseType: 'blob'
         });
     }
+
+    /**
+     * 下载文件接口GET
+     */
+    public static downloadFileWithGet(params: { filename: string }) {
+        return axios.get<any, Blob>('/admin/dictionary/download', { params, responseType: 'blob' });
+    }
 }

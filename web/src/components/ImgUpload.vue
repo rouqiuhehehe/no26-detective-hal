@@ -181,9 +181,12 @@ export default class extends Vue {
         this.dialogVisible = true;
     }
     public async handleDownload(file: ElUploadInternalFileDetail) {
-        const data = await Dictionary.downloadFile({ filename: file.name });
-
-        utils.downloadFile(file.name, data.data);
+        const data = await Dictionary.downloadFileWithGet({ filename: file.name });
+        // const a = document.createElement('a');
+        console.log(data);
+        // a.href = '/admin/dictionary/download?filename=' + file.name;
+        // a.click();
+        utils.downloadFile(file.name, data);
     }
 }
 </script>

@@ -39,7 +39,7 @@ const loadTs = (dirPath: string): Promise<any[]> => {
                 reject(error);
             }
         } catch (error) {
-            reject(`${ dirPath } does not exist`);
+            reject(`${dirPath} does not exist`);
         }
     });
 };
@@ -147,16 +147,12 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                     route[v.method](curPath, ...(v.middleWare ?? []), callback);
                                 });
                             }
-
-                            i++;
-
-                            if (i === moduleArr.length) {
+                            if (i++ === moduleArr.length - 1) {
                                 resolve(true);
                             }
                         });
                     } else {
-                        i++;
-                        if (i === moduleArr.length) {
+                        if (i++ === moduleArr.length - 1) {
                             resolve(true);
                         }
                     }

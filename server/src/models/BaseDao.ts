@@ -1,6 +1,6 @@
-import Db from "@src/bin/db";
-import Util from "@util";
-import { OkPacket } from "mysql";
+import Db from '@src/bin/db';
+import Util from '@util';
+import { OkPacket } from 'mysql';
 
 export interface SortFields {
     order: 'ASC' | 'DESC';
@@ -64,6 +64,8 @@ export default abstract class BaseDao {
     };
 
     protected insertFields: string[] = [];
+
+    protected updateFields: string[] = [];
 
     public get camelizePrimaryKey() {
         return this.camelizeField(this.primaryKey);
@@ -198,28 +200,49 @@ export default abstract class BaseDao {
     }
 
     // 修改方法
-    // public async updateRows(rows: Record<string, any> | Record<string, any>[]) {
-    //     if (!primaryKey) {
-    //         throw new Error('缺少必填参数primaryKey');
-    //     }
-    //
-    //     const [res] = await this.viewsRows(primaryKey);
-    //     if (!res) {
-    //         throw new Error(`不存在此数据，请检查primaryKey: ${primaryKey}`);
-    //     }
-    //
-    //     let sql = `delete from ${this.table} where ${this.primaryKey} = ${primaryKey}`;
-    //
-    //     sql = await this.beforeAction(ActionType.DELETE, primaryKey, sql);
-    //
-    //     return db.beginTransaction(sql);
-    // }
+    public async updateRows(rows: Record<string, any> | Record<string, any>[]) {
+        const primaryKey = rows[this.camelizePrimaryKey];
+        if (!primaryKey) {
+            throw new Error('缺少必传参数primaryKey');
+        }
+
+        const [res] = await this.viewsRows(primaryKey);
+        if (!res) {
+            throw new Error(`不存在此数据，请检查primaryKey: ${primaryKey}`);
+        }
+
+        const columns = Object.keys(rows).reduce((a, v) => {
+            if (v !== this.camelizePrimaryKey) {
+                if (this.updateFields.includes(v)) {
+                    a.push(`${v as string} = ${rows[v]}`);
+                } else {
+                    throw new Error(`存在未知修改字段，请检查${v}: ${rows[v]}`);
+                }
+            }
+
+            return a;
+        }, [] as string[]);
+
+        if (!columns.length) {
+            throw new Error(`不存在修改字段，请检查传入参数rows: ${JSON.stringify(rows)}`);
+        }
+
+        let sql = `update ${this.table} set ${columns.toString()} where ${this.primaryKey} = ${primaryKey}`;
+
+        sql = await this.beforeAction(ActionType.UPDATE, rows, sql);
+
+        return db.beginTransaction<OkPacket>(sql, (res) => {
+            if (res.changedRows !== 1) {
+                throw new Error(`修改数据库数据条数有误，请检查传入参数rows: ${JSON.stringify(rows)}`);
+            }
+        });
+    }
 
     // 批量修改，req.body传数组
     public async bulkUpdateRows(rows: Record<string, any>[]) {
         const primaryKeys = rows.map((v) => v[this.camelizePrimaryKey]);
         if (!primaryKeys.length) {
-            throw new Error('缺少必填参数primaryKey');
+            throw new Error('缺少必传参数primaryKey');
         }
 
         const res = await this.bulkViewsRows(primaryKeys);
@@ -358,8 +381,11 @@ export default abstract class BaseDao {
                     if (!a[item]) {
                         a[item] = [];
                     }
-
-                    a[item].push(`when ${v[this.camelizePrimaryKey]} then '${v[item]}'`);
+                    if (this.updateFields.includes(item)) {
+                        a[item].push(`when ${v[this.camelizePrimaryKey]} then '${v[item]}'`);
+                    } else {
+                        throw new Error(`存在未知修改字段，请检查传入参数${item}: ${v[item]}`);
+                    }
                 }
             });
             return a;

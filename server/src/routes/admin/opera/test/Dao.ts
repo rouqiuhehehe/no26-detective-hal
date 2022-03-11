@@ -25,6 +25,8 @@ export default class extends BaseDao {
 
     protected insertFields = ['name', 'age'];
 
+    protected updateFields = ['name', 'age'];
+
     @Override
     protected async beforeAction(type: ActionType, data: any, sql: string): Promise<string> {
         console.log(type, data, sql);

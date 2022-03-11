@@ -1,9 +1,9 @@
-import {scanController} from '@src/models/routes';
+import { scanController } from '@src/models/routes';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import {Secret} from './config/secret';
+import { Secret } from './config/secret';
 import middleware from './middleware';
 
 const dirname = process.env.NODE_ENV === 'development' ? __dirname : process.cwd();
@@ -53,8 +53,9 @@ export default class App {
     }
 
     private errorMiddleWare() {
-        // middleware.notFound(this.app.use.bind(this.app));
+        middleware.notFound(this.app.use.bind(this.app));
         this.app.use(middleware.errorMiddleware);
+        // this.app.use(middleware.notFound);
     }
 
     private set() {

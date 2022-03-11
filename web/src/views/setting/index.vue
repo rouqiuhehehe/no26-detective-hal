@@ -19,7 +19,7 @@
                         :preview-src-list="[item.value]"
                     >
                     </el-image>
-                    <span v-else class="descriptions-value">
+                    <span v-else v-ellipsis="{ width: '80px', content: item.value }" class="descriptions-value">
                         {{ item.value }}
                     </span>
                 </el-descriptions-item>

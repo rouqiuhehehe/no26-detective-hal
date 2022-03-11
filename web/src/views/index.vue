@@ -21,7 +21,7 @@
             <el-aside style="width: 250px; overflow: hidden">
                 <Menu :menu-tree="asideTree"></Menu>
             </el-aside>
-            <el-main>
+            <el-main v-waterMarter="{ text: userInfo.nickname, textColor: 'rgba(180, 180, 180, 0.4)' }">
                 <router-view />
             </el-main>
         </el-container>
