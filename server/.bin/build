@@ -13,7 +13,7 @@ try {
 } catch (error) {
 } finally {
     console.log('run dist');
-    execSync('babel src --out-dir dist --extensions ".ts,.js""', {
+    execSync('babel src --out-dir dist --extensions ".ts,.js"', {
         cwd: process.cwd()
     });
 

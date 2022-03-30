@@ -9,7 +9,7 @@ import HttpError from '@src/models/httpError';
 import User from '@src/models/user';
 import Util from '@util';
 import axios, { AxiosResponse } from 'axios';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import ManagementSystem from '..';
 
 enum GoogleVerifyServer {

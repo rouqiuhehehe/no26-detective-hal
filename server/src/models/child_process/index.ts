@@ -1,4 +1,4 @@
-import autoBind from '@src/descriptor/autobind';
+import autoBind from '@src/descriptor/Autobind';
 import childProcess from 'child_process';
 import net from 'net';
 import os from 'os';

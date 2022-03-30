@@ -1,4 +1,4 @@
-import autoBind from '@src/descriptor/autobind';
+import autoBind from '@src/descriptor/Autobind';
 import Util from '@util';
 import { Request, Response } from 'express';
 import FileStreamRotator from 'file-stream-rotator';
