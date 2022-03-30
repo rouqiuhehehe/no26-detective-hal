@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 
+const env = process.platform === 'win32' ? 'win' : 'linux';
 const removeOrder = process.platform === 'win32' ? 'rd /s /q' : 'rm -rf'
 try {
     fs.accessSync(path.join(process.cwd(), 'dist'));
@@ -25,7 +26,7 @@ try {
     } catch (error) {
     } finally {
         console.log('run build');
-        const worker = spawnSync(process.platform === 'win32' ? 'pkg.cmd' : 'pkg', ['-t', 'win', 'package.json'], {
+        const worker = spawnSync(process.platform === 'win32' ? 'pkg.cmd' : 'pkg', ['-t', env, 'package.json'], {
             cwd: process.cwd(),
             stdio: 'pipe'
         });
