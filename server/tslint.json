@@ -15,6 +15,7 @@
         "prefer-const": true,
         "no-import-side-effect": false,
         "no-implicit-dependencies": [true, "dev", ["@src", "@util", "domhandler"]],
-        "no-unused-expression": false
+        "no-unused-expression": false,
+        "no-object-literal-type-assertion": false
     }
 }

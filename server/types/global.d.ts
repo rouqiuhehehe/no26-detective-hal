@@ -1,8 +1,7 @@
-import { createClient } from 'redis';
-import HttpError from '@src/models/httpError';
-import { UserInfo } from '@src/types/user';
-import express from 'express';
-import { SinonAssert } from 'sinon';
+import { createClient } from "redis";
+import HttpError from "@src/models/httpError";
+import express from "express";
+import { SinonAssert } from "sinon";
 
 declare global {
     type Consturctor = abstract new (...args: any[]) => any;
@@ -51,6 +50,8 @@ declare global {
     // 取出T,U的差集，再取出T,U的并集，联合成新接口
     type Overwrite<T extends object, U extends object, I = Diff<T, U> & Intersection<U, T>> = Pick<I, keyof I>;
 
+    type ValueOf<T extends {}> = T[keyof T];
+
     namespace Express {
         type Message = (message: string, type?: string) => void;
         interface Response {
@@ -66,8 +67,10 @@ declare global {
         }
 
         interface Request {
-            user: UserInfo;
-            token?: string;
+            user: {
+                uid?: string;
+                token?: string;
+            };
         }
     }
 

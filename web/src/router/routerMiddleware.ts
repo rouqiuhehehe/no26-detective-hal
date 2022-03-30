@@ -1,7 +1,6 @@
 import autoBind from '@/descriptors/Autobind';
 import getRoutes from '@/middleware/getRoutes';
 import getUserInfo from '@/middleware/getUserInfo';
-import ElementUI from 'element-ui';
 import { NavigationGuardNext, Route } from 'vue-router';
 
 @autoBind
@@ -9,16 +8,9 @@ export default class {
     private middleware = [getUserInfo, getRoutes];
 
     public async beforeEach(to: Route, from: Route, next: NavigationGuardNext<Vue>) {
-        if (to.path === '/login') next();
-        else if (sessionStorage.getItem('token')) {
+        if (to.path === '/login' || to.path === '/404') next();
+        else {
             await this.callMiddleware(this.middleware, to, from, next);
-        } else {
-            ElementUI.MessageBox.alert('你还没有登陆，请先登录', {
-                title: '提示',
-                type: 'error'
-            }).then(() => {
-                next('/login');
-            });
         }
     }
 
@@ -33,7 +25,6 @@ export default class {
         next: (...arg: any) => void
     ) {
         const stack = middleware.reverse();
-
         const _next = async (...args: any) => {
             // 有参数说明中间键，未执行完就终止了，或者中间键全部执行完退出
             if (args.length > 0 || stack.length === 0) {

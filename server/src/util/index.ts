@@ -12,6 +12,7 @@ import variableTypes from './variable_type';
 import Joi from 'joi';
 
 export interface JoiErrorMessageOption {
+    base?: string;
     required?: string;
     regx?: string;
     min?: string;
@@ -56,7 +57,9 @@ export default class Util {
             // 如果是子路由，需要当前路由
             // 放入下一次事件循环执行，让父类装饰器先执行
             process.nextTick(() => {
-                const hasRoutes = Reflect.hasMetadata(ControllerMetadata.ROUTES, target);
+                const hasRoutes = Reflect.getOwnMetadata(ControllerMetadata.ISABSTRACTROUTES, target.constructor)
+                    ? Reflect.hasMetadata(ControllerMetadata.ABSTRACTROUTES, target)
+                    : Reflect.hasMetadata(ControllerMetadata.ROUTES, target);
 
                 if (hasRoutes) {
                     fn(DescriptorKey.METHOD);
@@ -339,24 +342,40 @@ export default class Util {
 
     public static joiErrorMessage(err: Joi.ErrorReport[], option: JoiErrorMessageOption) {
         let message;
-        const codeMessage = {};
-        if (option.required) {
-            codeMessage['any.required'] = option.required;
-        }
-        if (option.min) {
-            codeMessage['string.min'] = option.min;
-        }
-        if (option.max) {
-            codeMessage['string.max'] = option.max;
-        }
-        if (option.regx) {
-            codeMessage['string.pattern.base'] = option.regx;
-            codeMessage['string.pattern.invert.base'] = option.regx;
+        let key = '';
+        const codeMessage = {} as Record<string, string>;
+        for (const optionKey in option) {
+            if (Reflect.has(option, optionKey)) {
+                switch (optionKey) {
+                    case 'required':
+                        key = 'required';
+                        break;
+                    case 'min':
+                        key = 'min';
+                        break;
+                    case 'max':
+                        key = 'max';
+                        break;
+                    case 'regx':
+                        key = 'pattern.base';
+                        key = 'pattern.invert.base';
+                        break;
+                    case 'base':
+                        key = 'base';
+                        break;
+                }
+                codeMessage[key] = option[optionKey];
+            }
         }
         err.forEach((v) => {
-            console.log(v.code);
-            if (codeMessage[v.code]) {
-                message = codeMessage[v.code];
+            const type = v.code.match(/^[^\.]*/);
+            if (type) {
+                const errorCode = v.code.replace(`${type[0]}.`, '');
+                if (codeMessage[errorCode]) {
+                    message = codeMessage[errorCode];
+                } else {
+                    message = v.messages[v.code];
+                }
             }
         });
 
@@ -403,5 +422,11 @@ export default class Util {
         } else {
             return filePath;
         }
+    }
+
+    public static removeStartAndEndQuotes(str: string) {
+        const reg = /^["|'](.*)["|']$/g;
+
+        return str.replace(reg, '$1');
     }
 }

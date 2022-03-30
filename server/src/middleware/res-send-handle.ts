@@ -1,7 +1,8 @@
 import { Status } from '@src/config/server_config';
 
 export default function resSendHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-    req.token = req.header('authorization')?.replace('Bearer ', '');
+    req.user = {};
+    req.user.token = req.header('authorization')?.replace('Bearer ', '');
 
     res.error = (err, data?) => {
         res.send(

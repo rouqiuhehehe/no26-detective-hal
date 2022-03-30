@@ -365,7 +365,7 @@ module.exports = {
          * @description 禁止对对象字面量进行类型断言（断言成 any 是允许的）
          * @ts-only 仅支持 ts 文件
          */
-        'no-object-literal-type-assertion': true,
+        'no-object-literal-type-assertion': false,
         /**
          * @category functionality
          * @description 禁止没必要的 return await

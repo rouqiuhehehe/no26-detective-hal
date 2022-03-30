@@ -1,8 +1,8 @@
-import BaseDao, { Pagination } from '@src/models/BaseDao';
-import HttpError from '@src/models/httpError';
-import { Status } from '@src/config/server_config';
-import ProxyTarget from '@src/descriptor/ProxyTarget';
-import Autobind from '@src/descriptor/Autobind';
+import BaseDao, { Pagination } from "@src/models/BaseDao";
+import HttpError from "@src/models/httpError";
+import { Status } from "@src/config/server_config";
+import ProxyTarget from "@src/descriptor/ProxyTarget";
+import Autobind from "@src/descriptor/Autobind";
 
 const sendHttpError = (e: unknown, next: NextFunction) => {
     if (e instanceof Error) {
@@ -24,7 +24,6 @@ const proxy: ProxyHandler<BaseHandler<BaseDao>> = {
         };
     }
 };
-
 @ProxyTarget(proxy)
 @Autobind
 export default abstract class BaseHandler<T extends BaseDao> {
@@ -42,14 +41,14 @@ export default abstract class BaseHandler<T extends BaseDao> {
     }
 
     public async insertAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {
-        await this.dao.insertRows(req.body);
+        await this.dao.insertRows(req.body, req.user?.uid);
 
         res.success();
     }
 
     public async viewsAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {
-        const [result] = await this.dao.viewsRows(req.query[this.dao.camelizePrimaryKey] as string);
-        res.success(result ?? {});
+        const result = await this.dao.viewsRows(req.query[this.dao.camelizePrimaryKey] as string);
+        res.success(result);
     }
 
     public async bulkViewsAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {

@@ -2,10 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 
+const removeOrder = process.platform === 'win32' ? 'rd /s /q' : 'rm -rf'
 try {
     fs.accessSync(path.join(process.cwd(), 'dist'));
 
-    execSync('rd /s /q dist', {
+    execSync(`${removeOrder} dist`, {
         cwd: process.cwd()
     });
 } catch (error) {
@@ -18,7 +19,7 @@ try {
     try {
         fs.accessSync(path.join(process.cwd(), 'build'));
 
-        execSync('rd /s /q build', {
+        execSync(`${removeOrder} build`, {
             cwd: process.cwd()
         });
     } catch (error) {
@@ -41,7 +42,7 @@ try {
         copyEnv();
 
         console.log('delete dist');
-        execSync('rd /s /q dist', {
+        execSync(`${removeOrder} dist`, {
             cwd: process.cwd()
         });
 

@@ -118,7 +118,7 @@ axios.interceptors.request.use(
 
 // 响应拦截
 axios.interceptors.response.use(
-    (response) => {
+    async (response) => {
         loading?.close();
         loading = null;
         if (allExcludes.some((v) => new RegExp('^' + v).test(response.config.url!))) {
@@ -127,13 +127,12 @@ axios.interceptors.response.use(
                     if (response.data.status === 1001) {
                         // token失效
                         sessionStorage.removeItem('token');
-                        ElementUI.MessageBox.alert('登录信息过期，请先登录', {
+                        await ElementUI.MessageBox.alert('登录信息过期，请先登录', {
                             title: '提示',
                             type: 'error'
-                        }).then(() => {
-                            router.push('/login').then(() => void 0);
                         });
-                        return response.data;
+                        router.push('/login').then(() => void 0);
+                        return Promise.reject(new Error(response.data.message));
                     }
                     throw new Error(response.data.message);
                 }
@@ -158,9 +157,10 @@ axios.interceptors.response.use(
                 }
                 return response.data;
             } catch (err: any) {
-                MessageBox.alert(err.message, '错误', {
+                await MessageBox.alert(err.message + '，请重新登录', '错误', {
                     type: 'error'
                 }).then(() => void 0);
+                router.push('/login').then(() => void 0);
                 return Promise.reject(err);
             }
         } else {

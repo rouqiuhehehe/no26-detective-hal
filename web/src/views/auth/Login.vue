@@ -136,7 +136,7 @@ export default class extends Vue {
         password: ''
     };
 
-    private isVerify = false;
+    private isVerify = true;
 
     private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
 

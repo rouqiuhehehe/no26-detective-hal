@@ -1,49 +1,59 @@
-import Admin from '@src/routes/admin';
-import { Controller, Get, Post } from '@src/descriptor/controller';
-import Handler from './Handler';
+import { Get, IsAbstractRoutes, Post } from '@src/descriptor/controller';
+import BaseHandler from '@src/models/BaseHandler';
+import BaseDao from '@src/models/BaseDao';
+import Middleware from '@src/descriptor/middleware';
 
-const handler = new Handler();
-@Controller('/test')
-export default class extends Admin {
+@IsAbstractRoutes
+export default abstract class RootRoute<T extends BaseHandler<BaseDao>> {
+    protected abstract get handler(): T;
+
+    @Middleware()
     @Post('/insert')
     public async insertTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         req.user.uid = 'e66e01a0-aa45-4e38-b654-8c3b3b5e2aa6';
-        await handler.insertAction(req, res, next);
+        await this.handler.insertAction(req, res, next);
     }
 
-    @Get('/views')
+    @Middleware()
+    @Get('/view')
     public async viewsTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.viewsAction(req, res, next);
+        await this.handler.viewsAction(req, res, next);
     }
 
+    @Middleware()
     @Get('/')
     public async listTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.listAction(req, res, next);
+        await this.handler.listAction(req, res, next);
     }
 
+    @Middleware()
     @Post('/delete')
     public async deleteTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.deleteAction(req, res, next);
+        await this.handler.deleteAction(req, res, next);
     }
 
-    @Get('/bulk-views')
+    @Middleware()
+    @Get('/bulk-view')
     public async bulkViewsTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.bulkViewsAction(req, res, next);
+        await this.handler.bulkViewsAction(req, res, next);
     }
 
+    @Middleware()
     @Post('/bulk-delete')
     public async bulkDeleteTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.bulkDeleteAction(req, res, next);
+        await this.handler.bulkDeleteAction(req, res, next);
     }
 
+    @Middleware()
     @Post('/bulk-update')
     public async bulkUpdateTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        await handler.bulkUpdateAction(req, res, next);
+        await this.handler.bulkUpdateAction(req, res, next);
     }
 
+    @Middleware()
     @Post('/update')
     public async updateTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         req.user.uid = 'e66e01a0-aa45-4e38-b654-8c3b3b5e2aa6';
-        await handler.updateAction(req, res, next);
+        await this.handler.updateAction(req, res, next);
     }
 }

@@ -1,16 +1,17 @@
 // noinspection ES6PreferShortImport
 
-import axios from 'axios';
-import chai from 'chai';
-import crypto from 'crypto';
-import fs from 'fs';
-import { describe } from 'mocha';
-import mocksHttp from 'node-mocks-http';
-import path from 'path';
-import sinon, { SinonAssert } from 'sinon';
-import sinonChai from 'sinon-chai';
-import { Secret } from '../../src/config/secret';
-import config from '../config';
+import axios from "axios";
+import chai from "chai";
+import crypto from "crypto";
+import fs from "fs";
+import { describe } from "mocha";
+import mocksHttp from "node-mocks-http";
+import path from "path";
+import sinon, { SinonAssert } from "sinon";
+import sinonChai from "sinon-chai";
+import { Secret } from "../../src/config/secret";
+import config from "../config";
+import Util from "../../src/util";
 
 chai.use(sinonChai); // This is crucial to get Sinon's assertions.
 
@@ -184,8 +185,7 @@ export default class {
         const hash = crypto.createHash('md5');
         hash.update(password);
 
-        const md5Password = hash.digest('hex');
-        return md5Password;
+        return hash.digest('hex');
     }
 
     private ascllSort<T extends Record<string, any>>(obj: T) {
@@ -199,22 +199,17 @@ export default class {
         return newObj;
     }
 
-    private formatParams<T extends Object>(obj: T): T | Record<string, unknown> {
+    private formatParams(obj: Record<string, unknown>): Record<string, unknown> {
         const params = {};
-        function _(objC: T, params: Record<string, unknown>) {
-            const C = <A, U extends keyof A>(o: A, name: U): A[U] => {
-                return o[name];
-            };
+        function _(objC: Record<string, unknown>, params: Record<string, unknown>) {
             for (const i in objC) {
                 if (Reflect.has(objC, i)) {
-                    const item = C(objC, i);
-                    if (typeof item === 'boolean' || typeof item === 'number') {
-                        params[i] = item;
+                    const item = objC[i];
+                    if (!item) {
                         continue;
                     }
-                    if (!item) {
-                        delete params[i];
-                        continue;
+                    if (typeof item !== 'object') {
+                        params[i] = item;
                     } else {
                         if (item instanceof Array) {
                             if (item.length === 0) {
@@ -228,7 +223,7 @@ export default class {
                             params[i] = item;
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             _(item as any, params[i] as Record<string, unknown>);
-                            if (JSON.stringify(params[i]) === '{}') delete params[i];
+                            if (Util.isEmpty(params[i])) delete params[i];
                             continue;
                         }
                         params[i] = item;

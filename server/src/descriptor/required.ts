@@ -25,7 +25,6 @@ export default function Required<isStrict = false>(arr: string[]) {
             }
         }
         return a;
-        // tslint:disable-next-line: no-object-literal-type-assertion
     }, {} as Joi.SchemaMap<any, isStrict>);
 
     return Validate(joiObject);

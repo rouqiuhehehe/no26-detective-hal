@@ -91,7 +91,6 @@ export default class extends Vue {
             this.filesList = [];
             (newV as string[]).forEach((v) => {
                 if (v) {
-                    console.log(v);
                     // eslint-disable-next-line no-useless-escape
                     const filename = v.match(/(?<=(\/|\\))[^(\/|\\)]*$/g);
                     if (filename && filename.length) {
