@@ -1,4 +1,4 @@
-import Db from '@src/bin/db';
+import Db from '@src/bin/Db';
 import Util from '@util';
 import { OkPacket } from 'mysql';
 import { v4 } from 'uuid';

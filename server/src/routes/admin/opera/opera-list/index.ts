@@ -1,6 +1,6 @@
 import admin from '@src/routes/admin';
 import { Controller, Get } from '@src/descriptor/controller';
-import Db from '@src/bin/db';
+import Db from '@src/bin/Db';
 import Middleware from '@src/descriptor/middleware';
 import Required from '@src/descriptor/required';
 import Validate from '@src/descriptor/validate';
