@@ -50,7 +50,7 @@ export default class {
                 },
                 {
                     label: '图片',
-                    dataIndex: 'pic_url',
+                    dataIndex: 'picUrl',
                     component: {
                         component: 'el-image',
                         bind(v: string) {
@@ -87,14 +87,14 @@ export default class {
 
                 {
                     label: '城市限定',
-                    dataIndex: 'is_city_limit',
+                    dataIndex: 'isCityLimit',
                     beforeRender(v: number) {
                         return v === 0 ? Util.colorSpan('#909399', '否') : Util.colorSpan('#409EFF', '是');
                     }
                 },
                 {
                     label: '独家',
-                    dataIndex: 'is_exclusive',
+                    dataIndex: 'isExclusive',
                     beforeRender(v: number) {
                         return v === 0 ? Util.colorSpan('#909399', '否') : Util.colorSpan('#409EFF', '是');
                     }

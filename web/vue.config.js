@@ -6,6 +6,7 @@ module.exports = {
     publicPath: '/',
     outputDir: path.join(__dirname, 'dist'),
     assetsDir: 'assets',
+    sourceMap: false,
     devServer: {
         // outputDir: 'dist',
         host: '127.0.0.1',
