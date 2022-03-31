@@ -37,7 +37,7 @@ export default class Util {
     public static variableTypes = variableTypes;
 
     public static getUrlWithHost(url: string) {
-        return new URL(url, process.env.HTTP_URL_HOST as string).href;
+        return new URL(url.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), process.env.HTTP_URL_HOST as string).href;
     }
 
     public static isAbsoluteURL(url: string) {

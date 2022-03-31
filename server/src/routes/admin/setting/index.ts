@@ -115,7 +115,7 @@ export default class extends admin {
                     }
                 }
                 // @ts-ignore
-                await client.hSet(`user:${ req.token }`, userInfo);
+                await client.hSet(`user:${req.user.token}`, userInfo);
             });
 
             res.success();
