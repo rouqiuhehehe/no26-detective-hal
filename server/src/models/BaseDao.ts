@@ -450,6 +450,9 @@ export default abstract class BaseDao {
      * 会把驼峰式转成下划线式命名
      */
     protected deCamelizeField(str: string) {
+        if (!this.prefixField) {
+            return str;
+        }
         if (new RegExp(`^${this.prefixField}_`).test(str)) {
             return str;
         }

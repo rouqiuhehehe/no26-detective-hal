@@ -157,10 +157,10 @@ axios.interceptors.response.use(
                 }
                 return response.data;
             } catch (err: any) {
-                await MessageBox.alert(err.message + '，请重新登录', '错误', {
+                await MessageBox.alert(err.message, '错误', {
                     type: 'error'
                 }).then(() => void 0);
-                router.push('/login').then(() => void 0);
+                // router.push('/login').then(() => void 0);
                 return Promise.reject(err);
             }
         } else {

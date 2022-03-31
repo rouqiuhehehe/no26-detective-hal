@@ -34,9 +34,7 @@ export default class {
                     v.man = v.person.man;
                     Reflect.deleteProperty(v, 'person');
                 }
-                if (v.is_city_limit && v.is_city_limit.length) {
-                    v.is_city_limit = v.is_city_limit[0];
-                }
+                v.is_city_limit = +v.is_city_limit;
                 return v;
             },
             columns: [
@@ -308,18 +306,8 @@ export default class {
                 {
                     label: '城市限定',
                     dataIndex: 'is_city_limit',
-                    xType: 'checkboxGroup',
-                    max: 1,
-                    store: [
-                        {
-                            key: 0,
-                            value: '否'
-                        },
-                        {
-                            key: 1,
-                            value: '是'
-                        }
-                    ],
+                    xType: 'checkbox',
+                    value: 'false',
                     box: 4
                 }
             ]

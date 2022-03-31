@@ -16,9 +16,16 @@ const proxy: ProxyHandler<BaseHandler<BaseDao>> = {
         const fn = target[key];
 
         return async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+            const { _r, timestamp, sign } = req.query;
+            Reflect.deleteProperty(req.query, '_r');
+            Reflect.deleteProperty(req.query, 'timestamp');
+            Reflect.deleteProperty(req.query, 'sign');
             try {
                 await fn(req, res, next);
             } catch (e) {
+                req.query._r = _r;
+                req.query.timestamp = timestamp;
+                req.query.sign = sign;
                 sendHttpError(e, next);
             }
         };
