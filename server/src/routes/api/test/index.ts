@@ -1,12 +1,12 @@
 import Api from '@src/routes/api';
 import Handler from '@src/routes/api/test/Handler';
-import { Controller, SuperRoutes, SuperRoutesValidator, TurnOffParamsValidate } from '@src/descriptor/controller';
-import validation from '@src/routes/api/test/validation';
+import { Controller, SuperRoutes, SuperRoutesValidator } from '@src/descriptor/controller';
+import validation from './validation';
 
 const handler = new Handler();
 @SuperRoutesValidator(validation)
-@TurnOffParamsValidate
 @SuperRoutes
+// @TurnOffParamsValidate
 @Controller('/test')
 export default class Test extends Api<Handler> {
     protected get handler() {

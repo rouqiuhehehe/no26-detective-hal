@@ -242,12 +242,12 @@ export default class Util {
                 fn = descriptor.value;
                 break;
             case DescriptorType.ACCESSOR:
-                if (typeof descriptor.set !== 'function') {
-                    throw new TypeError(`${descriptor.set!.name} is not a function`);
-                }
-                if (typeof descriptor.get !== 'function') {
-                    throw new TypeError(`${descriptor.get!.name} is not a function`);
-                }
+                // if (typeof descriptor.set !== 'function') {
+                //     throw new TypeError(`${descriptor.set!.name} is not a function`);
+                // }
+                // if (typeof descriptor.get !== 'function') {
+                //     throw new TypeError(`${descriptor.get!.name} is not a function`);
+                // }
                 type = DescriptorType.ACCESSOR;
                 fn = {
                     get: descriptor.get,
@@ -428,5 +428,39 @@ export default class Util {
         const reg = /^["|'](.*)["|']$/g;
 
         return str.replace(reg, '$1');
+    }
+
+    /**
+     * 对象中数组转成字符串
+     */
+    public static arrayInObjectToString(obj: Record<string, any>) {
+        const newObj = Util.deepClone(obj);
+        Object.keys(newObj).forEach((v) => {
+            if (Array.isArray(newObj[v])) {
+                newObj[v] = newObj[v].toString();
+            }
+        });
+        return newObj;
+    }
+
+    /**
+     * 数组或对象中把需要转换key的value转换成数组
+     * @param obj 对象数组或对象
+     * @param keys 需要转换的key，如果不传默认全部转换
+     */
+    public static arrayOrObjectKeyToArray<T>(obj: T, keys?: string[]): T {
+        const isArray = Array.isArray(obj);
+        const newObj = isArray ? obj : [obj];
+        const returnObj = newObj.map((v) => {
+            Object.keys(v).forEach((key) => {
+                if (keys && keys.length) {
+                    if (keys.includes(key) && v[key]) {
+                        v[key] = v[key].split(',');
+                    }
+                }
+            });
+            return v;
+        });
+        return isArray ? returnObj : returnObj[0];
     }
 }

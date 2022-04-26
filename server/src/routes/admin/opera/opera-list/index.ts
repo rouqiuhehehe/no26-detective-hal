@@ -38,7 +38,7 @@ export default class extends admin {
             name: Joi.string(),
             man: Joi.number(),
             woman: Joi.number(),
-            types: Joi.array().items(Joi.number()),
+            types: Joi.array().items(Joi.string()),
             is_city_limit: Joi.number()
         },
         true

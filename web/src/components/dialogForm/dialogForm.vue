@@ -75,10 +75,20 @@ export default class extends Vue {
         this.thisArg = this.controller ?? this;
         if (this.isDelForm(form)) {
             this.show = async () => {
+                let message = '';
+                if (form.message) {
+                    if (typeof form.message === 'string') {
+                        message = form.message;
+                    } else if (typeof form.message === 'function') {
+                        message = form.message.call(this.thisArg, this.tableColumnData, form, this.myTable);
+                    }
+                } else {
+                    message = '确定要删除此项吗？';
+                }
                 try {
                     await this.$msgbox({
                         type: 'warning',
-                        message: '确定要删除此项吗',
+                        message,
                         title: '提示',
                         confirmButtonText: '确定',
                         cancelButtonText: '取消',
@@ -98,19 +108,21 @@ export default class extends Vue {
                     });
                     const { store, beforeCommit, afterCommit } = form;
 
-                    const params =
-                        (beforeCommit &&
-                            beforeCommit.call(
-                                this.thisArg,
-                                this.tableColumnData,
-                                this.options as DelForm,
-                                this.myTable
-                            )) ||
-                        null;
+                    const params = (beforeCommit &&
+                        beforeCommit.call(this.thisArg, this.tableColumnData, form, this.myTable)) || {
+                        id: this.tableColumnData?.id
+                    };
 
                     const res = await store(params);
 
-                    afterCommit && afterCommit.call(this.thisArg, res, this.options as DelForm, this.myTable);
+                    afterCommit &&
+                        typeof afterCommit === 'function' &&
+                        afterCommit.call(this.thisArg, res, form, this.myTable);
+                    !form?.hideSuccessTips &&
+                        (await this.$alert('提交成功', '提示', {
+                            type: 'success'
+                        }));
+                    this.$emit('refresh');
                 } catch (e) {
                     //
                 }
@@ -164,8 +176,11 @@ export default class extends Vue {
 
     public async commitForm() {
         try {
-            await (this.$refs['myForm'] as any).commit();
+            const res = await (this.$refs['myForm'] as any).commit();
             this.visible = false;
+            if (res !== 'no-refresh') {
+                this.$emit('refresh');
+            }
         } catch (e) {
             //
         }

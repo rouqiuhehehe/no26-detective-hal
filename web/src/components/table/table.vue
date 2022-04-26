@@ -1,9 +1,9 @@
 <template>
     <el-container>
-        <el-header v-if="!isEmptyObject(option.header)" height="30px">
+        <el-header v-if="!isEmptyObject(options.header)" height="30px">
             <el-breadcrumb class="my-breadcrumb" separator-class="el-icon-arrow-right">
                 <el-breadcrumb-item
-                    v-for="item in option.header"
+                    v-for="item in options.header"
                     :key="item.label"
                     :to="item.path ? { path: item.path } : false"
                     >{{ item.label }}</el-breadcrumb-item
@@ -12,95 +12,104 @@
         </el-header>
         <el-main
             :class="{
-                'has-pagination-main': !isEmptyObject(this.option.page)
+                'has-pagination-main': !isEmptyObject(this.options.page)
             }"
         >
-            <el-descriptions :title="option.title" :column="1"></el-descriptions>
+            <el-descriptions :title="options.title" :column="1"></el-descriptions>
             <div class="my-table">
                 <div class="search-form">
-                    <MyForm ref="searchForm" v-if="!isEmptyObject(option.search)" :option="option.search"></MyForm>
+                    <MyForm ref="searchForm" v-if="!isEmptyObject(options.search)" :option="options.search"></MyForm>
                     <div style="text-align: right">
-                        <template v-if="!isEmptyObject(option.buttons)">
-                            <template v-for="item in option.buttons">
+                        <template v-if="!isEmptyObject(options.buttons)">
+                            <template v-for="item in options.buttons">
                                 <template v-if="runFnComponent(item.show) !== false">
-                                    <component
-                                        v-if="item.component"
-                                        :key="item.dataIndex"
-                                        :is="runFnComponent(item.component.component, null, {}, item, option)"
-                                        v-bind="runFnComponent(item.component.bind, null, {}, item, option)"
-                                        v-on="runFnComponent(item.component.events, null, {}, item, option)"
-                                    >
-                                    </component>
                                     <el-button
                                         :key="item.dataIndex"
-                                        v-else
-                                        :type="item.type || 'primary'"
                                         :icon="item.icon || ''"
                                         @click="dialogFormClick(item.click, item, options)"
-                                        v-html="runFnComponent(item.label, item, option)"
+                                        v-html="runFnComponent(item.label, item, options)"
+                                        v-bind="{
+                                            type: item.type,
+                                            disabled: runFnComponent(item.disabled, item, options) || false
+                                        }"
                                     ></el-button>
                                 </template>
                             </template>
                         </template>
-                        <el-button v-if="!isEmptyObject(option.search)" type="primary" @click="search">查询</el-button>
+                        <el-button v-if="!isEmptyObject(options.search)" type="primary" @click="search">查询</el-button>
                     </div>
                 </div>
-                <el-table :data="tableData" v-bind="getTableBind">
-                    <el-table-column
-                        v-for="item in options.columns"
-                        v-bind="getTableItemBind(item)"
-                        :key="item.dataIndex"
-                    >
-                        <template slot-scope="scope">
-                            <component
-                                v-if="!isEmptyObject(item.component)"
-                                :is="
-                                    runFnComponent(
-                                        item.component.component,
-                                        scope.row[item.dataIndex],
-                                        scope.row,
-                                        item,
-                                        options
-                                    )
-                                "
-                                v-bind="
-                                    runFnComponent(
-                                        item.component.bind,
-                                        scope.row[item.dataIndex],
-                                        scope.row,
-                                        item,
-                                        options
-                                    )
-                                "
-                                v-on="
-                                    runFnComponent(
-                                        item.component.events,
-                                        scope.row[item.dataIndex],
-                                        scope.row,
-                                        item,
-                                        options
-                                    )
-                                "
-                            >
-                                {{
-                                    runFnComponent(
-                                        item.component.label,
-                                        scope.row[item.dataIndex],
-                                        scope.row,
-                                        item,
-                                        options
-                                    )
-                                }}
-                            </component>
-                            <div
-                                v-else-if="typeof item.beforeRender === 'function'"
-                                v-html="
-                                    item.beforeRender.call(thisArg, scope.row[item.dataIndex], scope.row, item, options)
-                                "
-                            ></div>
-                            <div v-else>{{ scope.row[item.dataIndex] }}</div>
-                        </template>
-                    </el-table-column>
+                <el-table :data="tableData" @sort-change="sortChange" v-bind="getTableBind" v-on="options.events">
+                    <template v-for="item in options.columns">
+                        <el-table-column
+                            :prop="item.dataIndex"
+                            v-if="item.type === 'selection'"
+                            v-bind="getTableItemBind(item)"
+                            :key="item.dataIndex"
+                        ></el-table-column>
+                        <el-table-column
+                            :prop="item.dataIndex"
+                            v-else
+                            v-bind="getTableItemBind(item)"
+                            :key="item.dataIndex"
+                        >
+                            <template slot-scope="scope">
+                                <component
+                                    v-if="!isEmptyObject(item.component)"
+                                    :is="
+                                        runFnComponent(
+                                            item.component.component,
+                                            scope.row[item.dataIndex],
+                                            scope.row,
+                                            item,
+                                            options
+                                        )
+                                    "
+                                    v-bind="
+                                        runFnComponent(
+                                            item.component.bind,
+                                            scope.row[item.dataIndex],
+                                            scope.row,
+                                            item,
+                                            options
+                                        )
+                                    "
+                                    v-on="
+                                        runFnComponent(
+                                            item.component.events,
+                                            scope.row[item.dataIndex],
+                                            scope.row,
+                                            item,
+                                            options
+                                        )
+                                    "
+                                >
+                                    {{
+                                        runFnComponent(
+                                            item.component.label,
+                                            scope.row[item.dataIndex],
+                                            scope.row,
+                                            item,
+                                            options
+                                        )
+                                    }}
+                                </component>
+                                <div
+                                    v-else-if="typeof item.beforeRender === 'function'"
+                                    v-html="
+                                        item.beforeRender.call(
+                                            thisArg,
+                                            scope.row[item.dataIndex],
+                                            scope.row,
+                                            item,
+                                            options
+                                        )
+                                    "
+                                ></div>
+                                <div v-else>{{ scope.row[item.dataIndex] }}</div>
+                            </template>
+                        </el-table-column>
+                    </template>
                     <el-table-column
                         v-if="!isEmptyObject(options.operation)"
                         v-bind="getTableItemBind(options.operation)"
@@ -149,23 +158,41 @@
                 :total="total"
             >
             </el-pagination>
-            <template v-for="item in options.buttons">
-                <MyDialogForm
-                    v-if="!isEmptyObject(item.dialog) && runFnComponent(item.show) !== false"
-                    :key="item.dataIndex"
-                    :ref="item.dataIndex + 'Form'"
-                    :option="item.dialog"
-                ></MyDialogForm>
+            <template v-if="!isEmptyObject(options.buttons)">
+                <template v-for="item in options.buttons">
+                    <MyDialogForm
+                        v-if="!isEmptyObject(item.dialog) && runFnComponent(item.show) !== false"
+                        :key="item.dataIndex"
+                        :ref="item.dataIndex + 'Form'"
+                        :option="item.dialog"
+                        @refresh="search"
+                    ></MyDialogForm>
+                </template>
             </template>
-            <template v-for="item in options.operation.button">
-                <MyDialogForm
-                    v-if="!isEmptyObject(item.form) && runFnComponent(item.show) !== false"
-                    :key="item.dataIndex"
-                    :ref="item.dataIndex + 'Form'"
-                    :option="item"
-                ></MyDialogForm>
+            <template v-if="!isEmptyObject(options.operation)">
+                <template v-for="item in options.operation.button">
+                    <MyDialogForm
+                        v-if="!isEmptyObject(item.form) && runFnComponent(item.show) !== false"
+                        :key="item.dataIndex"
+                        :ref="item.dataIndex + 'Form'"
+                        :option="item"
+                        @refresh="search"
+                    ></MyDialogForm>
+                </template>
             </template>
         </el-main>
+        <template v-if="!isEmptyObject(options.buttons)">
+            <template v-for="item in options.buttons">
+                <component
+                    v-if="item.component"
+                    :key="item.dataIndex + '_component'"
+                    :is="runFnComponent(item.component.component, null, {}, item, options)"
+                    v-bind="runFnComponent(item.component.bind, null, {}, item, options)"
+                    v-on="runFnComponent(item.component.events, null, {}, item, options)"
+                >
+                </component>
+            </template>
+        </template>
     </el-container>
 </template>
 
@@ -174,9 +201,11 @@ import { Component, Inject, Prop, ProvideReactive, Vue, Watch } from 'vue-proper
 import { FormType, MyTable, MyTableColumns } from '@/types/components';
 import form from '@/components/form/form.vue';
 import utils from '@/utils';
+import Util from '@/utils';
 import Config from './config';
 import dialogForm from '@/components/dialogForm/dialogForm.vue';
 import { AxiosResponse } from 'axios';
+import { DefaultSortOptions } from 'element-ui/types/table';
 
 @Component({
     name: 'MyTable',
@@ -220,6 +249,8 @@ export default class extends Vue {
 
     private limit = 10;
 
+    private sortFields = {};
+
     @Watch('option', { immediate: true, deep: true })
     public async onOptionChange() {
         this.thisArg = this.controller ?? this;
@@ -227,7 +258,6 @@ export default class extends Vue {
 
         if (!this.init) {
             this.init = true;
-
             if (!this.options.store) {
                 throw new Error('this options must has a store');
             } else {
@@ -274,6 +304,37 @@ export default class extends Vue {
         return obj;
     }
 
+    public updateOptions(params: Record<string, any>) {
+        Object.keys(params).forEach((key) => {
+            const path = key.split('.');
+
+            path.reduce((a, v, i) => {
+                // 兼容数组写法
+                let index = null;
+                const matched = v.match(/^(.*)\[(.*)]$/);
+                if (matched?.length) {
+                    index = matched[2];
+                    v = matched[1];
+                }
+                if (!Reflect.has(a, v)) {
+                    throw new SyntaxError(`未找到当前key，请检查${a[v]} in ${key}`);
+                }
+                if (!a[v]) {
+                    a[v] = {};
+                }
+                if (i === path.length - 1) {
+                    if (typeof params[key] === 'function') {
+                        a[v] = params[key].call(null, a[v]);
+                    } else {
+                        a[v] = params[key];
+                    }
+                }
+                return index === null ? a[v] : a[v][+index];
+            }, this.options);
+        });
+        this.$forceUpdate();
+    }
+
     public getTableItemBind(item: MyTableColumns) {
         const obj = utils.deepClone(this.config.defaultTableItemBind);
         for (const i in item) {
@@ -285,7 +346,14 @@ export default class extends Vue {
     }
 
     public runFnComponent(fn: any, ...arg: any[]) {
-        return utils.runFnComponent(this.thisArg)(fn, ...arg);
+        if (fn) {
+            return utils.runFnComponent(
+                this.thisArg,
+                typeof fn === 'function' ? fn.toString() : JSON.stringify(fn) + arg[0]
+            )(fn, ...arg);
+        } else {
+            return fn;
+        }
     }
 
     public getEditLabel(formType: FormType) {
@@ -345,29 +413,52 @@ export default class extends Vue {
         return utils.isEmpty(obj);
     }
 
-    private async searchHandle(data: Record<string, any>) {
-        let params: boolean | Record<string, any> = {
-            ...utils.deepClone(data),
-            limit: this.limit,
-            page: this.currentPage
-        };
+    private sortChange(column: DefaultSortOptions) {
+        const { prop, order } = column;
+        let prefix = '';
+        if (order === 'descending') {
+            prefix = '-';
+        }
+        this.sortFields[prop] = prefix;
+        this.search();
+    }
 
+    private async searchHandle(param: Record<string, any>) {
+        let params: boolean | Record<string, any> = {
+            ...utils.deepClone(param)
+        };
+        if (!Util.isEmpty(this.sortFields)) {
+            (params as Record<string, any>).sort = Object.keys(this.sortFields).map((v) => this.sortFields[v] + v);
+        }
         if (typeof this.options.beforeSearch === 'function') {
-            params = this.options.beforeSearch!.call(this.thisArg, params as Record<string, any>, this.options, this);
+            const res = this.options.beforeSearch!.call(
+                this.thisArg,
+                utils.deepClone(params as Record<string, any>),
+                this.options,
+                this
+            );
+            if (res !== false) {
+                if (res !== true) {
+                    params = res;
+                }
+            } else {
+                return;
+            }
+        }
+        if (typeof params === 'object') {
+            params.limit = this.limit;
+            params.page = this.currentPage;
+        }
+        let res = await (this.options.store as (params: any) => Promise<AxiosResponse<any, any>>)(params);
+        let data = res.data;
+
+        if (typeof this.options.afterSearch === 'function') {
+            data = this.options.afterSearch.call(this.thisArg, data, this.options, this);
         }
 
-        if (params !== false) {
-            let res = await (this.options.store as (params: any) => Promise<AxiosResponse<any, any>>)(params);
-            let data = res.data;
-
-            if (typeof this.options.afterSearch === 'function') {
-                data = this.options.afterSearch.call(this.thisArg, data, this.options, this);
-            }
-
-            this.tableData = data;
-            if (res.pagination) {
-                this.total = res.pagination.total;
-            }
+        this.tableData = data;
+        if (res.pagination) {
+            this.total = res.pagination.total;
         }
     }
 }

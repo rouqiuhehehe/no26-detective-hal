@@ -2,7 +2,7 @@ import cfg from '@/config';
 import router from '@/router';
 import utils from '@/utils';
 import formatParams from '@/utils/formatParams';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 import ElementUI, { Loading, MessageBox } from 'element-ui';
 import jsencrypt from 'jsencrypt';
@@ -15,17 +15,22 @@ function hashSHA256(params: Record<string, any>) {
     // 通过 hmacsha256 生成散列字符串
     return HmacSHA256(qs.stringify(params), HMACSHA256KEY).toString();
 }
+
 const excludes = ['/auth/management-system/get-public-key'];
 const tokenExcludes = ['/auth/management-system'];
-const allExcludes = ['/auth', '/admin'];
+const allExcludes = ['/auth', '/admin', '/api'];
 
 const isTokenExcludes = (url: string) => tokenExcludes.some((v) => new RegExp('^' + v).test(url));
 let loading: ElLoadingComponent | null;
 const defaultTimeout = 30000;
-if (process.env.NODE_ENV !== 'development') {
-    axios.defaults.baseURL = process.env.VUE_APP_API_URL;
-}
+// if (process.env.NODE_ENV !== 'development') {
+//     axios.defaults.baseURL = process.env.VUE_APP_API_URL;
+// }
 axios.defaults.timeout = defaultTimeout;
+
+function returnData(response: AxiosResponse) {
+    return response.request.responseType === 'blob' ? response : response.data;
+}
 
 axios.interceptors.request.use(
     async (config) => {
@@ -48,7 +53,11 @@ axios.interceptors.request.use(
                 params = formatParams(params);
 
                 if (config.headers && config.headers['Content-Type'] !== 'multipart/form-data') {
-                    data = formatParams(data);
+                    if (Array.isArray(data)) {
+                        data = data.map((v) => formatParams(v));
+                    } else {
+                        data = formatParams(data);
+                    }
                 }
 
                 config.params = params;
@@ -59,7 +68,6 @@ axios.interceptors.request.use(
                         ...params,
                         ...data
                     };
-
                     if (!isTokenExcludes(url)) {
                         Authorization.authorization = token;
                         (config.headers ?? (config.headers = {}))['Authorization'] = token;
@@ -146,7 +154,7 @@ axios.interceptors.response.use(
                                 HMACSHA256KEY
                             ).toString();
                             if (decrypt === authorization) {
-                                return response.data;
+                                return returnData(response);
                             } else {
                                 throw new Error('数据被篡改了');
                             }
@@ -155,7 +163,7 @@ axios.interceptors.response.use(
                         }
                     }
                 }
-                return response.data;
+                return returnData(response);
             } catch (err: any) {
                 await MessageBox.alert(err.message, '错误', {
                     type: 'error'
@@ -164,7 +172,7 @@ axios.interceptors.response.use(
                 return Promise.reject(err);
             }
         } else {
-            return response.data;
+            return returnData(response);
         }
     },
     (err) => {

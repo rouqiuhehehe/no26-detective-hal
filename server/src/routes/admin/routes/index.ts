@@ -44,6 +44,8 @@ export default class extends admin {
 
     private excludesAsidesMap = new Map();
 
+    private routeMap = new Set();
+
     @Middleware(['default'])
     @Get('/get-web-routes')
     public async getWebRoutes(req: Request, res: Response) {
@@ -58,12 +60,13 @@ export default class extends admin {
         const token = req.header('authorization')?.replace('Bearer ', '');
 
         await redis(async (client) => {
-            const { permission } = await client.hGetAll(`user:${ token }`);
+            const { permission } = await client.hGetAll(`user:${token}`);
 
             const webRoutes = await this.getDatabaseWebRoutes(req);
 
             const permissionHandleRoutes = this.permissionHandle(webRoutes, +permission as Permission);
-
+            this.excludesAsidesMap.clear();
+            this.routeMap.clear();
             const routesTree = this.formatRoutes(Util.deepClone(permissionHandleRoutes), null);
             const asideTree = this.formatAside(Util.deepClone(permissionHandleRoutes), null);
 
@@ -141,8 +144,8 @@ export default class extends admin {
     private formatAside(routes: WebRoutesTree[], pid: string | null) {
         const asideTree: AsideTree[] = [];
 
-        routes.reduce((a, v, i) => {
-            if (!v.meta.hidden) {
+        routes.reduce((a, v) => {
+            if (!v.meta.hidden && !this.routeMap.has(v.uid)) {
                 if (this.excludesAsides.includes(v.name)) {
                     this.excludesAsidesMap.set(v.uid, v);
                 } else {
@@ -153,7 +156,7 @@ export default class extends admin {
                         }
                     }
                     if (v.pid === pid) {
-                        routes.splice(i, 1);
+                        this.routeMap.add(v.uid);
                         const children = this.formatAside(routes, v.uid);
 
                         const obj: AsideTree = {

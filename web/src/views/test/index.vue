@@ -1,6 +1,6 @@
 <template>
     <div>
-        <my-table :option="config.tableOptions"></my-table>
+        <my-table :option="config.tableOptions" ref="myTable"></my-table>
     </div>
 </template>
 
@@ -9,17 +9,23 @@ import { Component, Vue } from 'vue-property-decorator';
 import MyTable from '@/components/table/table.vue';
 import Config from './config';
 
-const config = new Config();
 @Component({
-    name: 'operaList',
+    name: 'test',
     components: {
         'my-table': MyTable
     }
 })
 export default class extends Vue {
-    public config = config;
-    // @Provide('thisArg')
-    // public readonly thisArg = this;
+    public constructor() {
+        super();
+    }
+
+    public created() {
+        this.config = new Config(this);
+    }
+    public config!: Config;
+
+    public show = false;
 }
 </script>
 

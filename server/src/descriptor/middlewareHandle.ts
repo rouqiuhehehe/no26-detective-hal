@@ -7,13 +7,15 @@ import { NextFunction, Request, Response } from 'express';
 import { ControllerMetadata, RouteMethod } from './controller';
 
 const repeatDefineError = new HttpError(Status.SERVER_ERROR, '父路由定义过的中间件不允许在子路由重复定义');
+
 export enum DefaultMiddleWareType {
     LOG = 'log',
     AUTH = 'auth',
     AUTHORIZATION = 'authorization',
     ANTI_REPLAY = 'antiReplay',
     TIMESTAMP = 'timestamp',
-    CUSTOM = 'custom'
+    CUSTOM = 'custom',
+    VALIDATOR = 'validator'
 }
 
 export interface MiddleWareArray {
@@ -142,7 +144,7 @@ export const methodMiddleware = (
             const route = routes.find((v) => v.propertyKey === propertyKey);
             if (route) {
                 (route.middleWare ?? (route.middleWare = [])).push({
-                    type: DefaultMiddleWareType.CUSTOM,
+                    type: DefaultMiddleWareType.VALIDATOR,
                     fn: middleware(route.method),
                     target
                 });

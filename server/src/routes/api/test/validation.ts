@@ -3,10 +3,10 @@ import Joi from 'joi';
 import Util from '@util';
 
 export default {
-    [RoutesType.LIST]: [
+    [RoutesType.INSERT]: [
         {
             name: Joi.string()
-                .min(4)
+                .min(2)
                 .max(8)
                 .regex(Util.specialSymbolsRegExp(), {
                     invert: true
@@ -14,10 +14,36 @@ export default {
                 .required()
                 .error((err) =>
                     Util.joiErrorMessage(err, {
-                        min: '昵称不能少于4个字符',
-                        max: '昵称不能大于8个字符',
-                        required: '请输入昵称',
-                        regx: '昵称不能带有特殊符号'
+                        base: '姓名必须是字符串',
+                        min: '姓名不能少于2个字符',
+                        max: '姓名不能大于8个字符',
+                        required: '请输入姓名',
+                        regx: '姓名不能带有特殊符号'
+                    })
+                ),
+            age: Joi.number()
+                .min(0)
+                // tslint:disable-next-line:no-magic-numbers
+                .max(200)
+                .required()
+                .error((err) =>
+                    Util.joiErrorMessage(err, {
+                        base: '年龄必须是数字',
+                        min: '年龄不能小于0',
+                        max: '年龄不能大于200',
+                        required: '请输入年龄'
+                    })
+                )
+        }
+    ],
+    [RoutesType.DELETE]: [
+        {
+            id: Joi.string()
+                .required()
+                .error((err) =>
+                    Util.joiErrorMessage(err, {
+                        required: '缺少参数：id',
+                        base: 'id必须是字符串'
                     })
                 )
         }

@@ -30,8 +30,12 @@ export enum RoutesType {
     VIEW = '/view',
     BULKVIEW = '/bulk-view',
     BULKDELETE = '/bulk-delete',
-    BULKUPDATE = '/bulk-update'
+    BULKUPDATE = '/bulk-update',
+    IMPORTTEMPLATEDOWNLOAD = '/import-template-download',
+    IMPORT = '/import',
+    EXPORT = '/export'
 }
+
 const routesMap = [
     {
         path: RoutesType.INSERT,
@@ -64,6 +68,18 @@ const routesMap = [
     {
         path: RoutesType.BULKUPDATE,
         method: RouteMethod.POST
+    },
+    {
+        path: RoutesType.IMPORTTEMPLATEDOWNLOAD,
+        method: RouteMethod.POST
+    },
+    {
+        path: RoutesType.IMPORT,
+        method: RouteMethod.POST
+    },
+    {
+        path: RoutesType.EXPORT,
+        method: RouteMethod.POST
     }
 ];
 
@@ -75,7 +91,7 @@ export interface Route {
 }
 
 export interface RouteMiddleWare {
-    fn: (req: Request, res: Response, next: NextFunction) => void;
+    fn: (req: Request | Record<string, any>, res?: Response, next?: NextFunction) => void;
     type: DefaultMiddleWareType;
     target: Object;
 }
@@ -165,6 +181,7 @@ export function SuperRoutes(arg: RoutesType[] | 'single' | Function) {
         };
     }
 }
+
 function defineMetaDataSuperRoutes(target: Function, metaData: RoutesType[]) {
     if (Reflect.hasOwnMetadata(ControllerMetadata.SUPERROUTES, target)) {
         throw new RangeError('请不要重复定义superRoutes');
@@ -194,7 +211,7 @@ export function SuperRoutesValidator(validation: Validation) {
                     const { method } = map;
                     const params = validation[validationKey] as Parameters<typeof joiValidationCallback>;
                     validator[validationKey] = {
-                        type: DefaultMiddleWareType.CUSTOM,
+                        type: DefaultMiddleWareType.VALIDATOR,
                         target,
                         fn: joiValidationCallback(...params)(method)
                     };
@@ -202,7 +219,7 @@ export function SuperRoutesValidator(validation: Validation) {
             }
         }
         if (Reflect.hasOwnMetadata(ControllerMetadata.SUPERROUTESVALIDATOR, target)) {
-            throw new Error('super路由验证器允许重复');
+            throw new Error('super路由验证器重复');
         }
 
         Reflect.defineMetadata(ControllerMetadata.SUPERROUTESVALIDATOR, validator, target);

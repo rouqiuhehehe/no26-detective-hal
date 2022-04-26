@@ -6,7 +6,9 @@ import net from 'net';
 const app = new App();
 
 app.initRoute().then(() => {
-    const server = http.createServer(app.app);
+    const server = http.createServer((...arg) => {
+        app.app(...arg);
+    });
     let worker: net.Server;
     const timeoutTime = 5000;
 

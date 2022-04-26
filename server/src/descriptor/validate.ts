@@ -1,28 +1,36 @@
 import Joi from 'joi';
-import { RouteMethod } from './controller';
 import { methodMiddleware } from './middlewareHandle';
+import { RouteMethod } from '@src/descriptor/controller';
 
 /**
  * @param params joi对象
  * @param isLimitPage 是否为分页接口
  * @param acceptUnknownParameters 是否接收未知参数
- * @param validateCb 后置特殊校验，joi校验成功后触发
  */
 export const joiValidationCallback =
     <T = any, isStrict = false>(
         params: Joi.SchemaMap<T, isStrict>,
         isLimitPage = false,
-        acceptUnknownParameters = true,
-        validateCb?: (
-            error: null | Joi.ValidationError,
-            req: ExpressRequest,
-            res: ExpressResponse,
-            next: NextFunction
-        ) => void
+        acceptUnknownParameters = true
     ) =>
     (method: RouteMethod) =>
-    async (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
+    async (
+        req: ExpressRequest | Record<string, any>,
+        res?: ExpressResponse,
+        next?: NextFunction,
+        // 验证后置校验，用于支持函数中手动触发校验器
+        // = undefined用于兼容express的路由判断
+        validateCb:
+            | ((
+                  error: null | Joi.ValidationError,
+                  req: ExpressRequest | Record<string, any>,
+                  res?: ExpressResponse,
+                  next?: NextFunction
+              ) => void)
+            | undefined = undefined
+    ) => {
         let joiObj = params;
+        let validation;
         if (isLimitPage) {
             joiObj = {
                 ...joiObj,
@@ -36,12 +44,17 @@ export const joiValidationCallback =
             schema = schema.unknown();
         }
 
-        const { error } = schema.validate(method === 'get' ? req.query : req.body);
+        if (!req.query && !req.body) {
+            validation = req;
+        } else {
+            validation = method === 'get' ? req.query : req.body;
+        }
+        const { error } = schema.validate(validation);
 
         if (validateCb && typeof validateCb === 'function') {
             await validateCb(error ?? null, req, res, next);
         } else {
-            next(error);
+            next && next(error);
         }
     };
 

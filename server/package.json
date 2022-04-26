@@ -5,7 +5,7 @@
     "main": "app.js",
     "typings": "./types/*.d.ts",
     "scripts": {
-        "tsc": "tsc",
+        "tsc": "babel src --out-dir dist --extensions \".ts,.js\"",
         "serve": "cross-env NODE_ENV=development NODE_RUN=dev nodemon -e ts,tsx --exec node --trace-warnings -r ./bin.js src/app.ts",
         "build": "node .bin/build",
         "debugger": "cross-env NODE_ENV=development NODE_RUN=debugger nodemon -e ts,tsx --exec node --inspect --expose-gc --trace-warnings -r ./bin.js src/app.ts",
@@ -77,6 +77,7 @@
         "multer": "^1.4.4",
         "mysql": "^2.18.1",
         "mysqldump": "^3.2.0",
+        "node-xlsx": "^0.21.0",
         "path-browserify": "^1.0.1",
         "redis": "^4.0.4",
         "reflect-metadata": "^0.1.13",

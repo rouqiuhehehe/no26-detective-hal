@@ -1,6 +1,9 @@
 import Date from '@/utils/dateFormat';
 import loadScript from './loadScript';
 import _r from './_r';
+import { Message } from 'element-ui';
+import Axios from 'axios';
+import Vue from 'vue';
 
 export enum DescriptorType {
     DATA = 'data',
@@ -8,8 +11,35 @@ export enum DescriptorType {
     UNDEFINED = 'undefined'
 }
 
+const componentMap = new Map();
 export default class Util {
     public static date = Date;
+
+    public static async export(url: string, data?: Record<string, any>) {
+        const res = await Axios.post(url, data, {
+            responseType: 'blob'
+        });
+        Util.exportDownload(res.data, res.headers);
+    }
+
+    public static exportDownload(data: string, headers: Record<string, any>) {
+        const head = headers['content-disposition'] || '';
+        if (!head) {
+            Message.error('无导出文件，请检查选择的是否正确');
+            return;
+        }
+        let fileName = '';
+        try {
+            fileName = decodeURIComponent(head.split(';')[1].split('=')[1]);
+        } catch (err) {
+            fileName = '统计分析导出.xlsx';
+        }
+        const type = headers['content-type'];
+        const blob = new Blob([data], { type });
+
+        Util.downloadFile(fileName, blob);
+    }
+
     public static ascllSort<T extends Record<string, any>>(obj: T) {
         const sortkeys = Object.keys(obj).sort();
         const newObj: Record<string, any> = {};
@@ -124,14 +154,29 @@ export default class Util {
         return new RegExp('[`~!@#$^&*()=|{}"' + "'" + ':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]', 'g');
     }
 
-    public static runFnComponent(me: any) {
+    public static runFnComponent(me: any, key: any) {
         return (fn: any, ...arg: any[]) => {
+            if (fn?.prototype instanceof Vue) {
+                return fn;
+            }
             if (typeof fn === 'function') {
-                return fn.call(me, ...arg);
+                key = key ?? fn;
+                const component = fn.call(me, ...arg);
+                if (component?.prototype instanceof Vue) {
+                    if (componentMap.has(key)) {
+                        return componentMap.get(key);
+                    }
+                    componentMap.set(key, component);
+                }
+                return component;
             }
 
             return fn;
         };
+    }
+
+    public static clearComponent() {
+        componentMap.clear();
     }
 
     // 判断浏览器函数

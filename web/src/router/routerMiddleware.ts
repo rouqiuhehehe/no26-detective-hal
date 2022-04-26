@@ -2,23 +2,26 @@ import autoBind from '@/descriptors/Autobind';
 import getRoutes from '@/middleware/getRoutes';
 import getUserInfo from '@/middleware/getUserInfo';
 import { NavigationGuardNext, Route } from 'vue-router';
+import Util from '@/utils';
 
 @autoBind
 export default class {
     private middleware = [getUserInfo, getRoutes];
 
-    public async beforeEach(to: Route, from: Route, next: NavigationGuardNext<Vue>) {
+    public async beforeEach (to: Route, from: Route, next: NavigationGuardNext<Vue>) {
+        // 路由跳转时清空缓存组件
+        Util.clearComponent();
         if (to.path === '/login' || to.path === '/404') next();
         else {
             await this.callMiddleware(this.middleware, to, from, next);
         }
     }
 
-    public async afterEach(to: Route) {
+    public async afterEach (to: Route) {
         document.title = to.meta?.title ?? '26号探案馆';
     }
 
-    private async callMiddleware(
+    private async callMiddleware (
         middleware: ((to: Route, from: Route, _next: (...arg: any[]) => void) => void)[],
         to: Route,
         from: Route,

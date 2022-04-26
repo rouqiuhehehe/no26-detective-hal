@@ -18,7 +18,7 @@ export default class extends BaseDao {
         findInSet: ['types'],
         // in语法，值传数组
         whereIn: [],
-        defaultMatch: ['man', 'woman', 'is_city_limit']
+        defaultMatch: ['man', 'woman', 'is_city_limit'],
     };
 
     protected listFields = [

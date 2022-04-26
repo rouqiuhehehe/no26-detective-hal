@@ -136,7 +136,7 @@ export default class extends Vue {
         password: ''
     };
 
-    private isVerify = true;
+    private isVerify = process.env.NODE_ENV === 'development';
 
     private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
 
@@ -159,6 +159,7 @@ export default class extends Vue {
     }
 
     public async login(formName: string) {
+        console.log(process.env);
         if (!this.isVerify) {
             this.$alert('请先点击验证码进行进行验证', {
                 title: '提示',

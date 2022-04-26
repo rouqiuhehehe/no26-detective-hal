@@ -9,19 +9,21 @@ import HttpError from './httpError';
 /**
  * @param fileId 字段名
  * @param rule 规则
- * @param storageAddress 可选，储存文件夹
+ * @param fileType 可选，文件类型
  */
 interface FileFilterOption {
     fileId: string;
-    fileType: FileType;
+    fileType?: FileType;
     rule?: string[];
+    storageAddress?: string;
 }
 
 export const UploadKeys = 'Files_Md5_Key';
 
 type noString<T> = T extends string ? never : T;
+
 interface Hook {
-    beforeUpload(...params: Parameters<noString<NonNullable<DiskStorageOptions['destination']>>>): void;
+    beforeUpload (...params: Parameters<noString<NonNullable<DiskStorageOptions['destination']>>>): void;
 }
 
 type FileType = 'img';
@@ -42,8 +44,8 @@ export default class Upload {
         storageAddress: string;
     };
 
-    public constructor(
-        private dirPath: string,
+    public constructor (
+        private dirPath: string | null,
         private fileFilterOption: FileFilterOption | FileFilterOption[],
         _hook?: Hook
     ) {
@@ -56,12 +58,14 @@ export default class Upload {
                 if (fileFilterOption instanceof Array) {
                     const option = fileFilterOption.find((v) => v.fileId === file.fieldname);
                     if (option) {
-                        const map = fileTypeMap.get(option?.fileType);
+                        if (option?.fileType) {
+                            const map = fileTypeMap.get(option?.fileType);
 
-                        if (map) {
-                            this.map = map;
-                        } else {
-                            cb(new HttpError(Status.MISSING_PARAMS, 'File type error'));
+                            if (map) {
+                                this.map = map;
+                            } else {
+                                cb(new HttpError(Status.MISSING_PARAMS, 'File type error'));
+                            }
                         }
 
                         if (option.rule) {
@@ -74,13 +78,16 @@ export default class Upload {
                     }
                 } else {
                     if (file.fieldname === fileFilterOption.fileId) {
-                        const map = fileTypeMap.get(fileFilterOption?.fileType);
+                        if (fileFilterOption?.fileType) {
+                            const map = fileTypeMap.get(fileFilterOption?.fileType);
 
-                        if (map) {
-                            this.map = map;
-                        } else {
-                            cb(new HttpError(Status.MISSING_PARAMS, 'File type error'));
+                            if (map) {
+                                this.map = map;
+                            } else {
+                                cb(new HttpError(Status.MISSING_PARAMS, 'File type error'));
+                            }
                         }
+
                         if (fileFilterOption.rule) {
                             rule = fileFilterOption.rule;
                         } else {
@@ -103,19 +110,22 @@ export default class Upload {
         });
     }
 
-    public single(fieIdName: string) {
+    public single (fieIdName: string) {
         return this.uploader.single(fieIdName);
     }
 
-    public fields(fields: readonly multer.Field[]) {
+    public fields (fields: readonly multer.Field[]) {
         return this.uploader.fields(fields);
     }
 
-    public array(fieIdName: string, count: number) {
+    public array (fieIdName: string, count: number) {
         return this.uploader.array(fieIdName, count);
     }
 
-    public async saveFile(file: Express.Multer.File, filename: string) {
+    public async saveFile (file: Express.Multer.File, filename: string) {
+        if (!this.dirPath) {
+            throw new Error('请先传入文件目录，再保存文件');
+        }
         try {
             await fsPromise.access(this.dirPath);
         } catch (e) {

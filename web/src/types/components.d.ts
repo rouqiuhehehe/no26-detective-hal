@@ -40,6 +40,8 @@ export interface MyTable {
         label: string;
     }[];
 
+    events?: Record<string, (...arg: any) => any>;
+
     title: string;
 
     buttons?: Buttons[];
@@ -278,6 +280,7 @@ export interface MyPagination {
 
 type Buttons =
     | {
+          disabled?: boolean | ((option: Buttons, options: MyTable) => boolean);
           type?: ButtonType;
           icon?: string;
           dataIndex: string;
@@ -286,6 +289,7 @@ type Buttons =
           show?: boolean | ((this: Vue) => boolean);
       }
     | {
+          disabled?: boolean | ((option: Buttons, options: MyTable) => boolean);
           type?: ButtonType;
           icon?: string;
           dataIndex: string;
@@ -297,14 +301,19 @@ type Buttons =
           show?: boolean | ((this: Vue) => boolean);
       };
 
-type Button =
+type OperationButton =
     | Merge<
           MyDialog,
           {
               dataIndex: string;
-              beforeRender?: (value: null, row: Record<string, any>, option: Button, options: MyTable) => string;
+              beforeRender?: (
+                  value: null,
+                  row: Record<string, any>,
+                  option: OperationButton,
+                  options: MyTable
+              ) => string;
               label?: string;
-              click?: (row: Record<string, any>, option: Button, options: MyTable) => void | boolean;
+              click?: (row: Record<string, any>, option: OperationButton, options: MyTable) => void | boolean;
               show?: boolean | ((this: Vue) => boolean);
           }
       >
@@ -314,7 +323,7 @@ export type MyTableColumnsOperation = Omit<
     Merge<
         MyTableColumns,
         {
-            button: Button[];
+            button: OperationButton[];
         }
     >,
     'label' | 'dataIndex'
@@ -353,6 +362,7 @@ export type Columns =
     | MySwitch
     | MyText
     | MyImgUpload
+    | MyFileImport
     | MyComponent;
 
 export interface MyForm {
@@ -392,6 +402,9 @@ export interface MyForm {
     type: FormType;
 
     beforeRender?: (formData: any, options: MyForm) => Record<string, any>;
+
+    // 是否隐藏默认的提交成功提示
+    hideSuccessTips?: boolean;
 }
 
 export interface EditForm extends MyForm {
@@ -443,6 +456,10 @@ export interface DelForm {
     type: 'del';
     store: FormStore;
     confirm?: ElMessageBoxOptions;
+    hideSuccessTips?: boolean;
+    message?:
+        | string
+        | ((this: Vue, row?: Record<string, any>, column: DelForm, table?: Vue & { [K in keyof any]: any }) => string);
     beforeCommit?: (
         this: Vue,
         tableColumnData?: Record<string, any>,
@@ -546,6 +563,8 @@ export interface BaseItemComponent {
     box?: number;
     dataIndex: string;
     xType: string;
+    showStar?: boolean;
+    hidden?: boolean;
 }
 export type ColumnsStore = ((params: any) => Promise<AxiosResponse<any, any>>) | any[];
 export type FormStore = (params: any) => Promise<AxiosResponse<any, any>>;
@@ -573,6 +592,7 @@ export type XType =
     | 'date'
     | 'text'
     | 'imgUpload'
+    | 'fileImport'
     | 'component';
 
 export interface ComponentBase<T = any, U = ComponentBase, A = any> {
@@ -640,7 +660,7 @@ export interface ELEvent {
     input: (v: string | number) => void;
 }
 export type MyInput = MyElementUIComponentTypeWithBeforeRender<
-    ElInput,
+    Overwrite<ElInput, { type: 'text' | 'textarea' | 'number' }>,
     'input',
     Pick<ELEvent, 'change' | 'blur' | 'focus' | 'clear' | 'input'>
 >;
@@ -694,6 +714,22 @@ export type MyImgUpload = MyElementUIComponentTypeWithBeforeRender<
         sortType?: ('zoom' | 'download' | 'remove' | 'edit')[];
     },
     'imgUpload',
+    never
+>;
+export type MyFileImport = MyElementUIComponentTypeWithBeforeRender<
+    {
+        /**
+         * 实例 .png,.jpg
+         * */
+        accept: string;
+        template: {
+            title: string;
+            store: (params: any) => Promise<AxiosResponse<any, any>>;
+        };
+        store: (params: any) => Promise<AxiosResponse<any, any>>;
+        value: string[];
+    },
+    'fileImport',
     never
 >;
 export type MyText = Overwrite<

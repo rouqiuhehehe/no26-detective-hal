@@ -134,6 +134,7 @@ export default class {
                                     component: {
                                         component: 'el-image',
                                         bind(v: string) {
+                                            console.log(v);
                                             return {
                                                 src: v,
                                                 style: 'width: 50px;height: 50px;',
@@ -159,6 +160,12 @@ export default class {
                                     beforeRender(v, row) {
                                         return `${v}男${row.woman}女`;
                                     }
+                                },
+                                {
+                                    label: '',
+                                    xType: 'text',
+                                    hidden: true,
+                                    dataIndex: 'woman'
                                 },
                                 {
                                     label: '难度',
@@ -278,12 +285,16 @@ export default class {
                                             },
                                             label
                                         );
-                                    return createElement('div', [
-                                        inputNumber('man'),
-                                        span('男'),
-                                        inputNumber('woman'),
-                                        span('女')
-                                    ]);
+                                    return createElement(
+                                        'div',
+                                        {
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center'
+                                            }
+                                        },
+                                        [inputNumber('man'), span('男'), inputNumber('woman'), span('女')]
+                                    );
                                 }
                             });
                         }

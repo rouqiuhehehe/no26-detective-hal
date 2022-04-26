@@ -1,4 +1,5 @@
 import axios from '@/middleware/axios';
+import { AxiosResponse } from 'axios';
 
 /**
  * 字典集
@@ -36,6 +37,6 @@ export default class Dictionary {
      * 下载文件接口GET
      */
     public static downloadFileWithGet(params: { filename: string }) {
-        return axios.get<any, Blob>('/admin/dictionary/download', { params, responseType: 'blob' });
+        return axios.get<any, AxiosResponse<Blob>>('/admin/dictionary/download', { params, responseType: 'blob' });
     }
 }

@@ -147,6 +147,7 @@ export default class extends Vue {
             }
 
             this.allData = data;
+            this.$forceUpdate();
         }
     }
 
@@ -179,7 +180,14 @@ export default class extends Vue {
     }
 
     public runFnComponent(fn: any, ...arg: any[]) {
-        return utils.runFnComponent(this.thisArg)(fn, ...arg);
+        if (fn) {
+            return utils.runFnComponent(
+                this.thisArg,
+                (typeof fn === 'function' ? fn.toString() : JSON.stringify(fn)) + arg[0]
+            )(fn, ...arg);
+        } else {
+            return fn;
+        }
     }
 }
 </script>

@@ -1,9 +1,9 @@
-import { ControllerMetadata, Route, turnOffParamsValidateKey } from "@src/descriptor/controller";
-import { DefaultMiddleWareType, findFatherClass, MiddleWareArray } from "@src/descriptor/middlewareHandle";
-import { Middleware } from "@src/types/middleware_type";
-import express from "express";
-import fsPromise from "fs/promises";
-import path from "path";
+import { ControllerMetadata, Route, RouteMiddleWare, turnOffParamsValidateKey } from '@src/descriptor/controller';
+import { DefaultMiddleWareType, findFatherClass, MiddleWareArray } from '@src/descriptor/middlewareHandle';
+import { Middleware } from '@src/types/middleware_type';
+import express from 'express';
+import fsPromise from 'fs/promises';
+import path from 'path';
 
 // tslint:disable: no-unused-expression
 const moduleArr: Promise<any>[] = [];
@@ -135,6 +135,9 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                 ControllerMetadata.ISABSTRACTROUTES,
                                 controller
                             );
+                            // 处理导入的验证
+                            // 导入的验证默认和插入的验证相同
+                            let insertValidator: RouteMiddleWare;
                             if (
                                 // tslint:disable-next-line: jsdoc-format
                                 /**isController && */ hasHomePath &&
@@ -164,6 +167,7 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                         ControllerMetadata.SUPERROUTESVALIDATOR,
                                         controller
                                     );
+
                                     defaultRoutes.forEach((v: Route) => {
                                         if (superRoutes.includes(v.path)) {
                                             const route = { ...v };
@@ -180,6 +184,10 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                             if (superRoutesValidator) {
                                                 const validator = superRoutesValidator[route.path];
                                                 if (validator) {
+                                                    // 导入验证应于插入验证一致
+                                                    if (route.path === '/insert') {
+                                                        insertValidator = validator;
+                                                    }
                                                     route.middleWare?.push(validator);
                                                 }
                                             }
@@ -199,11 +207,26 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                         .join(homePath, basePath, v.path)
                                         .replace(new RegExp('/$'), '');
                                     const controllerInstance = new controller();
+                                    let validator = v.middleWare?.find(
+                                        (v) => v.type === DefaultMiddleWareType.VALIDATOR
+                                    );
 
+                                    // 导入默认使用insert的验证
+                                    if (
+                                        v.path === '/import' &&
+                                        !v.middleWare?.some((v) => v.type === DefaultMiddleWareType.VALIDATOR) &&
+                                        insertValidator
+                                    ) {
+                                        validator = insertValidator;
+                                    }
                                     const callback = controllerInstance[v.propertyKey].bind(controllerInstance);
                                     route[v.method](
                                         curPath,
                                         ...(v.middleWare ? v.middleWare.map((v) => v.fn) : []),
+                                        (req: ExpressRequest, _res: ExpressResponse, next: NextFunction) => {
+                                            validator && (req.validator = validator.fn);
+                                            next();
+                                        },
                                         callback
                                     );
                                 });

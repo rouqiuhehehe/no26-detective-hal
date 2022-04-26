@@ -10,7 +10,6 @@ export default abstract class RootRoute<T extends BaseHandler<BaseDao>> {
     @Middleware()
     @Post('/insert')
     public async insertTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        req.user.uid = 'e66e01a0-aa45-4e38-b654-8c3b3b5e2aa6';
         await this.handler.insertAction(req, res, next);
     }
 
@@ -53,7 +52,24 @@ export default abstract class RootRoute<T extends BaseHandler<BaseDao>> {
     @Middleware()
     @Post('/update')
     public async updateTest(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        req.user.uid = 'e66e01a0-aa45-4e38-b654-8c3b3b5e2aa6';
         await this.handler.updateAction(req, res, next);
+    }
+
+    @Middleware()
+    @Post('/import-template-download')
+    public async importTemplateDownload(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+        await this.handler.importTemplateDownload(req, res, next);
+    }
+
+    @Middleware()
+    @Post('/import')
+    public async import(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+        await this.handler.import(req, res, next);
+    }
+
+    @Middleware()
+    @Post('/export')
+    public async export(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+        await this.handler.export(req, res, next);
     }
 }

@@ -21,10 +21,6 @@ export default class {
                     return formData;
                 },
                 async afterCommit(this: Vue) {
-                    await this.$alert('提交成功', '提示', {
-                        type: 'success'
-                    });
-
                     await store.dispatch('user/getUserInfo');
                     await afterCommit();
                 },

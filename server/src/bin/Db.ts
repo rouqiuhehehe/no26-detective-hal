@@ -1,12 +1,12 @@
-import serverError from "@src/util/serverError";
-import Util from "@util";
-import events from "events";
-import { Request } from "express";
-import FileStreamRotator from "file-stream-rotator";
-import mysql from "mysql";
-import mysqldump from "mysqldump";
-import path from "path";
-import fsPromise from "fs/promises";
+import serverError from '@src/util/serverError';
+import Util from '@util';
+import events from 'events';
+import { Request } from 'express';
+import FileStreamRotator from 'file-stream-rotator';
+import mysql from 'mysql';
+import mysqldump from 'mysqldump';
+import path from 'path';
+import fsPromise from 'fs/promises';
 
 const dbconfig = fsPromise.readFile(path.join(process.cwd(), 'config', 'dbconfig.json'));
 // a bunch of session variables we use to make the import work smoothly
@@ -32,7 +32,7 @@ const FOOTER_VARIABLES = [
     ''
 ].join('\n');
 
-type Callback<T> = (results: T, fields?: mysql.FieldInfo[]) => void;
+type Callback<T> = (results: T, conn: mysql.PoolConnection, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
     private status = 'ready';
     private pool!: mysql.Pool;
@@ -60,7 +60,6 @@ export default class extends events.EventEmitter {
                         }
                         resolve(result);
                     });
-                    // console.log(query.sql);
                 }
                 connection.release();
             });
@@ -104,7 +103,7 @@ export default class extends events.EventEmitter {
                                 if (typeof sql === 'string') {
                                     const result = await this.transactionHandle(conn, sql, sqlVal);
                                     try {
-                                        callback && (await callback(result as unknown as T));
+                                        callback && (await callback(result as unknown as T, conn));
                                         // 提交事务
                                         conn.commit((err) => {
                                             if (err) {
@@ -122,8 +121,7 @@ export default class extends events.EventEmitter {
                                         });
                                         reject(error);
                                     }
-                                }
-                                else {
+                                } else {
                                     const allPromise = [];
                                     for (const value of sql) {
                                         if (typeof value === 'string') {
@@ -136,7 +134,7 @@ export default class extends events.EventEmitter {
 
                                     Promise.all(allPromise).then(async (result: any[]) => {
                                         try {
-                                            callback && (await callback(result as unknown as T));
+                                            callback && (await callback(result as unknown as T, conn));
                                             // 提交事务
                                             conn.commit((err) => {
                                                 if (err) {
@@ -235,7 +233,7 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务方法
      */
-    private transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal: unknown[]) {
+    public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown[]) {
         return new Promise((resolve, reject) => {
             conn.query(sql, sqlVal, async (err, result, _fields) => {
                 if (err) {

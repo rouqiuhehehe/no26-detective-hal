@@ -149,6 +149,7 @@ export default class extends Vue {
             this.onUpload = false;
         }
     }
+
     public changeUploadFiles(
         file: ElUploadInternalFileDetail | File,
         filesList: ElUploadInternalFileDetail[] | string
@@ -179,10 +180,10 @@ export default class extends Vue {
         this.dialogImageUrl = file.url!;
         this.dialogVisible = true;
     }
+
     public async handleDownload(file: ElUploadInternalFileDetail) {
-        const data = await Dictionary.downloadFileWithGet({ filename: file.name });
+        const { data } = await Dictionary.downloadFileWithGet({ filename: file.name });
         // const a = document.createElement('a');
-        console.log(data);
         // a.href = '/admin/dictionary/download?filename=' + file.name;
         // a.click();
         utils.downloadFile(file.name, data);
@@ -198,6 +199,7 @@ export default class extends Vue {
     height: 100px !important;
     width: 100px !important;
 }
+
 /deep/ .el-upload--picture-card {
     height: 100px !important;
     width: 100px !important;

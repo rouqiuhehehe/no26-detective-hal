@@ -25,6 +25,7 @@ export default class {
         ref: string;
         beforeClose: (done?: (() => void) | undefined) => void;
         center: boolean;
+        'close-on-click-modal': boolean;
     };
 
     public constructor(
@@ -39,7 +40,8 @@ export default class {
             width: '70%',
             ref: 'my-dialog-form',
             beforeClose: this.defaultFn.beforeClose(),
-            center: false
+            center: false,
+            'close-on-click-modal': false
         };
     }
 }
