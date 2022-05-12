@@ -1,21 +1,23 @@
 import { Status } from '@src/config/server_config';
 
 export default function resSendHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-    req.token = req.header('authorization')?.replace('Bearer ', '');
+    req.user = {};
+    req.user.token = req.header('authorization')?.replace('Bearer ', '');
 
     res.error = (err, data?) => {
+        const dev = process.env.NODE_ENV === 'development';
         res.send(
             data
                 ? {
                       status: err.status,
                       success: false,
-                      message: err.message
+                      data,
+                      message: dev ? err.message : 'server error'
                   }
                 : {
                       status: err.status,
                       success: false,
-                      data,
-                      message: err.message
+                      message: dev ? err.message : 'server error'
                   }
         );
     };

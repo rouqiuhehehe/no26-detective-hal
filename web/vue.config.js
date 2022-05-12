@@ -6,6 +6,7 @@ module.exports = {
     publicPath: '/',
     outputDir: path.join(__dirname, 'dist'),
     assetsDir: 'assets',
+    productionSourceMap: false,
     devServer: {
         // outputDir: 'dist',
         host: '127.0.0.1',
@@ -30,9 +31,18 @@ module.exports = {
                 target: process.env.VUE_APP_API_URL, //代理地址，这里设置的地址会代替axios中设置的baseURL
                 changeOrigin: true
             },
+            '/api': {
+                target: process.env.VUE_APP_API_URL, //代理地址，这里设置的地址会代替axios中设置的baseURL
+                changeOrigin: true
+            },
             '/recaptcha': {
                 target: 'https://www.recaptcha.net',
                 changeOrigin: true
+            },
+            '/socket.io': {
+                target: process.env.VUE_APP_API_URL,
+                changeOrigin: true,
+                ws: true
             }
         },
         disableHostCheck: true

@@ -17,7 +17,7 @@
         v-on="getMyItemEvents"
         v-bind="getMyItemBind"
     >
-        <template v-if="this.options.xType === 'select'">
+        <template v-if="options.xType === 'select'">
             <el-option
                 v-for="item in allData"
                 :key="options.formatKey ? item[options.formatKey.key] : item.key"
@@ -26,7 +26,7 @@
             >
             </el-option>
         </template>
-        <template v-if="this.options.xType === 'checkboxGroup'">
+        <template v-if="options.xType === 'checkboxGroup'">
             <el-checkbox
                 v-for="item in allData"
                 :key="options.formatKey ? item[options.formatKey.key] : item.key"
@@ -34,7 +34,7 @@
                 >{{ options.formatKey ? item[options.formatKey.value] : item.value }}</el-checkbox
             >
         </template>
-        <template v-if="this.options.xType === 'radio'">
+        <template v-if="options.xType === 'radio'">
             <el-radio
                 v-for="item in allData"
                 :key="options.formatKey ? item[options.formatKey.key] : item.key"
@@ -147,6 +147,7 @@ export default class extends Vue {
             }
 
             this.allData = data;
+            this.$forceUpdate();
         }
     }
 
@@ -179,7 +180,14 @@ export default class extends Vue {
     }
 
     public runFnComponent(fn: any, ...arg: any[]) {
-        return utils.runFnComponent(this.thisArg)(fn, ...arg);
+        if (fn) {
+            return utils.runFnComponent(
+                this.thisArg,
+                (typeof fn === 'function' ? fn.toString() : JSON.stringify(fn)) + arg[0]
+            )(fn, ...arg);
+        } else {
+            return fn;
+        }
     }
 }
 </script>

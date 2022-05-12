@@ -14,14 +14,17 @@
                 </el-dropdown-menu>
             </el-dropdown>
         </el-header>
-        <el-container>
+        <el-container style="flex: 1; overflow: hidden">
             <!-- <el-scrollbar style="overflow-x: hidden">
 
             </el-scrollbar> -->
             <el-aside style="width: 250px; overflow: hidden">
                 <Menu :menu-tree="asideTree"></Menu>
             </el-aside>
-            <el-main>
+            <el-main
+                v-waterMarter="{ text: userInfo.nickname, textColor: 'rgba(180, 180, 180, 0.4)' }"
+                style="overflow-x: hidden"
+            >
                 <router-view />
             </el-main>
         </el-container>
@@ -36,6 +39,7 @@ import { AsideTree } from '@/types/routes';
 import { Mutation } from 'vuex';
 import userOperation from '@/api/auth/user-operation';
 import { UserInfo } from '@/api/setting';
+import Websocket from '@/model/websocket';
 
 const user = namespace('user');
 const aside = namespace('routes');
@@ -56,6 +60,10 @@ export default class Home extends Vue {
     @aside.Getter
     public asideTree!: AsideTree;
 
+    public mounted() {
+        new Websocket();
+    }
+
     public handleCommand(command: string): void {
         if (command === 'setting') this.$router.push('/setting');
         else if (command === 'signOut') this.signOut();
@@ -75,7 +83,8 @@ export default class Home extends Vue {
                 await userOperation.loginOut();
                 this.CHANGE_USER_INFO({});
                 sessionStorage.removeItem('token');
-                this.$router.go(0);
+                await this.$alert('退出登陆成功，请重新登录', '提示');
+                await this.$router.push('/login');
             })
             .catch(() => {
                 return false;

@@ -50,6 +50,11 @@ declare global {
             [elem: string]: any;
         }
     }
+
+    interface Pagination {
+        limit: number;
+        page: number;
+    }
 }
 
 declare module 'vue/types/vue' {
@@ -72,5 +77,13 @@ declare module 'axios' {
             total: number;
             page: number;
         };
+    }
+
+    interface AxiosRequestConfig<T = any> {
+        needCache?: boolean;
+    }
+
+    interface Cancel {
+        config: AxiosRequestConfig;
     }
 }

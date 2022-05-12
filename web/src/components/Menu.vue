@@ -45,13 +45,16 @@ export default class extends Vue {
 .has-child-router {
     background: #eeeeee33;
 }
-/deep/ .el-submenu.is-opened > .el-submenu__title .el-submenu__icon-arrow {
-    display: none;
+.is-opened {
+    background: #eeeeee99;
 }
-
-/deep/ .el-submenu > .el-submenu__title .el-submenu__icon-arrow {
-    display: none;
-}
+///deep/ .el-submenu.is-opened > .el-submenu__title .el-submenu__icon-arrow {
+//    display: none;
+//}
+//
+///deep/ .el-submenu > .el-submenu__title .el-submenu__icon-arrow {
+//    display: none;
+//}
 
 /deep/ .el-menu-item {
     padding: 0 20px !important;

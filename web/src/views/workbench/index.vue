@@ -10,6 +10,7 @@ import { PieChart } from 'echarts/charts';
 import { LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { EChartsOption, SeriesOption, TopLevelFormatterParams } from 'echarts/types/dist/shared';
+
 echarts.use([LegendComponent, TitleComponent, TooltipComponent, PieChart, CanvasRenderer]);
 
 @Component
@@ -103,6 +104,8 @@ export default class extends Vue {
     };
     private getTypes = ['情感', '硬核', '机制', '恐怖', '欢乐', '推理'];
 
+    private myEcharts?: echarts.ECharts;
+
     public async mounted() {
         const typeCount = await WorkBenchApi.getOperaTypesCount<
             {
@@ -126,9 +129,18 @@ export default class extends Vue {
             };
         });
 
-        const myEcharts = echarts.init(this.$refs['my-echarts'] as HTMLDivElement);
+        this.myEcharts = echarts.init(this.$refs['my-echarts'] as HTMLDivElement);
 
-        myEcharts.setOption(this.option);
+        this.myEcharts.setOption(this.option);
+        window.addEventListener('resize', this.resize);
+    }
+
+    public beforeDestroy() {
+        window.removeEventListener('resize', this.resize);
+    }
+
+    private resize() {
+        this.myEcharts && this.myEcharts.resize();
     }
 }
 </script>

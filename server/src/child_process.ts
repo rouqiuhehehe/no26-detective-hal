@@ -5,7 +5,7 @@ export default class Cp extends ChildProcess {
         super();
 
         process.on('giveup', (len: number, during: number) => {
-            errorLogger(new Error('重启过于频繁: ' + during + '内重启' + len + '次'));
+            errorLogger(new Error(`重启过于频繁: ${ during }内重启${ len }次`));
         });
     }
 }

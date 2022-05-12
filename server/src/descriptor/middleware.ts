@@ -31,9 +31,9 @@ export default function Middleware(
             params!.splice(
                 i,
                 1,
+                DefaultMiddleWareType.AUTH,
                 DefaultMiddleWareType.AUTHORIZATION,
                 DefaultMiddleWareType.ANTI_REPLAY,
-                DefaultMiddleWareType.AUTH,
                 DefaultMiddleWareType.TIMESTAMP
             );
         }

@@ -32,9 +32,9 @@ const FOOTER_VARIABLES = [
     ''
 ].join('\n');
 
-type Callback<T> = (results: T, fields?: mysql.FieldInfo[]) => void;
+type Callback<T> = (results: T, conn: mysql.PoolConnection, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
-    private status = 'ready';
+    private status = new Set();
     private pool!: mysql.Pool;
 
     public constructor() {
@@ -49,6 +49,7 @@ export default class extends events.EventEmitter {
     }
 
     public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
+        console.log(sql, values);
         return new Promise((resolve, reject) => {
             this.pool!.getConnection((err, connection) => {
                 if (err) {
@@ -60,7 +61,6 @@ export default class extends events.EventEmitter {
                         }
                         resolve(result);
                     });
-                    // console.log(query.sql);
                 }
                 connection.release();
             });
@@ -70,19 +70,23 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务回滚方法
      */
-    public beginTransaction<T>(sql: string, values?: unknown[], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(sql: string, values?: unknown | unknown[], cb?: Callback<T>): Promise<boolean>;
     // noinspection JSUnusedGlobalSymbols
-    public beginTransaction<T>(sql: string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(sql: string | string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
     public beginTransaction<T>(
         sql: string | string[] | [string, unknown[]][],
-        values?: unknown[] | Callback<T>,
+        values?: unknown | unknown[] | Callback<T>,
         cb?: Callback<T>
     ): Promise<boolean> {
         let callback: Callback<T> | undefined;
-        let sqlVal: unknown[];
-        if (typeof sql !== 'string') {
-            callback = values as Callback<T>;
-            sqlVal = [];
+        let sqlVal: unknown | unknown[];
+        if (arguments.length === 2) {
+            if (typeof values === 'function') {
+                callback = values as Callback<T>;
+                sqlVal = [];
+            } else {
+                sqlVal = values;
+            }
         } else {
             callback = cb;
             sqlVal = values as unknown[];
@@ -104,7 +108,7 @@ export default class extends events.EventEmitter {
                                 if (typeof sql === 'string') {
                                     const result = await this.transactionHandle(conn, sql, sqlVal);
                                     try {
-                                        callback && (await callback(result as unknown as T));
+                                        callback && (await callback(result as unknown as T, conn));
                                         // 提交事务
                                         conn.commit((err) => {
                                             if (err) {
@@ -116,7 +120,7 @@ export default class extends events.EventEmitter {
                                         conn.rollback((e) => {
                                             console.log('事务回滚');
                                             if (e) {
-                                                throw e;
+                                                reject(e);
                                             }
                                             conn.release();
                                         });
@@ -135,7 +139,7 @@ export default class extends events.EventEmitter {
 
                                     Promise.all(allPromise).then(async (result: any[]) => {
                                         try {
-                                            callback && (await callback(result as unknown as T));
+                                            callback && (await callback(result as unknown as T, conn));
                                             // 提交事务
                                             conn.commit((err) => {
                                                 if (err) {
@@ -178,14 +182,18 @@ export default class extends events.EventEmitter {
 
         const stream = FileStreamRotator.getStream({
             date_format: 'YYYYMMDD',
-            filename: path.join(process.cwd(), 'dump/%DATE%', Date.now() + '.sql'),
+            filename: path.join(process.cwd(), 'dump/%DATE%', `${Date.now()}.sql`),
             frequency: 'daily',
             verbose: false,
             max_logs: '10d'
         });
 
         stream.write(
-            HEADER_VARIABLES + '\n' + res.dump.schema + '\n' + res.dump.data + '\n\n' + FOOTER_VARIABLES,
+            `${HEADER_VARIABLES}
+            ${res.dump.schema}
+            ${res.dump.data}
+                    
+            ${FOOTER_VARIABLES}`,
             'utf-8',
             (err) => {
                 if (err) {
@@ -215,13 +223,14 @@ export default class extends events.EventEmitter {
             });
 
             try {
-                if (this.status === 'ready') {
-                    this.status = 'pending';
+                if (!this.status.has(url)) {
+                    this.status.add(url);
                     const result = await this.asyncQuery(sql, values);
                     this.emit(url, result);
-                    this.status = 'ready';
+                    this.status.delete(url);
                 }
             } catch (e) {
+                this.status.delete(url);
                 this.emit(url, e);
             }
         });
@@ -230,7 +239,8 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务方法
      */
-    private transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal: unknown[]) {
+    public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown | unknown[]) {
+        console.log(sql, sqlVal);
         return new Promise((resolve, reject) => {
             conn.query(sql, sqlVal, async (err, result, _fields) => {
                 if (err) {

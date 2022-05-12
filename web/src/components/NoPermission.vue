@@ -3,10 +3,10 @@
     title="Insufficient Authority"
     :visible.sync="dialogVisible"
     width="350px"
-    custom-class="no-permission">
+    custom-class="no-waterMarter.ts">
     <div class="toast">
-        <p><b>Access failed!</b> Your account does not have permission to access this page. Click <router-link to="/login">login</router-link> again.</p>
-        <p>Or contact the project administrator for permission</p>
+        <p><b>Access failed!</b> Your account does not have waterMarter.ts to access this page. Click <router-link to="/login">login</router-link> again.</p>
+        <p>Or contact the project administrator for waterMarter.ts</p>
         <p>project administrator: <b>DongSiChong</b></p>
     </div>
     </el-dialog>

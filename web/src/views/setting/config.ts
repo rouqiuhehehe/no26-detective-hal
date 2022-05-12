@@ -17,14 +17,11 @@ export default class {
                 type: 'edit',
                 store: Setting.updateUserInfo,
                 viewStore: Setting.viewSettingUserInfo,
+                primaryKey: 'id',
                 beforeCommit(formData: Record<string, any>) {
                     return formData;
                 },
                 async afterCommit(this: Vue) {
-                    await this.$alert('提交成功', '提示', {
-                        type: 'success'
-                    });
-
                     await store.dispatch('user/getUserInfo');
                     await afterCommit();
                 },

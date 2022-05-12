@@ -9,19 +9,22 @@ export default class GetUser extends UserOperation {
     @Middleware(['default'])
     @Get('/get-user')
     public async getUser(req: ExpressRequest, res: ExpressResponse) {
-        this.getUserHandle(req, res);
+        await this.getUserHandle(req, res);
     }
 
     private async getUserHandle(req: ExpressRequest, res: ExpressResponse) {
         try {
-            const userInfo = await user.getUserInfoByToken(req);
-            const { nickname, avatar, create_date, username, update_date } = userInfo;
+            const userInfo = await user.getUserInfoByToken(req.user.token);
+            const { nickname, avatar, create_time, username, update_time, phone, role, roleValue } = userInfo;
             res.success({
                 nickname,
                 avatar,
-                create_date,
+                create_time,
                 username,
-                update_date
+                update_time,
+                phone,
+                role: role?.split(','),
+                roleValue: roleValue?.split(',')
             });
         } catch (e) {
             if (e instanceof HttpError) {

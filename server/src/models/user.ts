@@ -22,31 +22,56 @@ interface DbUser {
     salt: string;
     password: string;
     permission: number;
-    create_date: string;
-    update_date: string;
+    create_time: string;
+    update_time: string;
+    phone: string;
+    role: string;
+    roleValue: string;
 }
+
+export type RedisUser = Omit<DbUser, 'password' | 'salt' | 'id'> & { token: string };
 export default class User {
     public userInfo!: UserInfo;
 
     public getByUsername(name: string) {
-        const sql = 'select * from user where `username` = ?';
+        const sql = `SELECT
+                        a.*,
+                        GROUP_CONCAT( b.n_role_id ) AS role,
+                        GROUP_CONCAT(c.n_role_name) AS roleValue
+                    FROM
+                        user a
+                        RIGHT JOIN n_manage_role_relation b ON a.uid = b.n_user_id 
+                        LEFT JOIN n_manage_role c on b.n_role_id = c.n_role_id
+                    GROUP BY
+                        b.n_user_id
+                    HAVING
+                        username = ?`;
 
         return db.asyncQuery<DbUser[]>(sql, [name]);
     }
 
     // 用户名密码认证
-    public authenticate(
-        userInfo: ParamsUserInfo
-    ): Promise<Omit<DbUser, 'password' | 'salt' | 'id'> & { token: string }> {
+    public authenticate(userInfo: ParamsUserInfo): Promise<RedisUser> {
         return new Promise(async (resolve, reject) => {
             try {
                 const dbUserInfo = (await this.getByUsername(userInfo.username))[0];
                 if (dbUserInfo) {
-                    const { username, password, uid, nickname, avatar, create_date, update_date, permission } =
-                        dbUserInfo;
+                    const {
+                        username,
+                        password,
+                        uid,
+                        nickname,
+                        avatar,
+                        create_time,
+                        update_time,
+                        permission,
+                        phone,
+                        role,
+                        roleValue
+                    } = dbUserInfo;
 
                     await redis(async (client, quit) => {
-                        const errorNum = await client.get('password_error_num:user#' + uid);
+                        const errorNum = await client.get(`password_error_num:user#${uid}`);
 
                         if (errorNum && +errorNum === 5) {
                             reject(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
@@ -57,21 +82,28 @@ export default class User {
                         );
 
                         if (bcryptPassword === userInfo.password) {
-                            const token = await this.issueToken(userInfo.username);
-                            console.log(avatar);
+                            const token = await this.issueToken(userInfo.username, uid);
                             const info = {
                                 uid,
                                 nickname,
                                 token,
-                                avatar: Util.getUrlWithHost(avatar),
-                                create_date,
+                                avatar: avatar ? Util.getUrlWithHost(avatar) : '',
+                                create_time,
                                 permission,
                                 username,
-                                update_date
+                                update_time,
+                                phone,
+                                role,
+                                roleValue
                             };
-                            await client.hSet('user:' + token, info);
-                            await client.expire('user:' + token, Jwt_Config.JWT_EXPIRED);
-                            await client.del('password_error_num:user#' + uid);
+                            Object.keys(info).forEach((v) => {
+                                if (info[v] === null) {
+                                    info[v] = '';
+                                }
+                            });
+                            await client.hSet(`user:${token}`, info);
+                            await client.expire(`user:${token}`, Jwt_Config.JWT_EXPIRED);
+                            await client.del(`password_error_num:user#${uid}`);
                             resolve(info);
                         } else {
                             await quit();
@@ -100,7 +132,7 @@ export default class User {
             } else {
                 try {
                     await redis(async (client) => {
-                        const hasToken = await client.EXISTS('user:' + req.token);
+                        const hasToken = await client.EXISTS(`user:${req.user.token}`);
                         if (hasToken) {
                             try {
                                 const decoded = await Jwt.vailToken(token!, Jwt_Config.SECRET);
@@ -125,11 +157,14 @@ export default class User {
         });
     }
 
-    public getUserInfoByToken(req: ExpressRequest): Promise<DbUser> {
+    public getUserInfoByToken(token?: string): Promise<DbUser> {
         return new Promise(async (resolve, reject) => {
+            if (!token) {
+                return reject(new HttpError(Status.USER_NOT_FOND, `token is ${token}`));
+            }
             try {
                 await redis(async (client, quit) => {
-                    const dbUserInfo = await client.hGetAll('user:' + req.token);
+                    const dbUserInfo = await client.hGetAll(`user:${token}`);
 
                     await quit();
                     if (dbUserInfo) {
@@ -148,8 +183,8 @@ export default class User {
         return new Promise(async (resolve, reject) => {
             try {
                 await redis(async (client) => {
-                    const remove = await client.del('user:' + req.token);
-
+                    const remove = await client.del(`user:${req.user.token}`);
+                    await client.del(`user:web-routes:${req.user.token}`);
                     if (remove === 1) {
                         resolve({
                             value: true
@@ -164,10 +199,10 @@ export default class User {
         });
     }
 
-    private issueToken(username: string): Promise<string> {
+    private issueToken(username: string, uid: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             const secret = Jwt_Config.SECRET;
-            const token = Jwt.issueToken(username, secret);
+            const token = Jwt.issueToken(username, uid, secret);
             try {
                 resolve(token);
             } catch (err: any) {

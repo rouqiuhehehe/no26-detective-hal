@@ -1,15 +1,17 @@
 import { createClient } from 'redis';
 import HttpError from '@src/models/httpError';
-import { UserInfo } from '@src/types/user';
 import express from 'express';
 import { SinonAssert } from 'sinon';
+import Joi from 'joi';
+import { Pagination } from '@src/models/BaseDao';
 
 declare global {
+    type Consturctor = abstract new (...args: any[]) => any;
     type ExpressResponse = express.Response;
     type ExpressRequest = express.Request;
     type NextFunction = express.NextFunction;
 
-    type Pagination = {
+    type MysqlPagination = {
         'FOUND_ROWS()': number;
     }[];
     // type Client = RedisClientType<typeof modules, Record<string, never>>;
@@ -50,23 +52,37 @@ declare global {
     // 取出T,U的差集，再取出T,U的并集，联合成新接口
     type Overwrite<T extends object, U extends object, I = Diff<T, U> & Intersection<U, T>> = Pick<I, keyof I>;
 
+    type Validator = (
+        req: Record<string, any> | ExpressRequest,
+        res?: ExpressResponse,
+        next?: NextFunction,
+        validateCb?: (
+            error: null | Joi.ValidationError,
+            req: ExpressRequest | { query?: Record<string, any>; body?: Record<string, any> | any[] },
+            res?: ExpressResponse,
+            next?: NextFunction
+        ) => void
+    ) => void;
+
+    type ValueOf<T extends {}> = T[keyof T];
+
     namespace Express {
         type Message = (message: string, type?: string) => void;
+
         interface Response {
             message: Message;
+
             error<T extends Error>(e: HttpError<T>, data?: Record<string, string | number>): void;
-            success<T extends Record<string, any>>(
-                data?: T,
-                pagination?: {
-                    page: number;
-                    total: number;
-                }
-            ): void;
+
+            success<T extends Record<string, any>>(data?: T, pagination?: Pagination): void;
         }
 
         interface Request {
-            user: UserInfo;
-            token?: string;
+            user: {
+                uid?: string;
+                token?: string;
+            };
+            validator?: Validator;
         }
     }
 

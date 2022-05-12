@@ -1,4 +1,4 @@
-import autoBind from '@src/descriptor/autobind';
+import autoBind from '@src/descriptor/Autobind';
 import childProcess from 'child_process';
 import net from 'net';
 import os from 'os';
@@ -12,22 +12,24 @@ import os from 'os';
 */
 const port = 1337;
 const inspectPort = 9229;
+const dev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 export default class ChildProcess {
     protected cpus = os.cpus();
     protected server = net.createServer();
     private workerMap = new Map();
     private workerCount = 0;
-    private len = this.cpus.length;
-    private limit = 10;
+    private readonly len;
+    private readonly limit = 10;
     // 10次重启的超时时间
-    private during = 60000;
+    private readonly during = 60000;
     private restart: number[] = [];
 
     public constructor() {
-        if (process.env.NODE_ENV === 'development') {
+        if (dev) {
             // 如果是开发环境，不需要起太多进程
-
             this.len = 2;
+        } else {
+            this.len = this.cpus.length;
         }
 
         // 创建tcp服务，发射给子进程
@@ -44,7 +46,7 @@ export default class ChildProcess {
     protected forkChildProcess() {
         let processFilePath = '/work.js';
 
-        if (process.env.NODE_ENV === 'development') {
+        if (dev) {
             processFilePath = '/work.ts';
         }
 
@@ -61,12 +63,12 @@ export default class ChildProcess {
             // 发送报警事件，不再重启
             return process.emit('giveup', this.restart.length, this.during);
         }
-        if (process.env.NODE_ENV === 'development') {
-            arg.push('-r', process.cwd() + '/bin.js');
+        if (dev) {
+            arg.push('-r', `${process.cwd()}/bin.js`);
         }
         // 多进程google调试
         if (process.execArgv.includes('--inspect')) {
-            arg.unshift('--inspect=' + (inspectPort + index + 1).toString());
+            arg.unshift(`--inspect=${(inspectPort + index + 1).toString()}`);
         }
 
         const cp = childProcess.fork(__dirname + path, [], {
@@ -101,7 +103,7 @@ export default class ChildProcess {
         });
 
         cp.on('exit', () => {
-            console.log('worker ' + cp.pid + ' exited');
+            console.log(`worker ${cp.pid} exited`);
             this.workerMap.delete(cp.pid);
         });
 

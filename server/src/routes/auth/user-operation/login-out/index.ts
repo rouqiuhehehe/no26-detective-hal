@@ -9,7 +9,7 @@ export default class extends UserOperation {
     @Middleware(['default'])
     @Post('/login-out')
     public async loginOut(req: ExpressRequest, res: ExpressResponse) {
-        this.loginOutHandle(req, res);
+        await this.loginOutHandle(req, res);
     }
 
     private async loginOutHandle(req: ExpressRequest, res: ExpressResponse) {

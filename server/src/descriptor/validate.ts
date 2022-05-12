@@ -1,20 +1,36 @@
-import { Status } from '@src/config/server_config';
-import HttpError from '@src/models/httpError';
 import Joi from 'joi';
-import { RouteMethod } from './controller';
 import { methodMiddleware } from './middlewareHandle';
+import { RouteMethod } from '@src/descriptor/controller';
 
-const callback =
+/**
+ * @param params joi对象
+ * @param isLimitPage 是否为分页接口
+ * @param acceptUnknownParameters 是否接收未知参数
+ */
+export const joiValidationCallback =
     <T = any, isStrict = false>(
         params: Joi.SchemaMap<T, isStrict>,
         isLimitPage = false,
-        acceptUnknownParameters = true,
-        validateCb?: () => void,
-        errcb?: (err: Joi.ValidationError) => void
+        acceptUnknownParameters = true
     ) =>
     (method: RouteMethod) =>
-    async (req: ExpressRequest, _res: ExpressResponse, next: NextFunction) => {
+    async (
+        req: ExpressRequest | Record<string, any>,
+        res?: ExpressResponse,
+        next?: NextFunction,
+        // 验证后置校验，用于支持函数中手动触发校验器
+        // = undefined用于兼容express的路由判断
+        validateCb:
+            | ((
+                  error: null | Joi.ValidationError,
+                  req: ExpressRequest | Record<string, any>,
+                  res?: ExpressResponse,
+                  next?: NextFunction
+              ) => void)
+            | undefined = undefined
+    ) => {
         let joiObj = params;
+        let validation;
         if (isLimitPage) {
             joiObj = {
                 ...joiObj,
@@ -28,35 +44,22 @@ const callback =
             schema = schema.unknown();
         }
 
-        const { error } = schema.validate(method === 'get' ? req.query : req.body);
-
-        if (error) {
-            errorHandle(errcb, error, next);
+        if (!req.query && !req.body) {
+            validation = req;
         } else {
-            if (validateCb) {
-                try {
-                    await validateCb();
-                    next();
-                } catch (error: any) {
-                    errorHandle(errcb, error, next);
-                }
-            } else {
-                next();
-            }
+            validation = method === 'get' ? req.query : req.body;
+        }
+        const { error } = schema.validate(validation);
+
+        if (validateCb && typeof validateCb === 'function') {
+            await validateCb(error ?? null, req, res, next);
+        } else {
+            next && next(error);
         }
     };
 
-const errorHandle = <T extends Error>(errcb: ((err: T) => void) | undefined, error: T, next: NextFunction) => {
-    if (errcb) {
-        if (typeof errcb === 'function') {
-            errcb(error);
-        }
-    } else {
-        next(new HttpError(Status.SERVER_ERROR, error.message));
-    }
-};
-export default function Validate(...arr: Parameters<typeof callback>) {
+export default function Validate(...arr: Parameters<typeof joiValidationCallback>) {
     return (target: Object, name: string, _descriptor: PropertyDescriptor) => {
-        methodMiddleware(target, name, callback(...arr));
+        methodMiddleware(target, name, joiValidationCallback(...arr));
     };
 }

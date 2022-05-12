@@ -8,7 +8,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import MyTable from '@/components/table/table.vue';
 import Config from './config';
-import Util from '@/utils';
 
 const config = new Config();
 @Component({
@@ -19,10 +18,6 @@ const config = new Config();
 })
 export default class extends Vue {
     public config = config;
-
-    public get a() {
-        return Util.colorSpan('#f00', 'dsa');
-    }
     // @Provide('thisArg')
     // public readonly thisArg = this;
 }

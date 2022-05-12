@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 import { redisPushReplay } from '../../../src/descriptor/middleware/anti-replay';
 import { authorizationMiddleware } from '../../../src/descriptor/middleware/authorization';
 import base from '../../model/base';

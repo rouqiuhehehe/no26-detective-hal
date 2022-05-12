@@ -16,7 +16,8 @@ export default function Auth(target: Object, propertyKey?: string | symbol, desc
 }
 async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
     try {
-        await user.validateToken(req);
+        const { uid } = await user.validateToken(req);
+        req.user.uid = uid;
         next();
     } catch (e) {
         if (e instanceof HttpError) {

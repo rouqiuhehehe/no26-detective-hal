@@ -1,10 +1,11 @@
 import { Jwt_Config } from '@src/config/jwt';
 import * as Jsonwebtoken from 'jsonwebtoken';
 export class Jwt {
-    public static issueToken(username: string, secret: string) {
+    public static issueToken(username: string, uid: string, secret: string) {
         return Jsonwebtoken.sign(
             {
-                data: username
+                data: username,
+                uid
             },
             secret,
             {

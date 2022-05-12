@@ -77,7 +77,7 @@
 </style>
 <script lang="ts">
 // vue-property-decorator
-import { Vue, Component } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { Check, MutationsFunction } from '@/types/store';
 import { Secret } from '@/utils/enum';
 import { Md5 } from 'ts-md5';
@@ -136,7 +136,7 @@ export default class extends Vue {
         password: ''
     };
 
-    private isVerify = false;
+    private isVerify = process.env.NODE_ENV === 'development';
 
     private scriptSrc = 'https://www.recaptcha.net/recaptcha/api.js';
 

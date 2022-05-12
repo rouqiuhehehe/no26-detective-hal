@@ -12,6 +12,7 @@ import variableTypes from './variable_type';
 import Joi from 'joi';
 
 export interface JoiErrorMessageOption {
+    base?: string;
     required?: string;
     regx?: string;
     min?: string;
@@ -36,7 +37,7 @@ export default class Util {
     public static variableTypes = variableTypes;
 
     public static getUrlWithHost(url: string) {
-        return new URL(url, process.env.HTTP_URL_HOST as string).href;
+        return new URL(url.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), process.env.HTTP_URL_HOST as string).href;
     }
 
     public static isAbsoluteURL(url: string) {
@@ -56,7 +57,9 @@ export default class Util {
             // 如果是子路由，需要当前路由
             // 放入下一次事件循环执行，让父类装饰器先执行
             process.nextTick(() => {
-                const hasRoutes = Reflect.hasMetadata(ControllerMetadata.ROUTES, target);
+                const hasRoutes = Reflect.getOwnMetadata(ControllerMetadata.ISABSTRACTROUTES, target.constructor)
+                    ? Reflect.hasMetadata(ControllerMetadata.ABSTRACTROUTES, target)
+                    : Reflect.hasMetadata(ControllerMetadata.ROUTES, target);
 
                 if (hasRoutes) {
                     fn(DescriptorKey.METHOD);
@@ -75,7 +78,7 @@ export default class Util {
             if (hasHomePath) {
                 fn(DescriptorKey.CLASS);
             } else {
-                throw new HttpError(Status.SERVER_ERROR, (target as Function).name + ' does not has homePath');
+                throw new HttpError(Status.SERVER_ERROR, `${(target as Function).name} does not has homePath`);
             }
         }
     }
@@ -116,6 +119,10 @@ export default class Util {
             }, '');
     }
 
+    public static getSQLTime() {
+        return Util.dateFormat(new Date(), 'yyyy-MM-dd HH:mm:ss');
+    }
+
     public static dateFormat(dft: string | number | Date, format: string): string {
         const dateObj = new Date(dft);
         let k;
@@ -136,14 +143,14 @@ export default class Util {
         };
 
         if (/(y+)/.test(_format)) {
-            _format = _format.replace(RegExp.$1, (dateObj.getFullYear() + '').substr(4 - RegExp.$1.length));
+            _format = _format.replace(RegExp.$1, `${dateObj.getFullYear()}`.substr(4 - RegExp.$1.length));
         }
 
         for (k in o) {
-            if (new RegExp('(' + k + ')').test(_format)) {
+            if (new RegExp(`(${k})`).test(_format)) {
                 _format = _format.replace(
                     RegExp.$1,
-                    RegExp.$1.length === 1 ? `${o[k]}` : ('00' + o[k]).substr(('' + o[k]).length)
+                    RegExp.$1.length === 1 ? `${o[k]}` : `00${o[k]}`.substr(o[k].toString().length)
                 );
             }
         }
@@ -185,7 +192,7 @@ export default class Util {
      * 获取没有参数的完整url
      */
     public static getNoParamsUrl(req: Request) {
-        const urlObj = new URL(req.url, req.protocol + '://' + req.get('host'));
+        const urlObj = new URL(req.url, `${req.protocol}://${req.get('host')}`);
         return urlObj.pathname;
     }
 
@@ -233,18 +240,18 @@ export default class Util {
         switch (fnType) {
             case DescriptorType.DATA:
                 if (typeof descriptor.value !== 'function') {
-                    throw new TypeError(descriptor.value + ' is not a function');
+                    throw new TypeError(`${descriptor.value} is not a function`);
                 }
                 type = DescriptorType.DATA;
                 fn = descriptor.value;
                 break;
             case DescriptorType.ACCESSOR:
-                if (typeof descriptor.set !== 'function') {
-                    throw new TypeError(descriptor.set!.name + ' is not a function');
-                }
-                if (typeof descriptor.get !== 'function') {
-                    throw new TypeError(descriptor.get!.name + ' is not a function');
-                }
+                // if (typeof descriptor.set !== 'function') {
+                //     throw new TypeError(`${descriptor.set!.name} is not a function`);
+                // }
+                // if (typeof descriptor.get !== 'function') {
+                //     throw new TypeError(`${descriptor.get!.name} is not a function`);
+                // }
                 type = DescriptorType.ACCESSOR;
                 fn = {
                     get: descriptor.get,
@@ -319,12 +326,6 @@ export default class Util {
         }
     }
 
-    public static specialSymbolsRegExp(flags?: string) {
-        const regExpStr = '[`~!@#$^&*()=|{}"\':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]';
-
-        return new RegExp(regExpStr, flags);
-    }
-
     public static isEmpty(obj: unknown) {
         if (typeof obj !== 'object') {
             return !obj;
@@ -339,30 +340,48 @@ export default class Util {
 
     public static joiErrorMessage(err: Joi.ErrorReport[], option: JoiErrorMessageOption) {
         let message;
-        const codeMessage = {};
-        if (option.required) {
-            codeMessage['any.required'] = option.required;
-        }
-        if (option.min) {
-            codeMessage['string.min'] = option.min;
-        }
-        if (option.max) {
-            codeMessage['string.max'] = option.max;
-        }
-        if (option.regx) {
-            codeMessage['string.pattern.base'] = option.regx;
-            codeMessage['string.pattern.invert.base'] = option.regx;
+        let key = '';
+        const codeMessage = {} as Record<string, string>;
+        for (const optionKey in option) {
+            if (Reflect.has(option, optionKey)) {
+                switch (optionKey) {
+                    case 'required':
+                        key = 'required';
+                        break;
+                    case 'min':
+                        key = 'min';
+                        break;
+                    case 'max':
+                        key = 'max';
+                        break;
+                    case 'regx':
+                        key = 'pattern.base';
+                        codeMessage[key] = option[optionKey]!;
+                        key = 'pattern.invert.base';
+                        break;
+                    case 'base':
+                        key = 'base';
+                        break;
+                }
+                codeMessage[key] = option[optionKey];
+            }
         }
         err.forEach((v) => {
-            console.log(v.code);
-            if (codeMessage[v.code]) {
-                message = codeMessage[v.code];
+            const type = v.code.match(/^[^\.]*/);
+            if (type) {
+                const errorCode = v.code.replace(`${type[0]}.`, '');
+                if (codeMessage[errorCode]) {
+                    message = codeMessage[errorCode];
+                } else {
+                    message = v.messages[v.code];
+                }
             }
         });
 
         return new Error(message);
     }
 
+    // 根据文件名找文件
     public static async findFilesRecursively(filename: string, root: string): Promise<string> {
         const $findFilesRecursively = async (filename: string, root: string): Promise<string | void> => {
             const fileHash = await fsPromise.readdir(root);
@@ -384,9 +403,49 @@ export default class Util {
         };
         const filePath = await $findFilesRecursively(filename, root);
         if (!filePath) {
-            throw new HttpError(Status.SERVER_ERROR, filename + ' is not found in ' + root);
+            throw new HttpError(Status.SERVER_ERROR, `${filename} is not found in ${root}`);
         } else {
             return filePath;
         }
+    }
+
+    public static removeStartAndEndQuotes(str: string) {
+        const reg = /^["|'](.*)["|']$/g;
+
+        return str.replace(reg, '$1');
+    }
+
+    /**
+     * 对象中数组转成字符串
+     */
+    public static arrayInObjectToString(obj: Record<string, any>) {
+        const newObj = Util.deepClone(obj);
+        Object.keys(newObj).forEach((v) => {
+            if (Array.isArray(newObj[v])) {
+                newObj[v] = newObj[v].toString();
+            }
+        });
+        return newObj;
+    }
+
+    /**
+     * 数组或对象中把需要转换key的value转换成数组
+     * @param obj 对象数组或对象
+     * @param keys 需要转换的key，如果不传默认全部转换
+     */
+    public static arrayOrObjectKeyToArray<T>(obj: T, keys?: string[]): T {
+        const isArray = Array.isArray(obj);
+        const newObj = isArray ? obj : [obj];
+        const returnObj = newObj.map((v) => {
+            Object.keys(v).forEach((key) => {
+                if (keys && keys.length) {
+                    if (keys.includes(key) && v[key]) {
+                        v[key] = v[key].split(',');
+                    }
+                }
+            });
+            return v;
+        });
+        return isArray ? returnObj : returnObj[0];
     }
 }

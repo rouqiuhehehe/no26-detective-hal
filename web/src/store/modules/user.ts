@@ -23,14 +23,10 @@ const mutations: MutationTree<State> = {
 
 const actions: ActionTree<State, any> = {
     async getUserInfo({ commit }) {
-        try {
-            const res = await userOperation.getUserInfo<State>();
-            const userInfo = res.data;
+        const res = await userOperation.getUserInfo<State>();
+        const userInfo = res.data;
 
-            commit('CHANGE_USER_INFO', userInfo);
-        } catch (error) {
-            console.log(error);
-        }
+        commit('CHANGE_USER_INFO', userInfo);
     }
 };
 export default {

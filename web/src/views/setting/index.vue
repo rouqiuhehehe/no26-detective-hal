@@ -19,7 +19,7 @@
                         :preview-src-list="[item.value]"
                     >
                     </el-image>
-                    <span v-else class="descriptions-value">
+                    <span v-else v-ellipsis="{ width: '380px', content: item.value }" class="descriptions-value">
                         {{ item.value }}
                     </span>
                 </el-descriptions-item>
@@ -101,7 +101,7 @@ export default class extends Vue {
         const { data } = await Setting.getSettingUserInfo();
         this.descriptionsData = [];
 
-        let item: DescriptionsData;
+        let item: DescriptionsData | null;
         Object.keys(data).forEach((key) => {
             const value: string = data[key];
             switch (key) {
@@ -119,7 +119,7 @@ export default class extends Vue {
                         value
                     };
                     break;
-                case 'create_date':
+                case 'create_time':
                     item = {
                         label: '创建时间',
                         key,
@@ -133,7 +133,7 @@ export default class extends Vue {
                         value
                     };
                     break;
-                case 'update_date':
+                case 'update_time':
                     item = {
                         label: '修改时间',
                         key,
@@ -153,8 +153,25 @@ export default class extends Vue {
                         key,
                         value
                     };
+                    break;
+                case 'phone':
+                    item = {
+                        label: '联系方式',
+                        key,
+                        value
+                    };
+                    break;
+                case 'roleValue':
+                    item = {
+                        label: '角色',
+                        key,
+                        value: value?.toString()
+                    };
+                    break;
+                default:
+                    item = null;
             }
-            this.descriptionsData.push(item);
+            item && this.descriptionsData.push(item);
         });
     }
 }

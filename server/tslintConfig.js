@@ -365,7 +365,7 @@ module.exports = {
          * @description 禁止对对象字面量进行类型断言（断言成 any 是允许的）
          * @ts-only 仅支持 ts 文件
          */
-        'no-object-literal-type-assertion': true,
+        'no-object-literal-type-assertion': false,
         /**
          * @category functionality
          * @description 禁止没必要的 return await
@@ -933,7 +933,7 @@ module.exports = {
          * @description 必须使用模版字符串而不是字符串连接
          * @reason 字符串连接很常用
          */
-        'prefer-template': false,
+        'prefer-template': true,
         /**
          * @category style
          * @description 当没有初始值的时候，必须使用 while 而不是 for

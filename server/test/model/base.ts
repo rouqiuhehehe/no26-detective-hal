@@ -1,14 +1,17 @@
-import axios from 'axios';
-import chai from 'chai';
-import crypto from 'crypto';
-import fs from 'fs';
-import { describe } from 'mocha';
-import mocksHttp from 'node-mocks-http';
-import path from 'path';
-import sinon, { SinonAssert } from 'sinon';
-import sinonChai from 'sinon-chai';
-import { Secret } from '../../src/config/secret';
-import config from '../config';
+// noinspection ES6PreferShortImport
+
+import axios from "axios";
+import chai from "chai";
+import crypto from "crypto";
+import fs from "fs";
+import { describe } from "mocha";
+import mocksHttp from "node-mocks-http";
+import path from "path";
+import sinon, { SinonAssert } from "sinon";
+import sinonChai from "sinon-chai";
+import { Secret } from "../../src/config/secret";
+import config from "../config";
+import Util from "../../src/util";
 
 chai.use(sinonChai); // This is crucial to get Sinon's assertions.
 
@@ -34,7 +37,7 @@ export default class {
     protected authToken = '';
     private allExcludes = ['/auth', '/admin'];
     private tokenExcludes = ['/auth/management-system'];
-    private cookieserver = [];
+    private cookieserver: string[] = [];
 
     // hmac_sha256秘钥
     private HMACSHA256KEY = '1001';
@@ -71,7 +74,7 @@ export default class {
     }
 
     protected encodedDataByPublicKey(obj: Record<string, any>) {
-        const publicKey = fs.readFileSync(path.join(process.cwd() + '/key/rsa_public.key'));
+        const publicKey = fs.readFileSync(path.join(`${process.cwd()}/key/rsa_public.key`));
         const hash = crypto.createHmac('sha256', this.HMACSHA256KEY);
 
         const stringData = JSON.stringify(this.ascllSort(obj));
@@ -102,7 +105,7 @@ export default class {
     }
 
     protected _r(a: number) {
-        const c = Math.abs(parseInt(new Date().getTime() * Math.random() * 10000 + '', 10)).toString();
+        const c = Math.abs(parseInt(`${new Date().getTime() * Math.random() * 10000}`, 10)).toString();
         let d = 0;
         for (const b of c) {
             d += parseInt(b, 10);
@@ -123,7 +126,7 @@ export default class {
             (config) => {
                 const { url } = config;
                 if (url) {
-                    if (this.allExcludes.some((v) => new RegExp('^' + v).test(url))) {
+                    if (this.allExcludes.some((v) => new RegExp(`^${v}`).test(url))) {
                         let params = config.params ?? {};
                         let data = config.data ?? {};
                         const _r = this._r(1);
@@ -161,7 +164,7 @@ export default class {
                         }
                     }
                 }
-                config.headers.Cookie = this.cookieserver.join('');
+                config.headers!.Cookie = this.cookieserver.join('');
                 return config;
             },
             (err) => {
@@ -173,7 +176,7 @@ export default class {
             if (!response.data.success) {
                 throw new Error(response.data.message);
             }
-            this.cookieserver = response.headers['set-cookie'];
+            this.cookieserver = response.headers['set-cookie'] ?? [];
             return response.data;
         });
     }
@@ -182,8 +185,7 @@ export default class {
         const hash = crypto.createHash('md5');
         hash.update(password);
 
-        const md5Password = hash.digest('hex');
-        return md5Password;
+        return hash.digest('hex');
     }
 
     private ascllSort<T extends Record<string, any>>(obj: T) {
@@ -197,22 +199,17 @@ export default class {
         return newObj;
     }
 
-    private formatParams<T extends Object>(obj: T): T | Record<string, unknown> {
+    private formatParams(obj: Record<string, unknown>): Record<string, unknown> {
         const params = {};
-        function _(objC: T, params: Record<string, unknown>) {
-            const C = <A, U extends keyof A>(o: A, name: U): A[U] => {
-                return o[name];
-            };
+        function _(objC: Record<string, unknown>, params: Record<string, unknown>) {
             for (const i in objC) {
                 if (Reflect.has(objC, i)) {
-                    const item = C(objC, i);
-                    if (typeof item === 'boolean' || typeof item === 'number') {
-                        params[i] = item;
+                    const item = objC[i];
+                    if (!item) {
                         continue;
                     }
-                    if (!item) {
-                        delete params[i];
-                        continue;
+                    if (typeof item !== 'object') {
+                        params[i] = item;
                     } else {
                         if (item instanceof Array) {
                             if (item.length === 0) {
@@ -226,7 +223,7 @@ export default class {
                             params[i] = item;
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             _(item as any, params[i] as Record<string, unknown>);
-                            if (JSON.stringify(params[i]) === '{}') delete params[i];
+                            if (Util.isEmpty(params[i])) delete params[i];
                             continue;
                         }
                         params[i] = item;
@@ -239,6 +236,6 @@ export default class {
     }
 
     private isTokenExcludes(url: string) {
-        return this.tokenExcludes.some((v) => new RegExp('^' + v).test(url));
+        return this.tokenExcludes.some((v) => new RegExp(`^${v}`).test(url));
     }
 }

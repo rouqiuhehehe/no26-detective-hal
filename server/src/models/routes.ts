@@ -1,4 +1,4 @@
-import { ControllerMetadata, Route } from '@src/descriptor/controller';
+import { ControllerMetadata, Route, RouteMiddleWare, turnOffParamsValidateKey } from '@src/descriptor/controller';
 import { DefaultMiddleWareType, findFatherClass, MiddleWareArray } from '@src/descriptor/middlewareHandle';
 import { Middleware } from '@src/types/middleware_type';
 import express from 'express';
@@ -11,7 +11,9 @@ const loadTs = (dirPath: string): Promise<any[]> => {
     return new Promise(async (resolve, reject) => {
         try {
             // 检测目录是否存在
-            // await fsPromise.access(dirPath);
+            if (process.env.NODE_ENV === 'development') {
+                await fsPromise.access(dirPath);
+            }
             const fileName = await fsPromise.readdir(dirPath);
 
             try {
@@ -22,7 +24,9 @@ const loadTs = (dirPath: string): Promise<any[]> => {
                         await loadTs(curPath);
                         continue;
                     }
-
+                    if (/^(.*)(dao|handler).ts$/.test(name.toLocaleLowerCase())) {
+                        continue;
+                    }
                     if (extname === '.js' || extname === '.ts') {
                         try {
                             const module = import(`${curPath}`);
@@ -37,7 +41,7 @@ const loadTs = (dirPath: string): Promise<any[]> => {
                 reject(error);
             }
         } catch (error) {
-            reject(dirPath + ' does not exist');
+            reject(`${dirPath} does not exist`);
         }
     });
 };
@@ -126,35 +130,113 @@ export const scanController = (dirPath: string, route: express.Application) => {
                                 }
                             }
 
-                            // tslint:disable-next-line: jsdoc-format
-                            if (/**isController && */ hasHomePath && (hasRoutes || hasStaticRoutes)) {
+                            // 是否有需要继承的路由
+                            const hasAbstractRoutes = Reflect.getMetadata(
+                                ControllerMetadata.ISABSTRACTROUTES,
+                                controller
+                            );
+                            // 处理导入的验证
+                            // 导入的验证默认和插入的验证相同
+                            let insertValidator: RouteMiddleWare;
+                            if (
+                                // tslint:disable-next-line: jsdoc-format
+                                /**isController && */ hasHomePath &&
+                                (hasRoutes || hasStaticRoutes || hasAbstractRoutes)
+                            ) {
+                                const needSuperRoutes: Route[] = [];
+                                if (Reflect.hasOwnMetadata(ControllerMetadata.SUPERROUTES, controller)) {
+                                    const defaultRoutes = Reflect.getMetadata(
+                                        ControllerMetadata.ABSTRACTROUTES,
+                                        controller.prototype
+                                    );
+                                    const superRoutes = Reflect.getOwnMetadata(
+                                        ControllerMetadata.SUPERROUTES,
+                                        controller
+                                    );
+
+                                    if (!defaultRoutes || !defaultRoutes.length) {
+                                        throw new RangeError('请先定义父类默认路由，再继承');
+                                    }
+                                    // 是否取消默认路由的auth等默认校验，用于接口测试
+                                    const isTurnOffParamsValidate = Reflect.getOwnMetadata(
+                                        turnOffParamsValidateKey,
+                                        controller
+                                    );
+                                    // super路由的验证器中间件
+                                    const superRoutesValidator = Reflect.getOwnMetadata(
+                                        ControllerMetadata.SUPERROUTESVALIDATOR,
+                                        controller
+                                    );
+
+                                    defaultRoutes.forEach((v: Route) => {
+                                        if (superRoutes.includes(v.path)) {
+                                            const route = { ...v };
+                                            if (isTurnOffParamsValidate && route.middleWare) {
+                                                route.middleWare = route.middleWare.filter(
+                                                    (v) =>
+                                                        !(
+                                                            Object.values(DefaultMiddleWareType).includes(v.type) &&
+                                                            v.type !== DefaultMiddleWareType.CUSTOM &&
+                                                            v.type !== DefaultMiddleWareType.LOG
+                                                        )
+                                                );
+                                            }
+                                            if (superRoutesValidator) {
+                                                const validator = superRoutesValidator[route.path];
+                                                if (validator) {
+                                                    // 导入验证应于插入验证一致
+                                                    if (route.path === '/insert') {
+                                                        insertValidator = validator;
+                                                    }
+                                                    route.middleWare?.push(validator);
+                                                }
+                                            }
+                                            // 添加需要的父级路由
+                                            needSuperRoutes.push(route);
+                                        }
+                                    });
+                                }
                                 const routes = [
+                                    ...needSuperRoutes,
                                     ...(Reflect.getOwnMetadata(ControllerMetadata.ROUTES, controller.prototype) ?? []),
                                     ...(Reflect.getOwnMetadata(ControllerMetadata.ROUTES, controller) ?? [])
                                 ] as Route[];
-
                                 routes.forEach((v) => {
                                     // 做字符串兼容
                                     const curPath = path.posix
                                         .join(homePath, basePath, v.path)
                                         .replace(new RegExp('/$'), '');
                                     const controllerInstance = new controller();
+                                    let validator = v.middleWare?.find(
+                                        (v) => v.type === DefaultMiddleWareType.VALIDATOR
+                                    );
 
+                                    // 导入默认使用insert的验证
+                                    if (
+                                        v.path === '/import' &&
+                                        !v.middleWare?.some((v) => v.type === DefaultMiddleWareType.VALIDATOR) &&
+                                        insertValidator
+                                    ) {
+                                        validator = insertValidator;
+                                    }
                                     const callback = controllerInstance[v.propertyKey].bind(controllerInstance);
-
-                                    route[v.method](curPath, ...(v.middleWare ?? []), callback);
+                                    route[v.method](
+                                        curPath,
+                                        ...(v.middleWare ? v.middleWare.map((v) => v.fn) : []),
+                                        (req: ExpressRequest, _res: ExpressResponse, next: NextFunction) => {
+                                            validator && (req.validator = validator.fn);
+                                            next();
+                                        },
+                                        callback
+                                    );
                                 });
                             }
-
-                            i++;
-
-                            if (i === moduleArr.length) {
+                            if (i++ === moduleArr.length - 1) {
                                 resolve(true);
                             }
                         });
                     } else {
-                        i++;
-                        if (i === moduleArr.length) {
+                        if (i++ === moduleArr.length - 1) {
                             resolve(true);
                         }
                     }

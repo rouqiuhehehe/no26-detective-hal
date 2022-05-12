@@ -1,15 +1,18 @@
 <template>
     <el-form :model="formData" :rules="ruleForm" inline v-bind="getMyFormBind" ref="my-form">
         <el-row :gutter="20" class="my-form-container">
-            <el-col v-for="item in options.columns" :key="item.dataIndex" :span="item.box || 8">
-                <el-form-item v-bind="getMyFormItemBind(item)">
-                    <ItemComponent
-                        v-model="formData[item.dataIndex]"
-                        :formdata="formData"
-                        :option="item"
-                    ></ItemComponent>
-                </el-form-item>
-            </el-col>
+            <template v-for="item in options.columns">
+                <el-col v-if="!item.hidden" :key="item.dataIndex" v-bind="getColSpan(item.box || 8)">
+                    <el-form-item v-bind="getMyFormItemBind(item)">
+                        <span slot="label" v-if="item.showStar" class="required-label">{{ item.label }}</span>
+                        <ItemComponent
+                            v-model="formData[item.dataIndex]"
+                            :formdata="formData"
+                            :option="item"
+                        ></ItemComponent>
+                    </el-form-item>
+                </el-col>
+            </template>
         </el-row>
     </el-form>
 </template>
@@ -104,8 +107,9 @@ export default class extends Vue {
             this.init = true;
             if (this.options.type !== 'del') {
                 if (this.isEditOrViewForm(this.options)) {
-                    let params;
-
+                    let params = {
+                        [this.options.primaryKey]: this.tableColumnData?.[this.options.primaryKey]
+                    } as Record<string, any>;
                     if (this.options.viewParams) {
                         if (typeof this.options.viewParams === 'function') {
                             params = await this.options.viewParams.call(
@@ -125,9 +129,7 @@ export default class extends Vue {
                     data = await this.options.beforeRender.call(this.thisArg, data, this.options);
                 }
 
-                const formData = {
-                    ...data
-                };
+                const formData: Record<string, any> = {};
 
                 for (const v of this.options.columns) {
                     const map = this.itemConfig.typeMap;
@@ -141,14 +143,21 @@ export default class extends Vue {
                                 // this.ruleForm[v.dataIndex] = rule;
                             }
                         }
-
                         if (v.value) {
                             formData[v.dataIndex] = v.value;
+                        } else {
+                            if (data[v.dataIndex] || data[v.dataIndex] === 0) {
+                                formData[v.dataIndex] = data[v.dataIndex];
+                            } else {
+                                formData[v.dataIndex] = option?.defaultValue(v as any);
+                            }
                         }
-                        if (utils.isEmpty(formData[v.dataIndex]) && formData[v.dataIndex] !== 0) {
-                            formData[v.dataIndex] = option?.defaultValue(v as any);
-                        }
+                    } else {
+                        formData[v.dataIndex] = data[v.dataIndex];
                     }
+                }
+                if (this.isEditOrViewForm(this.options)) {
+                    formData.id = this.tableColumnData?.id;
                 }
                 this.formData = formData;
                 this.$forceUpdate();
@@ -185,6 +194,10 @@ export default class extends Vue {
                     try {
                         const res = await store(params);
 
+                        !this.options.hideSuccessTips &&
+                            (await this.$alert('提交成功', '提示', {
+                                type: 'success'
+                            }));
                         if (this.options.afterCommit && typeof this.options.afterCommit === 'function') {
                             await (this.options.afterCommit as any).call(
                                 this.thisArg,
@@ -192,18 +205,27 @@ export default class extends Vue {
                                 this.options,
                                 this.MyTable
                             );
-                        } else {
-                            await this.$alert('提交成功', '提示', {
-                                type: 'success'
-                            });
                         }
+
                         resolve(res);
                     } catch (e) {
                         reject(e);
                     }
+                } else {
+                    resolve('no-refresh');
                 }
             });
         });
+    }
+
+    public getColSpan(span: number) {
+        return {
+            xs: span + 8,
+            sm: span + 6,
+            md: span + 4,
+            lg: span + 2,
+            xl: span
+        };
     }
 
     public getMyFormItemBind(item: Columns) {
@@ -218,6 +240,15 @@ export default class extends Vue {
         }
         obj['prop'] = item.dataIndex;
         return obj;
+    }
+
+    private initFormData(formData: Record<string, any>) {
+        Object.keys(formData).reduce((a, v) => {
+            if (Reflect.has(a, v)) {
+                a[v] = formData[v];
+            }
+            return a;
+        }, this.formData);
     }
 
     private isEditOrViewForm(obj: any): obj is EditForm | ViewForm {
@@ -236,7 +267,7 @@ export default class extends Vue {
     }
 
     private getRule<T>(v: Columns, handle: RequiredRule<T>, message?: string, trigger = 'blur'): elRuleObject | false {
-        message = message ?? `请输入正确的${v.label.replace('：', '')}`;
+        message = message ?? `请输入${v.label.replace('：', '')}`;
         if (typeof handle === 'boolean' && handle) {
             return {
                 required: true,
@@ -349,7 +380,9 @@ export default class extends Vue {
         }
         return (rule, value, callback) => {
             if (required) {
-                if (!value || !reg?.test(value)) {
+                if (!value) {
+                    callback(new Error(`${v.label}不能为空`));
+                } else if (!reg?.test(value)) {
                     callback(new Error(message));
                 } else {
                     callback();
@@ -369,6 +402,25 @@ export default class extends Vue {
 <style lang="less" scoped>
 .el-form-item {
     display: flex;
+    ::v-deep.el-form-item__label {
+        white-space: nowrap;
+    }
+
+    ::v-deep .el-form-item__content {
+        flex: 1;
+    }
+}
+
+.required-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    &::before {
+        content: '*';
+        color: #ff4949;
+        margin-right: 4px;
+    }
 }
 
 .my-form-container {

@@ -17,15 +17,18 @@ export default function Required<isStrict = false>(arr: string[]) {
             throw new RangeError('Please do not add duplicate verification');
         } else {
             if (isString) {
-                a[v.slice(1)] = Joi.string().required();
+                a[v.slice(1)] = Joi.string()
+                    .required()
+                    .error(new Error(`请传入必填项${v.slice(1)}`));
             } else if (isNumber) {
-                a[v.slice(1)] = Joi.number().required();
+                a[v.slice(1)] = Joi.number()
+                    .required()
+                    .error(new Error(`请传入必填项${v.slice(1)}`));
             } else {
-                a[v] = Joi.required();
+                a[v] = Joi.required().error(new Error(`请传入必填项${v.slice(1)}`));
             }
         }
         return a;
-        // tslint:disable-next-line: no-object-literal-type-assertion
     }, {} as Joi.SchemaMap<any, isStrict>);
 
     return Validate(joiObject);

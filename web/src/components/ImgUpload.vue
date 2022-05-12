@@ -57,8 +57,8 @@
 <script lang="ts">
 import Dictionary from '@/api/dictionary';
 import utils from '@/utils';
-import {ElUploadInternalFileDetail, FileListItem, HttpRequestOptions} from 'element-ui/types/upload';
-import {Component, Prop, Vue, Watch} from 'vue-property-decorator';
+import { ElUploadInternalFileDetail, FileListItem, HttpRequestOptions } from 'element-ui/types/upload';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({
     inheritAttrs: false
@@ -91,7 +91,6 @@ export default class extends Vue {
             this.filesList = [];
             (newV as string[]).forEach((v) => {
                 if (v) {
-                    console.log(v);
                     // eslint-disable-next-line no-useless-escape
                     const filename = v.match(/(?<=(\/|\\))[^(\/|\\)]*$/g);
                     if (filename && filename.length) {
@@ -150,6 +149,7 @@ export default class extends Vue {
             this.onUpload = false;
         }
     }
+
     public changeUploadFiles(
         file: ElUploadInternalFileDetail | File,
         filesList: ElUploadInternalFileDetail[] | string
@@ -180,10 +180,13 @@ export default class extends Vue {
         this.dialogImageUrl = file.url!;
         this.dialogVisible = true;
     }
-    public async handleDownload(file: ElUploadInternalFileDetail) {
-        const data = await Dictionary.downloadFile({ filename: file.name });
 
-        utils.downloadFile(file.name, data.data);
+    public async handleDownload(file: ElUploadInternalFileDetail) {
+        const { data } = await Dictionary.downloadFileWithGet({ filename: file.name });
+        // const a = document.createElement('a');
+        // a.href = '/admin/dictionary/download?filename=' + file.name;
+        // a.click();
+        utils.downloadFile(file.name, data);
     }
 }
 </script>
@@ -196,6 +199,7 @@ export default class extends Vue {
     height: 100px !important;
     width: 100px !important;
 }
+
 /deep/ .el-upload--picture-card {
     height: 100px !important;
     width: 100px !important;

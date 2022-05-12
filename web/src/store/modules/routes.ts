@@ -49,16 +49,12 @@ function formatRoutes(params: Partial<WebRoutesTree>[]): formatRoutesTree[] {
 }
 const actions: ActionTree<State, any> = {
     async getWebRoutes({ commit }) {
-        try {
-            const res = await routes.getRoutes<State>();
-            const { routesTree, asideTree } = res.data;
+        const res = await routes.getRoutes<State>();
+        const { routesTree, asideTree } = res.data;
 
-            const route = formatRoutes(routesTree);
-            commit('CHANGE_ROUTES_TREE', route);
-            commit('CHANGE_ASIDE_TREE', asideTree);
-        } catch (error) {
-            console.log(error);
-        }
+        const route = formatRoutes(routesTree);
+        commit('CHANGE_ROUTES_TREE', route);
+        commit('CHANGE_ASIDE_TREE', asideTree);
     }
 };
 export default {

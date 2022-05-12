@@ -40,7 +40,10 @@ export interface MyTable {
         label: string;
     }[];
 
-    title: string;
+    aside?: ComponentBase;
+    events?: Record<string, (...arg: any) => any>;
+
+    title?: string;
 
     buttons?: Buttons[];
 
@@ -158,7 +161,7 @@ export interface MyTable {
 export interface MyTableColumns {
     beforeRender?: (v: any, row: Record<string, any>, options: MyTableColumns, tableOptions: MyTable) => any;
 
-    component?: ComponentBase<any, MyTableColumns, MyTable>;
+    component?: ComponentBase<any, any, MyTableColumns, MyTable>;
 
     /** Type of the column. If set to `selection`, the column will display checkbox. If set to `index`, the column will display index of the row (staring from 1). If set to `expand`, the column will display expand icon. */
     type?: TableColumnType;
@@ -274,18 +277,23 @@ export interface MyPagination {
 
     /** Whether to hide when thers's only one page */
     hideOnSinglePage?: boolean;
+
+    // 是否需要绝对定位
+    absolute?: boolean;
 }
 
 type Buttons =
     | {
+          disabled?: boolean | ((option: Buttons, options: MyTable) => boolean);
           type?: ButtonType;
           icon?: string;
           dataIndex: string;
-          component: Omit<ComponentBase<null, Buttons, MyTable>, 'label'>;
+          component: Omit<ComponentBase<null, any, Buttons, MyTable>, 'label'>;
           dialog?: MyDialog;
           show?: boolean | ((this: Vue) => boolean);
       }
     | {
+          disabled?: boolean | ((option: Buttons, options: MyTable) => boolean);
           type?: ButtonType;
           icon?: string;
           dataIndex: string;
@@ -297,14 +305,19 @@ type Buttons =
           show?: boolean | ((this: Vue) => boolean);
       };
 
-type Button =
+type OperationButton =
     | Merge<
           MyDialog,
           {
               dataIndex: string;
-              beforeRender?: (value: null, row: Record<string, any>, option: Button, options: MyTable) => string;
+              beforeRender?: (
+                  value: null,
+                  row: Record<string, any>,
+                  option: OperationButton,
+                  options: MyTable
+              ) => string;
               label?: string;
-              click?: (row: Record<string, any>, option: Button, options: MyTable) => void | boolean;
+              click?: (row: Record<string, any>, option: OperationButton, options: MyTable) => void | boolean;
               show?: boolean | ((this: Vue) => boolean);
           }
       >
@@ -314,7 +327,7 @@ export type MyTableColumnsOperation = Omit<
     Merge<
         MyTableColumns,
         {
-            button: Button[];
+            button: OperationButton[];
         }
     >,
     'label' | 'dataIndex'
@@ -337,6 +350,8 @@ export interface MyDialog {
     destroyOnClose?: boolean;
     ref?: string;
     form?: MyDialogForm;
+    component?: ComponentBase;
+    commit?: (options: MyDialog) => void | boolean | Promise<void | boolean>;
 }
 
 export type FormType = 'edit' | 'del' | 'view' | 'add' | 'default';
@@ -353,6 +368,7 @@ export type Columns =
     | MySwitch
     | MyText
     | MyImgUpload
+    | MyFileImport
     | MyComponent;
 
 export interface MyForm {
@@ -392,6 +408,11 @@ export interface MyForm {
     type: FormType;
 
     beforeRender?: (formData: any, options: MyForm) => Record<string, any>;
+
+    hideRequiredAsterisk?: boolean;
+
+    // 是否隐藏默认的提交成功提示
+    hideSuccessTips?: boolean;
 }
 
 export interface EditForm extends MyForm {
@@ -405,6 +426,8 @@ export interface EditForm extends MyForm {
         tableColumnsData?: Record<string, any>,
         table?: Vue & { [K in keyof any]: any }
     ) => { [K in keyof A]: A[k] } | Record<string, any>;
+
+    primaryKey: string;
 
     beforeCommit?: (
         this: Vue,
@@ -433,6 +456,8 @@ export interface ViewForm extends MyForm {
      */
     viewStore: FormStore<any>;
 
+    primaryKey: string;
+
     viewParams?: (
         tableColumnsData?: Record<string, any>,
         table?: Vue & { [K in keyof any]: any }
@@ -443,6 +468,11 @@ export interface DelForm {
     type: 'del';
     store: FormStore;
     confirm?: ElMessageBoxOptions;
+    primaryKey: string;
+    hideSuccessTips?: boolean;
+    message?:
+        | string
+        | ((this: Vue, row?: Record<string, any>, column: DelForm, table?: Vue & { [K in keyof any]: any }) => string);
     beforeCommit?: (
         this: Vue,
         tableColumnData?: Record<string, any>,
@@ -546,6 +576,8 @@ export interface BaseItemComponent {
     box?: number;
     dataIndex: string;
     xType: string;
+    showStar?: boolean;
+    hidden?: boolean;
 }
 export type ColumnsStore = ((params: any) => Promise<AxiosResponse<any, any>>) | any[];
 export type FormStore = (params: any) => Promise<AxiosResponse<any, any>>;
@@ -573,26 +605,27 @@ export type XType =
     | 'date'
     | 'text'
     | 'imgUpload'
+    | 'fileImport'
     | 'component';
 
-export interface ComponentBase<T = any, U = ComponentBase, A = any> {
+export interface ComponentBase<T = any, C = Record<string, any>, U = ComponentBase, A = any> {
     component:
         | Component
-        | ((value?: T, formdata: Record<string, any>, option: U) => Component)
-        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component)
+        | ((value?: T, formdata: C, option: U) => Component | string)
+        | ((value?: T, row: C, option: U, options?: A) => Component | string)
         | string;
     bind?:
         | Record<string, any>
-        | ((value?: T, formdata: Record<string, any>, option: U) => Record<string, any>)
-        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component);
+        | ((value?: T, formdata: C, option: U) => Record<string, any>)
+        | ((value?: T, row: C, option: U, options?: A) => Component);
     events?:
         | Record<string, any>
-        | ((value?: T, formdata: Record<string, any>, option: U) => Record<string, any>)
-        | ((value?: T, row: Record<string, any>, option: U, options?: A) => Component);
+        | ((value?: T, formdata: C, option: U) => Record<string, any>)
+        | ((value?: T, row: C, option: U, options?: A) => Component);
     label?:
         | string
-        | ((value?: T, formdata: Record<string, any>, option: U) => string)
-        | ((value?: T, row: Record<string, any>, option: U, options?: A) => string);
+        | ((value?: T, formdata: C, option: U) => string)
+        | ((value?: T, row: C, option: U, options?: A) => string);
 }
 /**
  * 获取不继承自vue的单独接口
@@ -602,7 +635,6 @@ type GetNoElementUIComponentType<T extends ElementUIComponent> = Diff<T, Element
  * 获取不带methods方法的接口
  */
 type OmitNoMethodsType<T extends ElementUIComponent> = Omit<T, 'focus' | 'blur' | 'select'>;
-
 type MyElementUIComponentType<T extends ElementUIComponent, U extends XType> = Overwrite<
     Merge<BaseItemComponent, Partial<GetNoElementUIComponentType<OmitNoMethodsType<T>>>>,
     { xType: U }
@@ -640,7 +672,7 @@ export interface ELEvent {
     input: (v: string | number) => void;
 }
 export type MyInput = MyElementUIComponentTypeWithBeforeRender<
-    ElInput,
+    Overwrite<ElInput, { type: 'text' | 'textarea' | 'number' }>,
     'input',
     Pick<ELEvent, 'change' | 'blur' | 'focus' | 'clear' | 'input'>
 >;
@@ -694,6 +726,22 @@ export type MyImgUpload = MyElementUIComponentTypeWithBeforeRender<
         sortType?: ('zoom' | 'download' | 'remove' | 'edit')[];
     },
     'imgUpload',
+    never
+>;
+export type MyFileImport = MyElementUIComponentTypeWithBeforeRender<
+    {
+        /**
+         * 实例 .png,.jpg
+         * */
+        accept: string;
+        template: {
+            title: string;
+            store: (params: any) => Promise<AxiosResponse<any, any>>;
+        };
+        store: (params: any) => Promise<AxiosResponse<any, any>>;
+        value: string[];
+    },
+    'fileImport',
     never
 >;
 export type MyText = Overwrite<

@@ -1,4 +1,5 @@
 import Util, { DescriptorType } from '@util';
+
 // tslint:disable: no-invalid-this
 
 function autoBind<T extends Function>(target: T): T | void;
@@ -37,7 +38,7 @@ function methodAutoBind(target: Object, key: string | symbol, fn: ReturnType<typ
         get = fn.fn.get;
         set = fn.fn.set;
     } else {
-        throw new TypeError(DescriptorType.UNDEFINED + ' is not a function');
+        throw new TypeError(`${DescriptorType.UNDEFINED} is not a function`);
     }
 
     return {
@@ -57,7 +58,6 @@ function methodAutoBind(target: Object, key: string | symbol, fn: ReturnType<typ
                 },
                 configurable: true
             });
-
             return get.bind(this);
         },
         set() {

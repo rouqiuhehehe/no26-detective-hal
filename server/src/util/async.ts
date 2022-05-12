@@ -25,7 +25,7 @@ export default class {
                     const callback = (...arg: T[]) => {
                         const afterNow = Date.now();
                         if (afterNow - now >= options.time) {
-                            reject(new Error(v.toString() + 'timeout'));
+                            reject(new Error(`${ v.toString() }timeout`));
                             error = true;
                         }
                         i++;

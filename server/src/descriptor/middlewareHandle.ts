@@ -4,16 +4,18 @@ import { Status } from '@src/config/server_config';
 import HttpError from '@src/models/httpError';
 import { Middleware } from '@src/types/middleware_type';
 import { NextFunction, Request, Response } from 'express';
-import { ControllerMetadata, Route, RouteMethod } from './controller';
+import { ControllerMetadata, RouteMethod } from './controller';
 
 const repeatDefineError = new HttpError(Status.SERVER_ERROR, '父路由定义过的中间件不允许在子路由重复定义');
+
 export enum DefaultMiddleWareType {
     LOG = 'log',
     AUTH = 'auth',
     AUTHORIZATION = 'authorization',
     ANTI_REPLAY = 'antiReplay',
     TIMESTAMP = 'timestamp',
-    CUSTOM = 'custom'
+    CUSTOM = 'custom',
+    VALIDATOR = 'validator'
 }
 
 export interface MiddleWareArray {
@@ -80,7 +82,9 @@ export const methodLogHandler = (
     middleware: Middleware
 ) => {
     // 拿到路由数组，如果不存在直接报错，路由定义需在中间件前
-    const routes = Reflect.getMetadata(ControllerMetadata.ROUTES, target);
+    const routes = Reflect.getOwnMetadata(ControllerMetadata.ISABSTRACTROUTES, target.constructor)
+        ? Reflect.getMetadata(ControllerMetadata.ABSTRACTROUTES, target)
+        : Reflect.getMetadata(ControllerMetadata.ROUTES, target);
 
     if (routes instanceof Array && routes.length) {
         if (Reflect.hasMetadata('middleware', target.constructor)) {
@@ -107,14 +111,18 @@ export const methodLogHandler = (
         // 遍历路由数组，找到定义中间件的项，吧中间件push进去
         const route = routes.find((v) => v.propertyKey === propertyKey);
         if (route) {
-            (route.middleWare ?? (route.middleWare = [])).push(middleware);
+            (route.middleWare ?? (route.middleWare = [])).push({
+                type,
+                target,
+                fn: middleware
+            });
         } else {
             throw new RangeError('The route defined by the current middleware was not found');
         }
     } else {
         throw new HttpError(
             Status.SERVER_ERROR,
-            routes + ' is not an array, is maybe that the descriptor in the wrong order'
+            `${routes} is not an array, is maybe that the descriptor in the wrong order`
         );
     }
 };
@@ -127,20 +135,26 @@ export const methodMiddleware = (
     // 拿到路由数组，如果不存在直接报错，路由定义需在中间件前
     // 所有子类装饰器放入下一次事件循环，让父类装饰器先执行
     process.nextTick(() => {
-        const routes = Reflect.getMetadata(ControllerMetadata.ROUTES, target);
+        const routes = Reflect.getOwnMetadata(ControllerMetadata.ISABSTRACTROUTES, target.constructor)
+            ? Reflect.getMetadata(ControllerMetadata.ABSTRACTROUTES, target)
+            : Reflect.getMetadata(ControllerMetadata.ROUTES, target);
 
         if (routes instanceof Array && routes.length) {
             // 遍历路由数组，找到定义中间件的项，吧中间件push进去
             const route = routes.find((v) => v.propertyKey === propertyKey);
             if (route) {
-                (route.middleWare ?? (route.middleWare = [])).push(middleware(route.method));
+                (route.middleWare ?? (route.middleWare = [])).push({
+                    type: DefaultMiddleWareType.VALIDATOR,
+                    fn: middleware(route.method),
+                    target
+                });
             } else {
                 throw new RangeError('The route defined by the current middleware was not found');
             }
         } else {
             throw new HttpError(
                 Status.SERVER_ERROR,
-                routes + ' is not an array, is maybe that the descriptor in the wrong order'
+                `${routes} is not an array, is maybe that the descriptor in the wrong order`
             );
         }
     });

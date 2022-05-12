@@ -118,7 +118,7 @@ export class Opera {
 
         const sqlArr = rows.map((v) => {
             const paramsArr = [];
-            const types: number[] = [];
+            const types: string[] = [];
 
             for (const i in v) {
                 if (Reflect.has(v, i) && this.columns.includes(i)) {
@@ -165,7 +165,7 @@ export class Opera {
     }
 
     private createTypesMap(types: OperaTypes[]) {
-        const map = new Map<string, number>();
+        const map = new Map<string, string>();
 
         types.forEach((v) => {
             map.set(v.label, v.id);

@@ -34,9 +34,7 @@ export default class {
                     v.man = v.person.man;
                     Reflect.deleteProperty(v, 'person');
                 }
-                if (v.is_city_limit && v.is_city_limit.length) {
-                    v.is_city_limit = v.is_city_limit[0];
-                }
+                v.is_city_limit = +v.is_city_limit;
                 return v;
             },
             columns: [
@@ -50,7 +48,7 @@ export default class {
                 },
                 {
                     label: '图片',
-                    dataIndex: 'pic_url',
+                    dataIndex: 'picUrl',
                     component: {
                         component: 'el-image',
                         bind(v: string) {
@@ -84,17 +82,20 @@ export default class {
                         }
                     }
                 },
-
+                {
+                    label: '类型',
+                    dataIndex: 'typeValue'
+                },
                 {
                     label: '城市限定',
-                    dataIndex: 'is_city_limit',
+                    dataIndex: 'isCityLimit',
                     beforeRender(v: number) {
                         return v === 0 ? Util.colorSpan('#909399', '否') : Util.colorSpan('#409EFF', '是');
                     }
                 },
                 {
                     label: '独家',
-                    dataIndex: 'is_exclusive',
+                    dataIndex: 'isExclusive',
                     beforeRender(v: number) {
                         return v === 0 ? Util.colorSpan('#909399', '否') : Util.colorSpan('#409EFF', '是');
                     }
@@ -109,6 +110,7 @@ export default class {
                             labelWidth: '100px',
                             labelWithColon: true,
                             type: 'view',
+                            primaryKey: 'id',
                             viewStore: operaList.getOperaListView,
                             viewParams(v) {
                                 return {
@@ -136,6 +138,7 @@ export default class {
                                     component: {
                                         component: 'el-image',
                                         bind(v: string) {
+                                            console.log(v);
                                             return {
                                                 src: v,
                                                 style: 'width: 50px;height: 50px;',
@@ -161,6 +164,12 @@ export default class {
                                     beforeRender(v, row) {
                                         return `${v}男${row.woman}女`;
                                     }
+                                },
+                                {
+                                    label: '',
+                                    xType: 'text',
+                                    hidden: true,
+                                    dataIndex: 'woman'
                                 },
                                 {
                                     label: '难度',
@@ -280,12 +289,16 @@ export default class {
                                             },
                                             label
                                         );
-                                    return createElement('div', [
-                                        inputNumber('man'),
-                                        span('男'),
-                                        inputNumber('woman'),
-                                        span('女')
-                                    ]);
+                                    return createElement(
+                                        'div',
+                                        {
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center'
+                                            }
+                                        },
+                                        [inputNumber('man'), span('男'), inputNumber('woman'), span('女')]
+                                    );
                                 }
                             });
                         }
@@ -308,18 +321,8 @@ export default class {
                 {
                     label: '城市限定',
                     dataIndex: 'is_city_limit',
-                    xType: 'checkboxGroup',
-                    max: 1,
-                    store: [
-                        {
-                            key: 0,
-                            value: '否'
-                        },
-                        {
-                            key: 1,
-                            value: '是'
-                        }
-                    ],
+                    xType: 'checkbox',
+                    value: 'false',
                     box: 4
                 }
             ]
