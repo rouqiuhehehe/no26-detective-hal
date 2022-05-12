@@ -1,11 +1,11 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
-import { Permission } from '@src/config/permission';
 import { Controller, Get } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Util from '@util';
 import { Request, Response } from 'express';
 import admin from '..';
+import { RedisConfig } from '@src/config/redis_config';
 
 const db = new Db();
 interface WebRoutes {
@@ -19,13 +19,14 @@ interface WebRoutes {
     create_date: Date;
     update_date: Date;
     title: string;
-    read_permission: Permission;
-    write_permission: Permission;
+    read_permission: string;
+    write_permission: string;
     icon?: string;
+    level: number;
 }
 
 type WebFormatRoutesTree = Omit<WebRoutes, 'write_permission' | 'read_permission'> & {
-    meta: { hidden: boolean; readonly: boolean };
+    meta: { readonly: boolean };
     children?: WebRoutesTree[];
 };
 
@@ -34,7 +35,7 @@ type WebRoutesTree = Omit<WebRoutes, 'write_permission' | 'read_permission'> & {
     children?: WebRoutesTree[];
 };
 
-type AsideTree = Pick<WebRoutes, 'title' | 'path' | 'icon'> & {
+type AsideTree = Pick<WebRoutes, 'title' | 'path' | 'icon' | 'level'> & {
     children?: AsideTree[];
 };
 
@@ -60,16 +61,27 @@ export default class extends admin {
         const token = req.header('authorization')?.replace('Bearer ', '');
 
         await redis(async (client) => {
-            const { permission } = await client.hGetAll(`user:${token}`);
+            const userWebRoutes = await client.get(`user:web-routes:${token}`);
+            if (userWebRoutes) {
+                return res.success(JSON.parse(userWebRoutes));
+            }
 
+            const { role } = await client.hGetAll(`user:${token}`);
             const webRoutes = await this.getDatabaseWebRoutes(req);
+            const permissionList = (await this.getRolePermission(role?.split(','))).map((v) => v.n_permission_id);
 
-            const permissionHandleRoutes = this.permissionHandle(webRoutes, +permission as Permission);
+            const permissionHandleRoutes = this.permissionHandle(webRoutes, permissionList);
             this.excludesAsidesMap.clear();
             this.routeMap.clear();
             const routesTree = this.formatRoutes(Util.deepClone(permissionHandleRoutes), null);
             const asideTree = this.formatAside(Util.deepClone(permissionHandleRoutes), null);
 
+            const routesAndAsideTree = {
+                routesTree,
+                asideTree
+            };
+            await client.set(`user:web-routes:${token}`, JSON.stringify(routesAndAsideTree));
+            await client.expire(`user:web-routes:${token}`, RedisConfig.WEB_ROUTES_EXPIRE);
             res.success({
                 routesTree,
                 asideTree
@@ -77,34 +89,33 @@ export default class extends admin {
         });
     }
 
-    private permissionHandle(routes: WebRoutes[], permission: Permission) {
-        return routes.map<WebFormatRoutesTree>((v) => {
-            let hidden: boolean;
-            let readonly: boolean;
-            if ((permission & v.write_permission) === v.write_permission) {
-                // 可读写权限
-                hidden = false;
-                readonly = false;
-            } else if ((permission & v.read_permission) === v.read_permission) {
-                // 可读权限
-                hidden = false;
-                readonly = true;
-            } else {
-                // 不可读写
-                hidden = true;
-                readonly = true;
+    private permissionHandle(routes: WebRoutes[], permissionList: string[]) {
+        console.log(routes);
+        return routes.reduce<WebFormatRoutesTree[]>((a, v) => {
+            let readonly = false;
+            const { read_permission, write_permission } = v;
+            if (read_permission) {
+                if (!permissionList.includes(read_permission)) {
+                    // 没有可读权限，不添加路由
+                    return a;
+                }
             }
-
+            if (write_permission) {
+                if (!permissionList.includes(write_permission)) {
+                    // 没有可写权限，添加readonly
+                    readonly = true;
+                }
+            }
             Reflect.deleteProperty(v, 'read_permission');
             Reflect.deleteProperty(v, 'write_permission');
-            return {
+            a.push({
                 ...v,
                 meta: {
-                    hidden,
                     readonly
                 }
-            };
-        });
+            });
+            return a;
+        }, []);
     }
 
     private formatRoutes(routes: WebRoutesTree[], pid: string | null) {
@@ -161,7 +172,8 @@ export default class extends admin {
 
                         const obj: AsideTree = {
                             title: v.title,
-                            path: v.path
+                            path: v.path,
+                            level: v.level
                         };
 
                         if (!Util.isEmpty(children)) {
@@ -178,11 +190,23 @@ export default class extends admin {
             return a;
         }, asideTree);
 
-        return asideTree;
+        return asideTree
+            .sort((a, b) => a.level - b.level)
+            .map((v) => {
+                Reflect.deleteProperty(v, 'level');
+                return v;
+            });
     }
 
     private async getDatabaseWebRoutes(req: Request) {
         const sql = 'select * from web_routes';
         return await db.asyncQueryBySock<WebRoutes[]>(req, sql);
+    }
+
+    private async getRolePermission(roleId: string[] = []) {
+        const sql = `SELECT DISTINCT n_permission_id FROM n_permission_relation WHERE n_role_id in (${roleId
+            .map((v) => `'${v}'`)
+            .toString()})`;
+        return await db.asyncQuery<{ n_permission_id: string }[]>(sql);
     }
 }

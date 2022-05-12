@@ -2,8 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 
-const env = process.platform === 'win32' ? 'win' : 'linux';
-const removeOrder = process.platform === 'win32' ? 'rd /s /q' : 'rm -rf'
+const { mode } = getCmdParams();
+const env = mode ?? (process.platform === 'win32' ? 'win' : 'linux');
+const fileName = process.platform === 'win32' ? 'pkg.cmd' : 'pkg';
+
+const removeOrder = process.platform === 'win32' ? 'rd /s /q' : 'rm -rf';
 try {
     fs.accessSync(path.join(process.cwd(), 'dist'));
 
@@ -18,24 +21,21 @@ try {
     });
 
     try {
-        fs.accessSync(path.join(process.cwd(), 'build'));
-
         execSync(`${removeOrder} build`, {
             cwd: process.cwd()
         });
     } catch (error) {
     } finally {
         console.log('run build');
-        const worker = spawnSync(process.platform === 'win32' ? 'pkg.cmd' : 'pkg', ['-t', env, 'package.json'], {
+        console.log(fileName, ['-t', env, 'package.json']);
+        const worker = spawnSync(fileName, ['-t', env, 'package.json'], {
             cwd: process.cwd(),
-            stdio: 'pipe'
+            stdio: [0, 1, 2]
         });
-
-        console.log(worker.stdout.toString());
 
         console.log('copy file');
 
-        copyDir('keys');
+        copyDir('key');
         copyDir('uploads');
         copyDir('config');
 
@@ -53,17 +53,22 @@ try {
 
 function copyDir(dirPath) {
     try {
-        fs.accessSync(path.join(process.cwd(), dirPath));
-
         fs.mkdirSync(path.join(process.cwd(), 'build', dirPath));
 
-        const keys = fs.readdirSync(path.join(process.cwd(), 'key'));
+        const keys = fs.readdirSync(path.join(process.cwd(), dirPath));
 
         keys.forEach((v) => {
             const copiedPath = path.join(process.cwd(), dirPath, v);
-            fs.copyFileSync(copiedPath, path.join(process.cwd(), 'build', dirPath, v));
+            const stat = fs.statSync(copiedPath);
+            if (stat.isFile()) {
+                fs.copyFileSync(copiedPath, path.join(process.cwd(), 'build', dirPath, v));
+            } else {
+                copyDir(path.join(dirPath, v));
+            }
         });
-    } catch (e) {}
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 function copyEnv() {
@@ -77,4 +82,15 @@ function copyEnv() {
             fs.copyFileSync(copiedPath, path.join(process.cwd(), 'build', v));
         }
     });
+}
+function getCmdParams() {
+    const params = process.argv.splice(2);
+    const paramsObj = {};
+    for (const item of params) {
+        const format = item.slice(2);
+        const paramsArr = format.split('=');
+        paramsObj[paramsArr[0]] = paramsArr[1];
+    }
+
+    return paramsObj;
 }

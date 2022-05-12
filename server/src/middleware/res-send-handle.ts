@@ -5,18 +5,19 @@ export default function resSendHandle(req: ExpressRequest, res: ExpressResponse,
     req.user.token = req.header('authorization')?.replace('Bearer ', '');
 
     res.error = (err, data?) => {
+        const dev = process.env.NODE_ENV === 'development';
         res.send(
             data
                 ? {
                       status: err.status,
                       success: false,
                       data,
-                      message: err.message
+                      message: dev ? err.message : 'server error'
                   }
                 : {
                       status: err.status,
                       success: false,
-                      message: err.message
+                      message: dev ? err.message : 'server error'
                   }
         );
     };

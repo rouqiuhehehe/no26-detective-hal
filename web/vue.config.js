@@ -38,6 +38,11 @@ module.exports = {
             '/recaptcha': {
                 target: 'https://www.recaptcha.net',
                 changeOrigin: true
+            },
+            '/socket.io': {
+                target: process.env.VUE_APP_API_URL,
+                changeOrigin: true,
+                ws: true
             }
         },
         disableHostCheck: true

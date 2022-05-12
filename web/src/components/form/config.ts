@@ -1,4 +1,5 @@
 import { MyForm } from '@/types/components';
+
 export default class {
     public bind = [
         'disabled',
@@ -17,6 +18,7 @@ export default class {
 
     public default: Partial<MyForm> = {
         labelWidth: '80px',
-        labelPosition: 'right'
+        labelPosition: 'right',
+        hideRequiredAsterisk: true
     };
 }

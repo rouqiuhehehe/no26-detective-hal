@@ -88,6 +88,14 @@ export default abstract class BaseDao {
         return `select SQL_CALC_FOUND_ROWS ${this.listFields.toString()} from ${this.table}`;
     }
 
+    protected get viewBuilder() {
+        return `select ${this.viewsFields.toString()} from ${this.table} where ${this.primaryKey} = ?`;
+    }
+
+    protected get deleteBuilder() {
+        return `delete from ${this.table} where ${this.primaryKey} = ?`;
+    }
+
     public hasPagination = true;
     public abstract table: string;
     public abstract primaryKey: string;
@@ -118,7 +126,7 @@ export default abstract class BaseDao {
         findInSet: [],
         // in语法，值传数组
         whereIn: [],
-        defaultMatch: [],
+        defaultMatch: []
     };
 
     // or连接符，查并集，目前只支持find_in_set
@@ -159,7 +167,6 @@ export default abstract class BaseDao {
                 sql += ` ${this.paginationSql(limit, page)}`;
             }
         }
-
         if (this.hasPagination) {
             sql += ';SELECT FOUND_ROWS();';
 
@@ -168,7 +175,6 @@ export default abstract class BaseDao {
                 this.getTableSock(ActionType.LIST),
                 sql
             );
-
             const data: [T[], Pagination] = [
                 this.formatQueryList(list) as T[],
                 {
@@ -195,7 +201,7 @@ export default abstract class BaseDao {
         const sqlHash: Record<string, any>[] = [];
         const values = hash
             .map((v) => {
-                if (!v) {
+                if (Util.isEmpty(v)) {
                     throw new Error('参数不能为空');
                 }
                 const item = this.generateCreateData(v, userId);
@@ -243,7 +249,7 @@ export default abstract class BaseDao {
     }
 
     // 删除方法
-    public async deleteRows(primaryKey: string | number) {
+    public async deleteRows(primaryKey: string, _body: Record<string, any>) {
         if (!primaryKey) {
             throw new Error('缺少必填参数primaryKey');
         }
@@ -253,11 +259,15 @@ export default abstract class BaseDao {
             throw new Error(`不存在此数据，请检查primaryKey: ${primaryKey}`);
         }
 
-        let sql = `delete from ${this.table} where ${this.primaryKey} = '${primaryKey}'`;
+        let sql = this.deleteBuilder;
 
         sql = await this.beforeAction(ActionType.DELETE, primaryKey, sql);
 
-        return db.beginTransaction<OkPacket>(sql, this.checkTransactionRes(ActionType.DELETE, false, primaryKey));
+        return db.beginTransaction<OkPacket>(
+            sql,
+            primaryKey,
+            this.checkTransactionRes(ActionType.DELETE, false, primaryKey)
+        );
     }
 
     // 批量删除方法
@@ -352,20 +362,23 @@ export default abstract class BaseDao {
     }
 
     // 详情方法
-    public async viewsRows(primaryKey: string | number): Promise<Record<string, any>> {
+    public async viewsRows<T extends Record<string, any>>(primaryKey: string): Promise<T> {
         if (!primaryKey) {
             throw new Error('缺少必填参数primaryKey');
         }
-        const str = this.viewsFields.toString();
-        if (!str) {
+        if (!this.viewsFields.length) {
             throw new Error('请实现抽象数组viewsFields，进行查询字段');
         }
-        let sql = `select ${str} from ${this.table} where ${this.primaryKey} = "${primaryKey}"`;
+        let sql = this.viewBuilder;
 
         sql = await this.beforeAction(ActionType.VIEW, primaryKey, sql);
-        const [res] = await db.asyncQueryBySock(this.getTableSock(ActionType.VIEW), sql);
+        const [res] = await db.asyncQueryBySock<Record<string, any>[]>(
+            this.getTableSock(ActionType.VIEW),
+            sql,
+            primaryKey
+        );
         await this.afterAction(ActionType.VIEW, res);
-        return this.formatQueryView(res) ?? {};
+        return this.formatQueryView<T>(res) ?? ({} as T);
     }
 
     // 批量查询详情方法
@@ -460,6 +473,7 @@ export default abstract class BaseDao {
         const reqParams = { ...params };
         const { match, whereIn, findInSet, time, defaultMatch } = this.queryCondition;
         if (reqParams) {
+            // tslint:disable:cyclomatic-complexity
             let sql: string[] | string = Object.keys(reqParams).reduce((a, key) => {
                 const value = reqParams[key];
                 const v = this.deCamelizeField(key);
@@ -469,15 +483,15 @@ export default abstract class BaseDao {
                     if (match && match.length && match.includes(v)) {
                         sql = `${v} like '%${value}%'`;
                     } else if (whereIn && whereIn.length && whereIn.includes(v)) {
-                        sql = this.whereInSql(v, value);
+                        sql = this.whereInSql(v, value instanceof Array ? value : [value]);
                     } else if (findInSet && findInSet.length && findInSet.includes(v)) {
-                        sql = this.findInSetSql(v, value, isOrWhere);
+                        sql = this.findInSetSql(v, value instanceof Array ? value : [value], isOrWhere);
                     } else if (time && time.length && time.includes(v)) {
                         const [start, end] = value;
 
                         sql = `${v} between '${start}' and '${end}'`;
                     } else if (defaultMatch && defaultMatch.length && defaultMatch.includes(v)) {
-                        sql = `${v} = ${value}`;
+                        sql = `${v} = '${value}'`;
                     }
                 }
 
@@ -524,7 +538,7 @@ export default abstract class BaseDao {
                 } else {
                     order = 'ASC';
                 }
-
+                console.log(this.deCamelizeField(key));
                 const index = arr.findIndex((item) => item.column === this.deCamelizeField(key));
                 if (index === -1) {
                     throw new Error(`不存在此排序字段，请检查字段${v}`);
@@ -548,7 +562,7 @@ export default abstract class BaseDao {
     }
 
     protected getTableSock(action: ActionType) {
-        return `${this.table}_${this.primaryKey}:${action}`;
+        return `${this.table}-${this.primaryKey}:${action}`;
     }
 
     protected formatBulkUpdateRow(primaryKeys: Record<string, any>[], userId?: string) {
@@ -599,13 +613,13 @@ export default abstract class BaseDao {
      * 会把驼峰式转成下划线式命名
      */
     protected deCamelizeField(str: string) {
+        const reg = /[A-Z]/g;
         if (!this.prefixField) {
-            return str;
+            return `${str.replace(reg, (matched) => `_${matched.toLocaleLowerCase()}`)}`;
         }
         if (new RegExp(`^${this.prefixField}_`).test(str)) {
             return str;
         }
-        const reg = /[A-Z]/g;
         return `${this.prefixField}_${str.replace(reg, (matched) => `_${matched.toLocaleLowerCase()}`)}`;
     }
 
@@ -634,6 +648,32 @@ export default abstract class BaseDao {
                 return item[0].toUpperCase() + item.slice(1);
             })
             .join('');
+    }
+
+    protected checkTransactionRes(type: ActionType | null, isBulk: boolean, rows: any, cb?: () => Promise<void>) {
+        return async (res: OkPacket, conn: mysql.PoolConnection) => {
+            if (isBulk) {
+                const { affectedRows } = res;
+
+                if (affectedRows !== rows.length) {
+                    throw new Error(
+                        `事务修改rows条目数，与传入数量长度不同，请检查参数${JSON.stringify(
+                            rows
+                        )}，改变数量: ${affectedRows}`
+                    );
+                }
+            } else {
+                if (res.affectedRows !== 1) {
+                    throw new Error(`修改数据库数据条数有误，请检查传入参数rows: ${JSON.stringify(rows)}`);
+                }
+            }
+            cb && (await cb());
+            type && (await this.afterAction(type, rows, conn));
+        };
+    }
+
+    protected formatQueryList<T>(list: T[]) {
+        return list.map((v) => this.formatQueryView(v));
     }
 
     private validateParams(data: Record<string, any>[], validator: Validator) {
@@ -694,11 +734,7 @@ export default abstract class BaseDao {
         return body;
     }
 
-    private formatQueryList<T>(list: T[]) {
-        return list.map((v) => this.formatQueryView(v));
-    }
-
-    private formatQueryView<T>(obj: T) {
+    private formatQueryView<T>(obj: Record<string, any>) {
         if (!obj) {
             return null;
         }
@@ -709,7 +745,7 @@ export default abstract class BaseDao {
             createTime && (result.createTime = Util.dateFormat(createTime, 'yyyy-MM-dd HH:mm:ss'));
             updateTime && (result.updateTime = Util.dateFormat(updateTime, 'yyyy-MM-dd HH:mm:ss'));
         }
-        return result;
+        return result as T;
     }
 
     private checkPrimaryKeyIsEmptyArray(primaryKey: string[] | number[]) {
@@ -724,26 +760,5 @@ export default abstract class BaseDao {
         if (!primaryKey.length) {
             throw new Error('缺少必填参数primaryKey');
         }
-    }
-
-    private checkTransactionRes(type: ActionType, isBulk: boolean, rows: any) {
-        return async (res: OkPacket, conn: mysql.PoolConnection) => {
-            if (isBulk) {
-                const { affectedRows } = res;
-
-                if (affectedRows !== rows.length) {
-                    throw new Error(
-                        `事务修改rows条目数，与传入数量长度不同，请检查参数${JSON.stringify(
-                            rows
-                        )}，改变数量: ${affectedRows}`
-                    );
-                }
-            } else {
-                if (res.affectedRows !== 1) {
-                    throw new Error(`修改数据库数据条数有误，请检查传入参数rows: ${JSON.stringify(rows)}`);
-                }
-            }
-            await this.afterAction(type, rows, conn);
-        };
     }
 }

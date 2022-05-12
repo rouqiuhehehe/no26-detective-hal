@@ -106,9 +106,10 @@ export default class Login extends ManagementSystem {
             });
 
             req.session.uid = uid;
-
             res.success({
-                ...userInfo
+                ...userInfo,
+                role: userInfo.role?.split(','),
+                roleValue: userInfo.roleValue?.split(',')
             });
         } catch (e) {
             console.log(e);
@@ -132,10 +133,10 @@ export default class Login extends ManagementSystem {
                         next(new HttpError(Status.SERVER_ERROR, ErrorMsg.REDIS_ERROR, error));
                     }
                 } else {
-                    res.error(e);
+                    next(e);
                 }
             } else {
-                res.error(new HttpError(Status.SERVER_ERROR, (e as Error).message, e as Error));
+                next(new HttpError(Status.SERVER_ERROR, (e as Error).message, e as Error));
             }
         }
     }

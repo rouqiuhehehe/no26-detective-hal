@@ -159,7 +159,6 @@ export default class extends Vue {
     }
 
     public async login(formName: string) {
-        console.log(process.env);
         if (!this.isVerify) {
             this.$alert('请先点击验证码进行进行验证', {
                 title: '提示',

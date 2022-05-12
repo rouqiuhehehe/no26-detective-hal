@@ -4,7 +4,7 @@ import Util, { DescriptorType } from '@util';
 const suggestionTransforms = [
     (key: string) => key.toLowerCase(),
     (key: string) => key.toUpperCase(),
-    (key: string) => `${ key }s`,
+    (key: string) => `${key}s`,
     (key: string) => key.slice(0, -1),
     (key: string) => key.slice(1, key.length)
 ];
@@ -121,7 +121,10 @@ export default function Override(
     name: string | symbol,
     descriptor: PropertyDescriptor
 ): PropertyDescriptor {
-    const superClass = Object.getPrototypeOf(target);
+    let superClass = Object.getPrototypeOf(target);
+    if (superClass.constructor.name === 'ProxyTarget') {
+        superClass = Object.getPrototypeOf(superClass);
+    }
     const superDescriptor = Object.getOwnPropertyDescriptor(superClass, name);
 
     const reporter = new SyntaxErrorReporter(superClass, target, superDescriptor, descriptor, name);

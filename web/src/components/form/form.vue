@@ -108,7 +108,7 @@ export default class extends Vue {
             if (this.options.type !== 'del') {
                 if (this.isEditOrViewForm(this.options)) {
                     let params = {
-                        id: this.tableColumnData?.id
+                        [this.options.primaryKey]: this.tableColumnData?.[this.options.primaryKey]
                     } as Record<string, any>;
                     if (this.options.viewParams) {
                         if (typeof this.options.viewParams === 'function') {
@@ -267,7 +267,7 @@ export default class extends Vue {
     }
 
     private getRule<T>(v: Columns, handle: RequiredRule<T>, message?: string, trigger = 'blur'): elRuleObject | false {
-        message = message ?? `请输入正确的${v.label.replace('：', '')}`;
+        message = message ?? `请输入${v.label.replace('：', '')}`;
         if (typeof handle === 'boolean' && handle) {
             return {
                 required: true,
@@ -404,6 +404,10 @@ export default class extends Vue {
     display: flex;
     ::v-deep.el-form-item__label {
         white-space: nowrap;
+    }
+
+    ::v-deep .el-form-item__content {
+        flex: 1;
     }
 }
 

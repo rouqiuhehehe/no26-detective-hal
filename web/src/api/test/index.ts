@@ -10,7 +10,6 @@ export interface List {
     id: string;
     updateDate: string;
 }
-
 export default class Test {
     public static getList(params: Record<string, any>) {
         return axios.get<List>('/api/test', { params });
@@ -33,7 +32,6 @@ export default class Test {
     }
 
     public static bulkEdit(data: Record<string, any>[]) {
-        console.log(data);
         return axios.post('/api/test/bulk-update', data);
     }
 

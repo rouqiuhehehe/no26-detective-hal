@@ -119,6 +119,10 @@ export default class Util {
             }, '');
     }
 
+    public static getSQLTime() {
+        return Util.dateFormat(new Date(), 'yyyy-MM-dd HH:mm:ss');
+    }
+
     public static dateFormat(dft: string | number | Date, format: string): string {
         const dateObj = new Date(dft);
         let k;
@@ -322,12 +326,6 @@ export default class Util {
         }
     }
 
-    public static specialSymbolsRegExp(flags?: string) {
-        const regExpStr = '[`~!@#$^&*()=|{}"\':;,\\[\\].<>/?！￥…（）—【】‘；：”“。，、？]';
-
-        return new RegExp(regExpStr, flags);
-    }
-
     public static isEmpty(obj: unknown) {
         if (typeof obj !== 'object') {
             return !obj;
@@ -358,6 +356,7 @@ export default class Util {
                         break;
                     case 'regx':
                         key = 'pattern.base';
+                        codeMessage[key] = option[optionKey]!;
                         key = 'pattern.invert.base';
                         break;
                     case 'base':
@@ -380,20 +379,6 @@ export default class Util {
         });
 
         return new Error(message);
-    }
-
-    // 生成随机中文的字符串
-    public static async randomChinese(len: number) {
-        return new Array(len).fill('').reduce((a) => {
-            // tslint:disable-next-line:no-magic-numbers no-parameter-reassignment
-            a += String.fromCodePoint(Math.round(Math.random() * 20901) + 19968);
-            return a;
-        }, '');
-    }
-
-    // 生成一个随机数字，输入最大数和最小数
-    public static randomNumber(max: number, min: number) {
-        return parseInt((Math.random() * (max - min + 1) + min).toString(), 10);
     }
 
     // 根据文件名找文件

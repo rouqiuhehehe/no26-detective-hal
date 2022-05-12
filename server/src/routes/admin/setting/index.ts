@@ -11,6 +11,7 @@ import Util from '@util';
 import Joi from 'joi';
 import admin from '..';
 import { Opera } from '@src/models/operaList';
+import regExp from '@src/util/regExp';
 
 const db = new Db();
 const user = new User();
@@ -19,31 +20,31 @@ export default class extends admin {
     @Middleware()
     @Get('/get-setting-user-info')
     public async getSettingUserInfo(req: ExpressRequest, res: ExpressResponse) {
-        const userInfo = await user.getUserInfoByToken(req);
-        const { uid, username, nickname, avatar, permission, create_date, update_date } = userInfo;
-        let permissionLabel = '';
-        if ((permission & Permission.READ_AND_WRITE) === Permission.READ_AND_WRITE) {
-            permissionLabel = '可读可写';
-        } else if ((permission & Permission.READ) === Permission.READ) {
-            permissionLabel = '只读';
-        } else if ((permission & Permission.HIDDEN) === Permission.HIDDEN) {
-            permissionLabel = '没有权限';
+        const userInfo = await user.getUserInfoByToken(req.user.token);
+        const { uid, username, nickname, avatar, permission, create_time, update_time, phone, role, roleValue } = userInfo;
+        let fullPhone = phone;
+        if (fullPhone) {
+            const sql = `SELECT n_mask_label FROM n_phone_mask_relation WHERE n_id = ?`;
+            const [{ n_mask_label: maskLabel }] = await db.asyncQuery(sql, uid);
+            fullPhone = fullPhone.replace(/^(\d{3})\*{4}(\d{4})/, `$1${maskLabel}$2`);
         }
         res.success({
             uid,
             username,
             nickname,
+            role: role?.split(','),
+            roleValue: roleValue?.split(','),
+            phone: fullPhone,
             avatar,
-            permission: permissionLabel,
-            create_date,
-            update_date
+            create_time,
+            update_time
         });
     }
 
     @Middleware()
     @Get('/get-setting-user-info/view')
     public async getSettingUserInfoView(req: ExpressRequest, res: ExpressResponse) {
-        const userInfo = await user.getUserInfoByToken(req);
+        const userInfo = await user.getUserInfoByToken(req.user.token);
         const { uid, username, nickname, avatar } = userInfo;
         res.success({
             uid,
@@ -57,7 +58,7 @@ export default class extends admin {
         nickname: Joi.string()
             .min(4)
             .max(8)
-            .regex(Util.specialSymbolsRegExp(), {
+            .regex(regExp.specialSymbolsRegExp(), {
                 invert: true
             })
             .required()
@@ -94,7 +95,7 @@ export default class extends admin {
     @Post('/get-setting-user-info/update')
     public async updateSettingUserInfo(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { nickname, username, avatar } = req.body;
-        const userInfo = await user.getUserInfoByToken(req);
+        const userInfo = await user.getUserInfoByToken(req.user.token);
         const { uid } = userInfo;
         const params = {
             nickname,
@@ -107,7 +108,7 @@ export default class extends admin {
         try {
             await db.beginTransaction(sql);
             await redis(async (client) => {
-                const userInfo = await user.getUserInfoByToken(req);
+                const userInfo = await user.getUserInfoByToken(req.user.token);
                 params.avatar = avatar;
                 for (const i in params) {
                     if (Reflect.has(userInfo, i) && Reflect.has(params, i)) {

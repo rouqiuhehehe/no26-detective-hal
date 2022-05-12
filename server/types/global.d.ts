@@ -3,6 +3,7 @@ import HttpError from '@src/models/httpError';
 import express from 'express';
 import { SinonAssert } from 'sinon';
 import Joi from 'joi';
+import { Pagination } from '@src/models/BaseDao';
 
 declare global {
     type Consturctor = abstract new (...args: any[]) => any;
@@ -10,7 +11,7 @@ declare global {
     type ExpressRequest = express.Request;
     type NextFunction = express.NextFunction;
 
-    type Pagination = {
+    type MysqlPagination = {
         'FOUND_ROWS()': number;
     }[];
     // type Client = RedisClientType<typeof modules, Record<string, never>>;
@@ -73,13 +74,7 @@ declare global {
 
             error<T extends Error>(e: HttpError<T>, data?: Record<string, string | number>): void;
 
-            success<T extends Record<string, any>>(
-                data?: T,
-                pagination?: {
-                    page: number;
-                    total: number;
-                }
-            ): void;
+            success<T extends Record<string, any>>(data?: T, pagination?: Pagination): void;
         }
 
         interface Request {

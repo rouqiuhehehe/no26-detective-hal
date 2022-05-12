@@ -82,7 +82,10 @@ export default class {
                         }
                     }
                 },
-
+                {
+                    label: '类型',
+                    dataIndex: 'typeValue'
+                },
                 {
                     label: '城市限定',
                     dataIndex: 'isCityLimit',
@@ -107,6 +110,7 @@ export default class {
                             labelWidth: '100px',
                             labelWithColon: true,
                             type: 'view',
+                            primaryKey: 'id',
                             viewStore: operaList.getOperaListView,
                             viewParams(v) {
                                 return {

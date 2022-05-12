@@ -1,6 +1,7 @@
 import { RoutesType, Validation } from '@src/descriptor/controller';
 import Joi from 'joi';
 import Util from '@util';
+import regExp from '@src/util/regExp';
 
 export default {
     [RoutesType.INSERT]: [
@@ -8,7 +9,7 @@ export default {
             name: Joi.string()
                 .min(2)
                 .max(8)
-                .regex(Util.specialSymbolsRegExp(), {
+                .regex(regExp.specialSymbolsRegExp(), {
                     invert: true
                 })
                 .required()

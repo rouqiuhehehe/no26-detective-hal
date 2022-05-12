@@ -34,7 +34,7 @@ const FOOTER_VARIABLES = [
 
 type Callback<T> = (results: T, conn: mysql.PoolConnection, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
-    private status = 'ready';
+    private status = new Set();
     private pool!: mysql.Pool;
 
     public constructor() {
@@ -49,6 +49,7 @@ export default class extends events.EventEmitter {
     }
 
     public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
+        console.log(sql, values);
         return new Promise((resolve, reject) => {
             this.pool!.getConnection((err, connection) => {
                 if (err) {
@@ -69,19 +70,23 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务回滚方法
      */
-    public beginTransaction<T>(sql: string, values?: unknown[], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T>(sql: string, values?: unknown | unknown[], cb?: Callback<T>): Promise<boolean>;
     // noinspection JSUnusedGlobalSymbols
     public beginTransaction<T>(sql: string | string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
     public beginTransaction<T>(
         sql: string | string[] | [string, unknown[]][],
-        values?: unknown[] | Callback<T>,
+        values?: unknown | unknown[] | Callback<T>,
         cb?: Callback<T>
     ): Promise<boolean> {
         let callback: Callback<T> | undefined;
-        let sqlVal: unknown[];
+        let sqlVal: unknown | unknown[];
         if (arguments.length === 2) {
-            callback = values as Callback<T>;
-            sqlVal = [];
+            if (typeof values === 'function') {
+                callback = values as Callback<T>;
+                sqlVal = [];
+            } else {
+                sqlVal = values;
+            }
         } else {
             callback = cb;
             sqlVal = values as unknown[];
@@ -218,13 +223,14 @@ export default class extends events.EventEmitter {
             });
 
             try {
-                if (this.status === 'ready') {
-                    this.status = 'pending';
+                if (!this.status.has(url)) {
+                    this.status.add(url);
                     const result = await this.asyncQuery(sql, values);
                     this.emit(url, result);
-                    this.status = 'ready';
+                    this.status.delete(url);
                 }
             } catch (e) {
+                this.status.delete(url);
                 this.emit(url, e);
             }
         });
@@ -233,7 +239,8 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务方法
      */
-    public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown[]) {
+    public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown | unknown[]) {
+        console.log(sql, sqlVal);
         return new Promise((resolve, reject) => {
             conn.query(sql, sqlVal, async (err, result, _fields) => {
                 if (err) {

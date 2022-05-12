@@ -198,6 +198,7 @@ export default class {
                     form: {
                         type: 'del',
                         store: Test.bulkDel,
+                        primaryKey: 'id',
                         message: () => {
                             return `确定删除已选择的${this.selection.length}条数据吗？`;
                         },
@@ -292,7 +293,8 @@ export default class {
                 form: {
                     type: 'view',
                     viewStore: Test.getView,
-                    columns: this.getFormColumns
+                    columns: this.getFormColumns,
+                    primaryKey: 'id'
                 }
             },
             {
@@ -301,7 +303,8 @@ export default class {
                     type: 'edit',
                     store: Test.edit,
                     viewStore: Test.getView,
-                    columns: this.getFormColumns
+                    columns: this.getFormColumns,
+                    primaryKey: 'id'
                 }
             },
             {
@@ -309,6 +312,7 @@ export default class {
                 form: {
                     type: 'del',
                     store: Test.del,
+                    primaryKey: 'id',
                     message(row) {
                         return `确定删除（姓名：${row!.name}）吗？`;
                     }

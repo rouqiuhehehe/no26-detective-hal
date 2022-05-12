@@ -12,6 +12,7 @@ import os from 'os';
 */
 const port = 1337;
 const inspectPort = 9229;
+const dev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 export default class ChildProcess {
     protected cpus = os.cpus();
     protected server = net.createServer();
@@ -24,7 +25,7 @@ export default class ChildProcess {
     private restart: number[] = [];
 
     public constructor() {
-        if (process.env.NODE_ENV === 'development') {
+        if (dev) {
             // 如果是开发环境，不需要起太多进程
             this.len = 2;
         } else {
@@ -45,7 +46,7 @@ export default class ChildProcess {
     protected forkChildProcess() {
         let processFilePath = '/work.js';
 
-        if (process.env.NODE_ENV === 'development') {
+        if (dev) {
             processFilePath = '/work.ts';
         }
 
@@ -62,7 +63,7 @@ export default class ChildProcess {
             // 发送报警事件，不再重启
             return process.emit('giveup', this.restart.length, this.during);
         }
-        if (process.env.NODE_ENV === 'development') {
+        if (dev) {
             arg.push('-r', `${process.cwd()}/bin.js`);
         }
         // 多进程google调试

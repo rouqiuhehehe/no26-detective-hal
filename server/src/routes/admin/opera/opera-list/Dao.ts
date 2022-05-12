@@ -1,4 +1,5 @@
-import BaseDao, { QueryCondition, SortFields } from '@src/models/BaseDao';
+import BaseDao, { ActionType, QueryCondition, SortFields } from '@src/models/BaseDao';
+import Override from '@src/descriptor/Override';
 
 export default class extends BaseDao {
     public hasPagination = true;

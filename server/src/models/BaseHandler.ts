@@ -47,6 +47,7 @@ export default abstract class BaseHandler<T extends BaseDao> {
             }
             res.success(list, totalObj as Pagination);
         } else {
+            list = result;
             if (this.dao.needToArrayFields?.length) {
                 list = Util.arrayOrObjectKeyToArray(result, this.dao.camelizeNeedToArrayFields);
             }
@@ -77,7 +78,7 @@ export default abstract class BaseHandler<T extends BaseDao> {
     }
 
     public async deleteAction(req: ExpressRequest, res: ExpressResponse, _next: NextFunction) {
-        await this.dao.deleteRows(req.body[this.dao.camelizePrimaryKey] as string);
+        await this.dao.deleteRows(req.body[this.dao.camelizePrimaryKey] as string, req.body);
 
         res.success();
     }

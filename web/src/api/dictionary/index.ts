@@ -9,7 +9,7 @@ export default class Dictionary {
      * 获取所有剧本类型
      */
     public static getOperaTypes<T>() {
-        return axios.get<T>('/admin/dictionary/get-opera-types');
+        return axios.get<T>('/admin/dictionary/get-opera-types', { needCache: true });
     }
 
     /**

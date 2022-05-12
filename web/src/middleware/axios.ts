@@ -2,7 +2,7 @@ import cfg from '@/config';
 import router from '@/router';
 import utils from '@/utils';
 import formatParams from '@/utils/formatParams';
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 import ElementUI, { Loading, MessageBox } from 'element-ui';
 import jsencrypt from 'jsencrypt';
@@ -10,6 +10,8 @@ import qs from 'qs';
 import { ElLoadingComponent } from 'element-ui/types/loading';
 
 const HMACSHA256KEY = '1001';
+const cacheKey = 'NEED_CACHE';
+const cacheMap = new Map();
 
 function hashSHA256(params: Record<string, any>) {
     // 通过 hmacsha256 生成散列字符串
@@ -29,7 +31,48 @@ const defaultTimeout = 30000;
 axios.defaults.timeout = defaultTimeout;
 
 function returnData(response: AxiosResponse) {
-    return response.request.responseType === 'blob' ? response : response.data;
+    const { url, needCache } = response.config;
+    const res = response.request.responseType === 'blob' ? response : response.data;
+    if (needCache) {
+        if (cacheMap.has(url)) {
+            console.warn(`有缓存时调用接口，请检查${url}`);
+        } else {
+            cacheMap.set(url, res);
+        }
+    }
+    return res;
+}
+
+function checkCache(url: string, config: AxiosRequestConfig) {
+    if (cacheMap.has(url)) {
+        const cancel = new axios.Cancel(cacheKey);
+        cancel.config = config;
+        throw cancel;
+    }
+}
+
+function checkErr(err: any) {
+    if (err.config && err.config.needCache && err.message === cacheKey) {
+        if (cacheMap.has(err.config.url)) {
+            console.log(cacheMap.get(err.config.url));
+            return Promise.resolve(cacheMap.get(err.config.url));
+        } else {
+            return Promise.reject('未获取到缓存');
+        }
+    }
+    if (err.config && isTokenExcludes(err.config.url)) {
+        return Promise.reject(err);
+    }
+    if (err.message) {
+        MessageBox.alert(err.message, '错误', {
+            type: 'error'
+        }).then(() => void 0);
+    }
+    return Promise.reject(err);
+}
+
+export function clearCache() {
+    cacheMap.clear();
 }
 
 axios.interceptors.request.use(
@@ -40,8 +83,9 @@ axios.interceptors.request.use(
                 lock: true
             });
         }
-        const { url } = config;
+        const { url, needCache } = config;
         if (url) {
+            needCache && checkCache(url, config);
             if (allExcludes.some((v) => new RegExp('^' + v).test(url))) {
                 let params = config.params ?? {};
                 let data = config.data ?? {};
@@ -178,15 +222,8 @@ axios.interceptors.response.use(
     (err) => {
         loading?.close();
         loading = null;
-        if (err.config && isTokenExcludes(err.config.url)) {
-            return Promise.reject(err);
-        }
-        if (err.message) {
-            MessageBox.alert(err.message, '错误', {
-                type: 'error'
-            }).then(() => void 0);
-        }
-        return Promise.reject(err);
+        console.log(err, 20);
+        return checkErr(err);
     }
 );
 

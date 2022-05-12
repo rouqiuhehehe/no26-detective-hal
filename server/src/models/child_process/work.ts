@@ -2,6 +2,8 @@ import App from '@src/server';
 import errorLogger from '@src/util/errorLogger';
 import http from 'http';
 import net from 'net';
+import { Server } from 'socket.io';
+import io, { ClientToServerEvents, ServerToClientEvents } from '@src/models/webSocket';
 
 const app = new App();
 
@@ -9,6 +11,11 @@ app.initRoute().then(() => {
     const server = http.createServer((...arg) => {
         app.app(...arg);
     });
+    // @ts-ignore
+    const webSocket = new Server<ServerToClientEvents, ClientToServerEvents>(server, {
+        transports: ['websocket']
+    });
+    new io(webSocket);
     let worker: net.Server;
     const timeoutTime = 5000;
 

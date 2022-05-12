@@ -58,6 +58,6 @@ export interface OperaList {
 }
 
 export interface OperaTypes {
-    id: number;
+    id: string;
     label: string;
 }

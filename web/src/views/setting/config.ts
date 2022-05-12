@@ -17,6 +17,7 @@ export default class {
                 type: 'edit',
                 store: Setting.updateUserInfo,
                 viewStore: Setting.viewSettingUserInfo,
+                primaryKey: 'id',
                 beforeCommit(formData: Record<string, any>) {
                     return formData;
                 },
