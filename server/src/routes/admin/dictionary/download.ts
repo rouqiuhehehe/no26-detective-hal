@@ -1,9 +1,7 @@
 import redis from '@src/bin/redis';
-import { Status } from '@src/config/server_config';
 import { Controller, Get, Post } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
 import Validate from '@src/descriptor/validate';
-import HttpError from '@src/models/httpError';
 import { UploadKeys } from '@src/models/upload';
 import Joi from 'joi';
 import path from 'path';
@@ -25,16 +23,8 @@ export default class extends dictionary {
         filename = filename.replace(extname, '');
 
         try {
-            await redis(async (client) => {
-                const url = await client.hGet(UploadKeys, filename);
-
-                if (url) {
-                    // const data = await fsPromise.readFile(url);
-                    res.download(url);
-                } else {
-                    throw new HttpError(Status.MISSING_PARAMS, 'file is not found');
-                }
-            });
+            const filePath = await this.searchFile(filename);
+            res.download(filePath);
         } catch (error) {
             next(error);
         }
@@ -46,14 +36,39 @@ export default class extends dictionary {
     @Middleware()
     @Get('/')
     public async downloadFileGet(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
-        const { filename } = req.query;
+        let filename = req.query.filename as string;
 
+        const extname = path.extname(filename);
+
+        filename = filename.replace(extname, '');
         try {
-            const filePath = await Util.findFilesRecursively(filename as string, path.join(process.cwd(), 'uploads'));
-
+            // const filePath = await Util.findFilesRecursively(filename as string, path.join(process.cwd(), 'uploads'));
+            const filePath = await this.searchFile(filename);
             res.download(filePath);
         } catch (error) {
             next(error);
         }
+    }
+
+    private searchFile(filename: string): Promise<string> {
+        return new Promise(async (resolve, reject) => {
+            await redis(async (client) => {
+                const url = await client.hGet(UploadKeys, filename);
+
+                if (url) {
+                    resolve(path.join(process.cwd(), url));
+                } else {
+                    try {
+                        const filePath = await Util.findFilesRecursively(
+                            filename as string,
+                            path.join(process.cwd(), 'uploads')
+                        );
+                        resolve(filePath);
+                    } catch (e) {
+                        reject(e);
+                    }
+                }
+            });
+        });
     }
 }

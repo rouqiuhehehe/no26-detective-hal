@@ -23,7 +23,8 @@ export interface ClientToServerEvents {
 
 export default class {
     private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
-    public constructor() {
+
+    public constructor () {
         this.socket = io(process.env.VUE_APP_API_URL, {
             auth: {
                 authorization: sessionStorage.getItem('token') ?? ''
@@ -34,7 +35,7 @@ export default class {
         this.on();
     }
 
-    private on() {
+    private on () {
         this.socket.on('refresh-routes', async () => {
             await addRoutes(true);
         });
@@ -50,7 +51,7 @@ export default class {
         });
     }
 
-    private error() {
+    private error () {
         this.socket.on('connect_error', async (err) => {
             if ((err as SocketError).data === '403') {
                 await MessageBox({

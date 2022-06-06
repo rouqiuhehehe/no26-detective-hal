@@ -13,7 +13,6 @@ import initEnv from './util/initEnv';
 // if (process.env.NODE_RUN === 'debugger') {
 //     easyMonitor('dsc');
 // }
-
 console.log(process.pid);
 // (async () => {
 //     const async = new Async();

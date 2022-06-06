@@ -90,7 +90,6 @@ export default class extends admin {
     }
 
     private permissionHandle(routes: WebRoutes[], permissionList: string[]) {
-        console.log(routes);
         return routes.reduce<WebFormatRoutesTree[]>((a, v) => {
             let readonly = false;
             const { read_permission, write_permission } = v;
