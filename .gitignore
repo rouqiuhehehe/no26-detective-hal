@@ -9,6 +9,6 @@ dump/
 .vscode/
 
 !.bin/*
-build/*
+build/
 
 *.bak
