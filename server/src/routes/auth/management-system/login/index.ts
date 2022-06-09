@@ -16,6 +16,7 @@ enum GoogleVerifyServer {
     URL = 'https://www.recaptcha.net/recaptcha/api/siteverify',
     KEY = '6LcIylwdAAAAAEy2vxDt3oeylMkJrE51cvY9gF65'
 }
+
 const user = new User();
 export default class Login extends ManagementSystem {
     private SALT_BASE = 12;
@@ -26,7 +27,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Get('/get-salt')
-    public async getSalt(req: ExpressRequest, res: ExpressResponse) {
+    public async getSalt (req: ExpressRequest, res: ExpressResponse) {
         const salt = await bcrypt.genSalt(this.SALT_BASE);
 
         req.session.salt = salt;
@@ -42,7 +43,7 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/verify-code')
-    public async verifyCode(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+    public async verifyCode (req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { token } = req.body;
 
         try {
@@ -65,24 +66,22 @@ export default class Login extends ManagementSystem {
         DefaultMiddleWareType.TIMESTAMP
     ])
     @Post('/login')
-    public async login(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+    public async login (req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         await this.loginHandle(req, res, next);
     }
 
-    private async verifyCodeHandle(token: string): Promise<
+    private async verifyCodeHandle (token: string): Promise<| AxiosResponse<{
+        success: true;
+        challenge_ts: string;
+        hostname: string;
+        action: string;
+    }>
         | AxiosResponse<{
-              success: true;
-              challenge_ts: string;
-              hostname: string;
-              action: string;
-          }>
-        | AxiosResponse<{
-              success: false;
-              challenge_ts: string;
-              hostname: string;
-              'error-codes': string[];
-          }>
-    > {
+        success: false;
+        challenge_ts: string;
+        hostname: string;
+        'error-codes': string[];
+    }>> {
         return axios.post(GoogleVerifyServer.URL, undefined, {
             params: {
                 secret: GoogleVerifyServer.KEY,
@@ -91,7 +90,7 @@ export default class Login extends ManagementSystem {
         });
     }
 
-    private async loginHandle(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
+    private async loginHandle (req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
         const { username, password } = req.body;
         const { salt } = req.session;
 
@@ -118,12 +117,12 @@ export default class Login extends ManagementSystem {
                     const err = e;
                     try {
                         await redis(async (client) => {
-                            const num = await client.incr(`password_error_num:user#${err.query!.uid}`);
+                            const num = await client.incr(`password_error_num:user#${ err.query!.uid }`);
 
                             if (+num === 5) {
                                 return res.error(new HttpError(Status.ACCOUNT_FREEZE, ErrorMsg.ACCOUNT_FREEZE));
                             }
-                            err.message = `${err.message}，还剩${5 - +num}次机会`;
+                            err.message = `${ err.message }，还剩${ 5 - +num }次机会`;
 
                             res.error(err);
                         });

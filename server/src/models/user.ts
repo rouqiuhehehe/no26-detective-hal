@@ -101,9 +101,13 @@ export default class User {
                                     info[v] = '';
                                 }
                             });
-                            await client.hSet(`user:${token}`, info);
-                            await client.expire(`user:${token}`, Jwt_Config.JWT_EXPIRED);
-                            await client.del(`password_error_num:user#${uid}`);
+                            try {
+                                await client.hSet(`user:${token}`, info);
+                                await client.expire(`user:${token}`, Jwt_Config.JWT_EXPIRED);
+                                await client.del(`password_error_num:user#${uid}`);
+                            } catch (e: any) {
+                                reject(new HttpError(Status.SERVER_ERROR, e?.message ?? e, e));
+                            }
                             resolve(info);
                         } else {
                             await quit();
