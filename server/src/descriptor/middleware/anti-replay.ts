@@ -20,7 +20,10 @@ export default function antiReplay(target: Object, propertyKey?: string | symbol
 
 export async function redisPushReplay(req: ExpressRequest, _res: ExpressResponse, next: NextFunction) {
     const { _r } = req.query;
-
+    const { antiReplay } = global.baseConfig;
+    if (!antiReplay) {
+        return next();
+    }
     if (!_r) {
         return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.MISSING_REPLAY_PARAMS));
     }

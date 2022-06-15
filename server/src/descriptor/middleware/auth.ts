@@ -14,8 +14,13 @@ export default function Auth(target: Object, propertyKey?: string | symbol, desc
         }
     });
 }
+
 async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
     try {
+        const { auth } = global.baseConfig;
+        if (!auth) {
+            return next();
+        }
         const { uid } = await user.validateToken(req);
         req.user.uid = uid;
         next();

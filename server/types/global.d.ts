@@ -6,6 +6,9 @@ import Joi from 'joi';
 import { Pagination } from '@src/models/BaseDao';
 
 declare global {
+    // 必须使用var不然不起作用
+    // noinspection ES6ConvertVarToLetConst
+    var baseConfig: Record<string, any>;
     type Consturctor = abstract new (...args: any[]) => any;
     type ExpressResponse = express.Response;
     type ExpressRequest = express.Request;

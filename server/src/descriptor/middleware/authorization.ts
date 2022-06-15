@@ -28,6 +28,10 @@ export default function authorization(target: Object, propertyKey?: string | sym
 
 export function authorizationMiddleware(req: ExpressRequest, res: ExpressResponse, next: NextFunction) {
     const originalUrl = Util.getNoParamsUrl(req);
+    const { encrypt } = global.baseConfig;
+    if (!encrypt) {
+        return next();
+    }
     if (!excludesArr.includes(originalUrl)) {
         // 读取请求头消息
         const Authorization = req.query.sign as string;

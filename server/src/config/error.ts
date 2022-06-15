@@ -4,6 +4,7 @@ export enum ErrorMsg {
     SERVER_ERROR = 'server error',
     MISSING_PARAMS = '参数缺失',
     MISSING_REPLAY_PARAMS = '请设置防重放参数',
+    MISSING_TIMESTAMP_ERROR = '请设置时间戳参数',
     ERROR_REPLAY_PARAMS = '防重放参数错误',
     HASH_ERROR = '哈希参数校验失败',
     PASSWORD_SALT_ERROR = '密码加密错误',

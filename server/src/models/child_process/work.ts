@@ -4,8 +4,11 @@ import http from 'http';
 import net from 'net';
 import { Server } from 'socket.io';
 import io, { ClientToServerEvents, ServerToClientEvents } from '@src/models/webSocket';
+import path from 'path';
 
 const app = new App();
+// tslint:disable-next-line:no-var-requires
+(global as any).baseConfig = require(path.join(process.cwd(), 'config', 'base-config'));
 
 app.initRoute().then(() => {
     const server = http.createServer((...arg) => {

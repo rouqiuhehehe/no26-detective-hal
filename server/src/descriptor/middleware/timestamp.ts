@@ -15,10 +15,17 @@ export default function timestamp(target: Object, propertyKey?: string | symbol,
         }
     });
 }
+
 async function timestampMiddleware(req: Request, _res: Response, next: NextFunction) {
     const { timestamp } = req.query;
-
-    if (!timestamp || Date.now() - +timestamp > EXPIRE_DATE) {
+    const { timestamp: time } = global.baseConfig;
+    if (!time) {
+        return next();
+    }
+    if (!timestamp) {
+        return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.MISSING_TIMESTAMP_ERROR));
+    }
+    if (Date.now() - +timestamp > EXPIRE_DATE) {
         return next(new HttpError(Status.MISSING_PARAMS, ErrorMsg.TIMESTAMP_ERRPR));
     }
     next();

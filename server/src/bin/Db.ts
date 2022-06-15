@@ -9,6 +9,7 @@ import path from 'path';
 import fsPromise from 'fs/promises';
 
 const dbconfig = fsPromise.readFile(path.join(process.cwd(), 'config', 'dbconfig.json'));
+
 // a bunch of session variables we use to make the import work smoothly
 const HEADER_VARIABLES = [
     // Add commands to store the client encodings used when importing and set to UTF8 to preserve data
@@ -49,7 +50,8 @@ export default class extends events.EventEmitter {
     }
 
     public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
-        console.log(sql, values);
+        const { debugSQL } = global.baseConfig;
+        debugSQL && console.log(sql, values);
         return new Promise((resolve, reject) => {
             this.pool!.getConnection((err, connection) => {
                 if (err) {
@@ -240,7 +242,8 @@ export default class extends events.EventEmitter {
      * 处理事务方法
      */
     public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown | unknown[]) {
-        console.log(sql, sqlVal);
+        const { debugSQL } = global.baseConfig;
+        debugSQL && console.log(sql, sqlVal);
         return new Promise((resolve, reject) => {
             conn.query(sql, sqlVal, async (err, result, _fields) => {
                 if (err) {
