@@ -1,7 +1,6 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
 import { ErrorMsg } from '@src/config/error';
-import { Jwt_Config } from '@src/config/jwt';
 import { Secret } from '@src/config/secret';
 import { Status } from '@src/config/server_config';
 import { Issue, LoginError } from '@src/config/user_error';
@@ -103,7 +102,7 @@ export default class User {
                             });
                             try {
                                 await client.hSet(`user:${token}`, info);
-                                await client.expire(`user:${token}`, Jwt_Config.JWT_EXPIRED);
+                                await client.expire(`user:${token}`, baseConfig.redis.TOKEN_EXPIRED);
                                 await client.del(`password_error_num:user#${uid}`);
                             } catch (e: any) {
                                 reject(new HttpError(Status.SERVER_ERROR, e?.message ?? e, e));
@@ -139,7 +138,7 @@ export default class User {
                         const hasToken = await client.EXISTS(`user:${req.user.token}`);
                         if (hasToken) {
                             try {
-                                const decoded = await Jwt.vailToken(token!, Jwt_Config.SECRET);
+                                const decoded = await Jwt.vailToken(token!, baseConfig.redis.TOKEN_SECRET);
                                 resolve(decoded);
                             } catch (e: any) {
                                 if (e instanceof TokenExpiredError) {
@@ -205,7 +204,7 @@ export default class User {
 
     private issueToken(username: string, uid: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
-            const secret = Jwt_Config.SECRET;
+            const secret = baseConfig.redis.TOKEN_SECRET;
             const token = Jwt.issueToken(username, uid, secret);
             try {
                 resolve(token);

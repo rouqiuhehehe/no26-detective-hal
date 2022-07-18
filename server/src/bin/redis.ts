@@ -1,11 +1,10 @@
-import { RedisConfig } from '@src/config/redis_config';
 import { createClient } from 'redis';
 
 export default async function redis(cb: (connect: Client, quit: () => Promise<void>) => void) {
     const client = createClient({
         socket: {
-            port: RedisConfig.POIT as number,
-            host: RedisConfig.HOST as string
+            port: baseConfig.redis.port as number,
+            host: baseConfig.redis.host as string
         }
     });
 

@@ -1,6 +1,5 @@
 import Db from '@src/bin/Db';
 import redis from '@src/bin/redis';
-import { Permission } from '@src/config/permission';
 import { Status } from '@src/config/server_config';
 import { Controller, Get, Post } from '@src/descriptor/controller';
 import Middleware from '@src/descriptor/middleware';
@@ -21,7 +20,8 @@ export default class extends admin {
     @Get('/get-setting-user-info')
     public async getSettingUserInfo(req: ExpressRequest, res: ExpressResponse) {
         const userInfo = await user.getUserInfoByToken(req.user.token);
-        const { uid, username, nickname, avatar, permission, create_time, update_time, phone, role, roleValue } = userInfo;
+        const { uid, username, nickname, avatar, permission, create_time, update_time, phone, role, roleValue } =
+            userInfo;
         let fullPhone = phone;
         if (fullPhone) {
             const sql = `SELECT n_mask_label FROM n_phone_mask_relation WHERE n_id = ?`;

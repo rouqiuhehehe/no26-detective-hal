@@ -5,9 +5,9 @@ import Middleware from '@src/descriptor/middleware';
 import Util from '@util';
 import { Request, Response } from 'express';
 import admin from '..';
-import { RedisConfig } from '@src/config/redis_config';
 
 const db = new Db();
+
 interface WebRoutes {
     id: number;
     uid: string;
@@ -81,7 +81,7 @@ export default class extends admin {
                 asideTree
             };
             await client.set(`user:web-routes:${token}`, JSON.stringify(routesAndAsideTree));
-            await client.expire(`user:web-routes:${token}`, RedisConfig.WEB_ROUTES_EXPIRE);
+            await client.expire(`user:web-routes:${token}`, baseConfig.redis.WEB_ROUTES_EXPIRE);
             res.success({
                 routesTree,
                 asideTree

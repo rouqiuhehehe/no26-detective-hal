@@ -1,12 +1,22 @@
 module.exports = {
     // 是否需要sign签名验证
-    encrypt: false,
+    encrypt: true,
     // 是否需要验证防重放参数
-    antiReplay: false,
+    antiReplay: true,
     // 是否需要验证时间戳
-    timestamp: false,
+    timestamp: true,
     // 是否需要打印sql语句
     debugSQL: true,
     // 是否需要验证登录
-    auth: false
+    auth: true,
+    redis: {
+        port: 6379,
+        host: '127.0.0.1',
+        // 路由过期事件，1小时
+        WEB_ROUTES_EXPIRE: 3600,
+        // token过期时间
+        TOKEN_EXPIRED: 14400,
+        // token密钥
+        TOKEN_SECRET: 'W18hBlQ$J_)HqSd'
+    }
 };
