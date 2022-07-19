@@ -18,7 +18,7 @@ export default class ChildProcess {
     protected server = net.createServer();
     private workerMap = new Map();
     private workerCount = 0;
-    private readonly len;
+    private readonly len: number;
     private readonly limit = 10;
     // 10次重启的超时时间
     private readonly during = 60000;
@@ -31,6 +31,7 @@ export default class ChildProcess {
         } else {
             this.len = this.cpus.length;
         }
+        this.len = global.baseConfig.processLen ?? this.len;
 
         // 创建tcp服务，发射给子进程
         this.server.listen(port, this.forkChildProcess);
