@@ -4,6 +4,7 @@ import { Middleware } from '@src/types/middleware_type';
 import express from 'express';
 import fsPromise from 'fs/promises';
 import path from 'path';
+import Util from '@util';
 
 // tslint:disable: no-unused-expression
 const moduleArr: Promise<any>[] = [];
@@ -145,9 +146,8 @@ export const scanController = (dirPath: string, route: express.Application) => {
                             ) {
                                 const needSuperRoutes: Route[] = [];
                                 if (Reflect.hasOwnMetadata(ControllerMetadata.SUPERROUTES, controller)) {
-                                    const defaultRoutes = Reflect.getMetadata(
-                                        ControllerMetadata.ABSTRACTROUTES,
-                                        controller.prototype
+                                    const defaultRoutes = Util.deepClone(
+                                        Reflect.getMetadata(ControllerMetadata.ABSTRACTROUTES, controller.prototype)
                                     );
                                     const superRoutes = Reflect.getOwnMetadata(
                                         ControllerMetadata.SUPERROUTES,

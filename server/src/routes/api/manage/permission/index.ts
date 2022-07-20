@@ -12,7 +12,7 @@ const handler = new Handler();
 @SuperRoutes([RoutesType.LIST])
 // @TurnOffParamsValidate
 @Controller('/manage/permission')
-export default class User extends Api<Handler> {
+export default class Permission extends Api<Handler> {
     protected get handler() {
         return handler;
     }

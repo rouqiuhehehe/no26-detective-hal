@@ -13,7 +13,7 @@ const handler = new Handler();
 @SuperRoutes('single')
 // @TurnOffParamsValidate
 @Controller('/manage/role')
-export default class User extends Api<Handler> {
+export default class Role extends Api<Handler> {
     protected get handler() {
         return handler;
     }

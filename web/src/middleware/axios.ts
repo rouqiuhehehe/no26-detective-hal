@@ -24,7 +24,7 @@ const allExcludes = ['/auth', '/admin', '/api'];
 
 const isTokenExcludes = (url: string) => tokenExcludes.some((v) => new RegExp('^' + v).test(url));
 let loading: ElLoadingComponent | null;
-const defaultTimeout = 30000;
+const defaultTimeout = 30000000;
 // if (process.env.NODE_ENV !== 'development') {
 //     axios.defaults.baseURL = process.env.VUE_APP_API_URL;
 // }
@@ -146,7 +146,7 @@ axios.interceptors.request.use(
                             // 通过公钥对数据加密
                             const encrypt = JSencrypt.encrypt(hashSHA256(Authorization));
                             // 加密数据添加到请求头中
-                            if (encrypt) {
+                            if (encrypt && cfg.encrypt) {
                                 config.params.sign = encrypt;
                             } else {
                                 throw new axios.Cancel('参数加密错误');

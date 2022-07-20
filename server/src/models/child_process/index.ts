@@ -2,7 +2,9 @@ import autoBind from '@src/descriptor/Autobind';
 import childProcess from 'child_process';
 import net from 'net';
 import os from 'os';
-
+import path from 'path';
+// tslint:disable-next-line:no-var-requires
+(global as any).baseConfig = require(path.join(process.cwd(), 'config', 'base-config'));
 /*
     类型         回调/异常    进程类型     执行类型         可设置超时
     spawn()         X          任意        命令              X
@@ -15,7 +17,10 @@ const inspectPort = 9229;
 const dev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 export default class ChildProcess {
     protected cpus = os.cpus();
-    protected server = net.createServer();
+    protected server = net.createServer({
+        // @ts-ignore
+        keepAlive: true
+    });
     private workerMap = new Map();
     private workerCount = 0;
     private readonly len: number;
@@ -34,8 +39,9 @@ export default class ChildProcess {
         this.len = global.baseConfig.processLen ?? this.len;
 
         // 创建tcp服务，发射给子进程
-        this.server.listen(port, this.forkChildProcess);
+        // this.server.listen(port, this.forkChildProcess);
 
+        import('./work');
         process.on('exit', () => {
             this.workerMap.forEach((v: childProcess.ChildProcess) => {
                 v.kill();

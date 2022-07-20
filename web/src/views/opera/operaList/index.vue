@@ -1,7 +1,5 @@
 <template>
-    <div>
-        <my-table :option="config.tableOptions"></my-table>
-    </div>
+    <my-table :option="config.tableOptions"></my-table>
 </template>
 
 <script lang="ts">
@@ -24,8 +22,9 @@ export default class extends Vue {
 </script>
 
 <style lang="less" scoped>
-/deep/.el-input-number--mini {
+/deep/ .el-input-number--mini {
     width: 38px;
+
     .el-input__inner {
         padding: 0 10px;
     }

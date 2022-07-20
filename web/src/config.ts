@@ -1,3 +1,3 @@
 export default {
-    encrypt: true
+    encrypt: false
 };

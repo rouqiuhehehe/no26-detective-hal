@@ -11,9 +11,14 @@ const app = new App();
 (global as any).baseConfig = require(path.join(process.cwd(), 'config', 'base-config'));
 
 app.initRoute().then(() => {
-    const server = http.createServer((...arg) => {
-        app.app(...arg);
-    });
+    const server = http
+        .createServer((...arg) => {
+            app.app(...arg);
+        })
+        .on('clientError', (err) => {
+            console.log(err, 1231);
+        })
+        .listen(1337);
     // @ts-ignore
     const webSocket = new Server<ServerToClientEvents, ClientToServerEvents>(server, {
         transports: ['websocket']
@@ -28,7 +33,17 @@ app.initRoute().then(() => {
         if (e === 'tcp') {
             worker = net;
             net.on('connection', (socket) => {
+                console.log(10);
                 server.emit('connection', socket);
+                socket.on('data', (data) => {
+                    console.log(data.toString(), 7789);
+                });
+                socket.on('end', () => {
+                    console.log(socket.localAddress, 75775);
+                });
+                socket.on('close', (e) => {
+                    console.log(e, 5555);
+                });
             });
         } else {
             console.log(process.pid, e);
