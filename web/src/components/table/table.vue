@@ -1,5 +1,5 @@
 <template>
-    <el-container style="height: 100%">
+    <el-container style="min-height: 100%">
         <el-header v-if="!isEmptyObject(options.header)" height="30px" style="margin-bottom: 10px">
             <el-breadcrumb class="my-breadcrumb" separator-class="el-icon-arrow-right">
                 <el-breadcrumb-item

@@ -11,6 +11,8 @@ module.exports = {
     auth: true,
     // 进程数
     processLen: 1,
+    // 当前服务地址
+    HTTP_URL_HOST: 'http://127.0.0.1:1337',
     redis: {
         port: 6379,
         host: '127.0.0.1',

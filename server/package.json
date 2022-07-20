@@ -7,7 +7,7 @@
     "scripts": {
         "tsc": "babel src --out-dir dist --extensions \".ts,.js\"",
         "serve": "cross-env NODE_ENV=development nodemon -e ts,tsx --exec node --trace-warnings -r ./bin.js src/app.ts",
-        "build": "node .bin/build --mode=linux",
+        "build": "node .bin/build --mode=node16-linux-x64",
         "debugger": "cross-env NODE_ENV=development nodemon -e ts,tsx --exec node --inspect --expose-gc --trace-warnings -r ./bin.js src/app.ts",
         "test": "mocha -w --recursive -r ./bin.js ./test/**/*.spec.ts",
         "concurrent-test": "autocannon -c 1000 -p 5 http://127.0.0.1:1337/admin"
