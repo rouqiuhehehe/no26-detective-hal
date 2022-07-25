@@ -18,7 +18,9 @@ app.initRoute().then(() => {
         .on('clientError', (err) => {
             console.log(err, 1231);
         })
-        .listen(1337);
+        .listen(1337, () => {
+            console.log('服务器启动完毕');
+        });
     // @ts-ignore
     const webSocket = new Server<ServerToClientEvents, ClientToServerEvents>(server, {
         transports: ['websocket']

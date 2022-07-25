@@ -75,6 +75,27 @@ export function clearCache() {
     cacheMap.clear();
 }
 
+async function readBlob(response: AxiosResponse) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.readAsText(response.data);
+        fileReader.onload = () => {
+            if (fileReader.result) {
+                try {
+                    const res = JSON.parse(fileReader.result as string);
+                    if (res.success === false) {
+                        reject(new Error(res.message));
+                    } else {
+                        resolve(1);
+                    }
+                } catch (e) {
+                    resolve(1);
+                }
+            }
+        };
+    });
+}
+
 axios.interceptors.request.use(
     async (config) => {
         if (!loading) {
@@ -175,35 +196,39 @@ axios.interceptors.response.use(
         loading = null;
         if (allExcludes.some((v) => new RegExp('^' + v).test(response.config.url!))) {
             try {
-                if (response.data.success === false) {
-                    if (response.data.status === 1001) {
-                        // token失效
-                        sessionStorage.removeItem('token');
-                        await ElementUI.MessageBox.alert('登录信息过期，请先登录', {
-                            title: '提示',
-                            type: 'error'
-                        });
-                        router.push('/login').then(() => void 0);
-                        return Promise.reject(new Error(response.data.message));
+                if (response.data instanceof Blob) {
+                    await readBlob(response);
+                } else {
+                    if (response.data.success === false) {
+                        if (response.data.status === 1001) {
+                            // token失效
+                            sessionStorage.removeItem('token');
+                            await ElementUI.MessageBox.alert('登录信息过期，请先登录', {
+                                title: '提示',
+                                type: 'error'
+                            });
+                            router.push('/login').then(() => void 0);
+                            return Promise.reject(new Error(response.data.message));
+                        }
+                        throw new Error(response.data.message);
                     }
-                    throw new Error(response.data.message);
-                }
 
-                if (cfg.encrypt) {
-                    if (!excludes.includes(response.config.url ?? '') && response.request.responseType !== 'blob') {
-                        if (response.headers?.authorization) {
-                            const { authorization } = response.headers;
-                            const decrypt = HmacSHA256(
-                                JSON.stringify(response.data.data ?? response.data),
-                                HMACSHA256KEY
-                            ).toString();
-                            if (decrypt === authorization) {
-                                return returnData(response);
+                    if (cfg.encrypt) {
+                        if (!excludes.includes(response.config.url ?? '') && response.request.responseType !== 'blob') {
+                            if (response.headers?.authorization) {
+                                const { authorization } = response.headers;
+                                const decrypt = HmacSHA256(
+                                    JSON.stringify(response.data.data ?? response.data),
+                                    HMACSHA256KEY
+                                ).toString();
+                                if (decrypt === authorization) {
+                                    return returnData(response);
+                                } else {
+                                    throw new Error('数据被篡改了');
+                                }
                             } else {
-                                throw new Error('数据被篡改了');
+                                throw new Error('请设置参数加密响应头');
                             }
-                        } else {
-                            throw new Error('请设置参数加密响应头');
                         }
                     }
                 }

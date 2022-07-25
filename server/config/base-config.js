@@ -1,6 +1,6 @@
 module.exports = {
     // 是否需要sign签名验证
-    encrypt: false,
+    encrypt: true,
     // 是否需要验证防重放参数
     antiReplay: true,
     // 是否需要验证时间戳

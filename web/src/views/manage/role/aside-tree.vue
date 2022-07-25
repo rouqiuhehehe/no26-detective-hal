@@ -4,7 +4,10 @@
             min-width: 220px;
             width: 220px;
             padding: 16px;
-            height: calc(100% - 15px);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             border-right: 1px solid #eee;
             margin-right: 20px;
         "
@@ -209,13 +212,16 @@ export default class extends Vue {
 ::v-deep .el-tree-node__content {
     height: 100%;
 }
+
 ::v-deep .is-current {
     .el-tree-node__content {
         background: #f5f7fa;
     }
 }
+
 .custom-tree-node {
     width: 100%;
+
     > div {
         padding: 10px 20px 10px 0;
         width: 100%;

@@ -23,7 +23,7 @@ export default class extends dictionary {
         filename = filename.replace(extname, '');
 
         try {
-            const filePath = await this.searchFile(filename);
+            const filePath = await this.searchFile(filename, extname);
             res.download(filePath);
         } catch (error) {
             next(error);
@@ -43,14 +43,14 @@ export default class extends dictionary {
         filename = filename.replace(extname, '');
         try {
             // const filePath = await Util.findFilesRecursively(filename as string, path.join(process.cwd(), 'uploads'));
-            const filePath = await this.searchFile(filename);
+            const filePath = await this.searchFile(filename, extname);
             res.download(filePath);
         } catch (error) {
             next(error);
         }
     }
 
-    private searchFile(filename: string): Promise<string> {
+    private searchFile(filename: string, extname: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             await redis(async (client) => {
                 const url = await client.hGet(UploadKeys, filename);
@@ -60,7 +60,7 @@ export default class extends dictionary {
                 } else {
                     try {
                         const filePath = await Util.findFilesRecursively(
-                            filename as string,
+                            (filename as string) + extname,
                             path.join(process.cwd(), 'uploads')
                         );
                         resolve(filePath);
