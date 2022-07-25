@@ -50,15 +50,13 @@ const aside = namespace('routes');
     }
 })
 export default class Home extends Vue {
+    @aside.Getter
+    public asideTree!: AsideTree;
     //   private navConfig = navConfig;
     @user.Getter
     private userInfo!: UserInfo;
-
     @user.Mutation
     private CHANGE_USER_INFO!: Mutation<Partial<UserInfo>>;
-
-    @aside.Getter
-    public asideTree!: AsideTree;
 
     public mounted() {
         new Websocket();
@@ -97,11 +95,14 @@ export default class Home extends Vue {
     width: 100%;
     height: 100%;
     overflow-y: auto;
+
     .container-header {
         line-height: 60px;
+
         h1 {
             float: left;
             cursor: pointer;
+
             img {
                 width: 35px;
                 height: 35px;
@@ -109,21 +110,26 @@ export default class Home extends Vue {
                 vertical-align: sub;
             }
         }
+
         .dropdown {
             float: right;
             cursor: pointer;
             height: 40px;
+
             &:hover {
                 color: #409eff;
             }
+
             .el-dropdown-link {
                 display: flex;
                 align-items: center;
+
                 > img {
                     width: 25px;
                     height: 25px;
                     margin-right: 5px;
                 }
+
                 > em {
                     font-weight: 600;
                     font-style: normal;
@@ -135,6 +141,7 @@ export default class Home extends Vue {
     .el-scrollbar__wrap {
         overflow-x: hidden;
     }
+
     .el-aside {
         .fl-be {
             position: absolute;

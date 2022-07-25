@@ -1,13 +1,13 @@
 <template>
     <el-dialog
-        v-bind="getDialogOptionsBind"
         v-if="options.form ? (options.form.type === 'del' ? false : visible) : visible"
         :visible.sync="visible"
+        v-bind="getDialogOptionsBind"
     >
         <MyForm v-if="option.form" ref="myForm" :option="options.form"></MyForm>
         <component
-            v-else-if="option.component"
             :is="runFnComponent(option.component.component)"
+            v-else-if="option.component"
             v-bind="runFnComponent(option.component.bind)"
             v-on="runFnComponent(option.component.events)"
         >
@@ -53,28 +53,50 @@ export default class extends Vue {
         default: null
     })
     public tableColumnData?: Record<string, any>;
-
+    @ProvideReactive('myDialogForm')
+    public myDialogForm = this;
+    public thisArg!: Vue;
+    public options!: MyDialog;
+    public config;
+    public visible = false;
     @Inject({
         from: 'thisArg',
         default: null
     })
     private readonly controller?: Vue;
 
-    @ProvideReactive('myDialogForm')
-    public myDialogForm = this;
-
-    public thisArg!: Vue;
-
-    public options!: MyDialog;
-
-    public config;
-    public visible = false;
-
     public constructor() {
         super();
         this.config = new Config({
             beforeClose: this.beforeClose
         });
+    }
+
+    public get getDialogOptionsBind() {
+        const obj = utils.deepClone(this.config.default);
+        if (!utils.isEmpty(this.options.form)) {
+            switch (this.options.form!.type) {
+                case 'view':
+                    obj.title = '查看';
+                    break;
+                case 'edit':
+                    obj.title = '编辑';
+                    break;
+                case 'add':
+                    obj.title = '新增';
+                    break;
+            }
+        }
+        for (const i in this.options) {
+            if (this.config.bind.includes(i)) {
+                if (i === 'beforeClose') {
+                    obj[i] = this.beforeClose.call(this.thisArg, this.options.beforeClose as any);
+                } else {
+                    obj[i] = this.options[i];
+                }
+            }
+        }
+        return obj;
     }
 
     @Watch('option', { immediate: true, deep: true })
@@ -140,33 +162,6 @@ export default class extends Vue {
         }
     }
 
-    public get getDialogOptionsBind() {
-        const obj = utils.deepClone(this.config.default);
-        if (!utils.isEmpty(this.options.form)) {
-            switch (this.options.form!.type) {
-                case 'view':
-                    obj.title = '查看';
-                    break;
-                case 'edit':
-                    obj.title = '编辑';
-                    break;
-                case 'add':
-                    obj.title = '新增';
-                    break;
-            }
-        }
-        for (const i in this.options) {
-            if (this.config.bind.includes(i)) {
-                if (i === 'beforeClose') {
-                    obj[i] = this.beforeClose.call(this.thisArg, this.options.beforeClose as any);
-                } else {
-                    obj[i] = this.options[i];
-                }
-            }
-        }
-        return obj;
-    }
-
     @autoBind
     public beforeClose(beforeClose?: (options: MyDialog) => boolean) {
         return (done?: () => void) => {
@@ -209,10 +204,6 @@ export default class extends Vue {
         this.visible = true;
     }
 
-    private isDelForm(obj: any): obj is DelForm {
-        return obj?.type === 'del';
-    }
-
     public runFnComponent(fn: any, ...arg: any[]) {
         if (fn) {
             return utils.runFnComponent(
@@ -222,6 +213,10 @@ export default class extends Vue {
         } else {
             return fn;
         }
+    }
+
+    private isDelForm(obj: any): obj is DelForm {
+        return obj?.type === 'del';
     }
 }
 </script>

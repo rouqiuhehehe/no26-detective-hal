@@ -7,16 +7,16 @@
             </el-breadcrumb>
         </el-header>
         <el-main>
-            <el-descriptions title="用户信息" :column="1">
+            <el-descriptions :column="1" title="用户信息">
                 <template slot="extra">
                     <el-button v-if="can" type="primary" @click="dialogShow">编辑</el-button>
                 </template>
                 <el-descriptions-item v-for="item in descriptionsData" :key="item.key" :label="item.label">
                     <el-image
                         v-if="item.key === 'avatar'"
-                        style="width: 35px; height: 35px"
-                        :src="item.value"
                         :preview-src-list="[item.value]"
+                        :src="item.value"
+                        style="width: 35px; height: 35px"
                     >
                     </el-image>
                     <span v-else v-ellipsis="{ width: '380px', content: item.value }" class="descriptions-value">
@@ -24,7 +24,7 @@
                     </span>
                 </el-descriptions-item>
                 <el-descriptions-item label="操作">
-                    <el-button v-if="can" type="primary" size="small" @click="updateOperaList">操作</el-button>
+                    <el-button v-if="can" size="small" type="primary" @click="updateOperaList">操作</el-button>
                 </el-descriptions-item>
             </el-descriptions>
         </el-main>
@@ -193,6 +193,7 @@ export default class extends Vue {
 .bg-purple {
     background: #d3dce6;
 }
+
 .bg-purple-light {
     background: #e5e9f2;
 }

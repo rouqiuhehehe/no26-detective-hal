@@ -1,21 +1,21 @@
 <template>
     <!--suppress JSUnresolvedVariable -->
     <component
-        v-if="options.xType === 'component'"
         :is="runFnComponent(options.component.component, value, formdata, options)"
-        v-bind="runFnComponent(options.component.bind, value, formdata, options)"
-        v-on="runFnComponent(options.component.events, value, formdata, options)"
+        v-if="options.xType === 'component'"
         :value="value"
+        v-bind="runFnComponent(options.component.bind, value, formdata, options)"
         @input="$listeners.input"
+        v-on="runFnComponent(options.component.events, value, formdata, options)"
     ></component>
     <div v-else-if="itemConfig.component === 'div'" v-html="thisVal"></div>
     <component
-        v-else
         :is="itemConfig.component"
+        v-else
         :value="thisVal"
+        v-bind="getMyItemBind"
         @input="$listeners.input"
         v-on="getMyItemEvents"
-        v-bind="getMyItemBind"
     >
         <template v-if="options.xType === 'select'">
             <el-option
@@ -31,8 +31,8 @@
                 v-for="item in allData"
                 :key="options.formatKey ? item[options.formatKey.key] : item.key"
                 :label="options.formatKey ? item[options.formatKey.key] : item.key"
-                >{{ options.formatKey ? item[options.formatKey.value] : item.value }}</el-checkbox
-            >
+                >{{ options.formatKey ? item[options.formatKey.value] : item.value }}
+            </el-checkbox>
         </template>
         <template v-if="options.xType === 'radio'">
             <el-radio
@@ -71,34 +71,54 @@ export default class extends Vue {
 
     @Prop()
     public formdata!: Record<string, any>;
-
+    @InjectReactive({
+        from: 'myTable',
+        default: {}
+    })
+    public readonly MyTable?: Vue & { [K in keyof any]: any };
+    public thisArg!: Vue;
+    public allData?: any[] = [];
+    public options!: Columns;
+    public itemConfig: ReturnType<typeof itemConfig.typeMap.get>;
+    public thisVal = '';
     @InjectReactive({
         from: 'myForm',
         default: {}
     })
     private readonly myForm!: MyDialogForm;
-
     @Inject({
         from: 'thisArg',
         default: null
     })
     private controller?: Vue;
 
-    @InjectReactive({
-        from: 'myTable',
-        default: {}
-    })
-    public readonly MyTable?: Vue & { [K in keyof any]: any };
+    public get getMyItemEvents() {
+        const obj = {} as ELEvent;
 
-    public thisArg!: Vue;
+        if (this.options.xType !== 'text' && this.options.xType !== 'component') {
+            for (const i in this.options.events) {
+                if ((this.itemConfig?.events as string[])?.includes(i)) {
+                    obj[i] = this.options.events[i];
+                }
+            }
+        }
 
-    public allData?: any[] = [];
+        return obj;
+    }
 
-    public options!: Columns;
+    public get getMyItemBind() {
+        const obj = utils.deepClone(this.itemConfig?.defaultBind) ?? {};
 
-    public itemConfig: ReturnType<typeof itemConfig.typeMap.get>;
-
-    public thisVal = '';
+        for (const i in this.options) {
+            if ((this.itemConfig?.bind as string[])?.includes(i)) {
+                obj[i] = this.options[i];
+            }
+        }
+        if (this.myForm.type === 'view' && (this.itemConfig?.bind as string[])?.includes('disabled')) {
+            obj['disabled'] = obj['disabled'] ?? true;
+        }
+        return obj;
+    }
 
     @Watch('value', { immediate: true })
     public onValueChange(v: any) {
@@ -149,34 +169,6 @@ export default class extends Vue {
             this.allData = data;
             this.$forceUpdate();
         }
-    }
-
-    public get getMyItemEvents() {
-        const obj = {} as ELEvent;
-
-        if (this.options.xType !== 'text' && this.options.xType !== 'component') {
-            for (const i in this.options.events) {
-                if ((this.itemConfig?.events as string[])?.includes(i)) {
-                    obj[i] = this.options.events[i];
-                }
-            }
-        }
-
-        return obj;
-    }
-
-    public get getMyItemBind() {
-        const obj = utils.deepClone(this.itemConfig?.defaultBind) ?? {};
-
-        for (const i in this.options) {
-            if ((this.itemConfig?.bind as string[])?.includes(i)) {
-                obj[i] = this.options[i];
-            }
-        }
-        if (this.myForm.type === 'view' && (this.itemConfig?.bind as string[])?.includes('disabled')) {
-            obj['disabled'] = obj['disabled'] ?? true;
-        }
-        return obj;
     }
 
     public runFnComponent(fn: any, ...arg: any[]) {

@@ -1,5 +1,5 @@
 <template>
-    <my-table :option="config.tableOptions" ref="myTable"></my-table>
+    <my-table ref="myTable" :option="config.tableOptions"></my-table>
 </template>
 
 <script lang="ts">
@@ -14,6 +14,9 @@ import Config from './config';
     }
 })
 export default class extends Vue {
+    public config!: Config;
+    public show = false;
+
     public constructor() {
         super();
     }
@@ -21,10 +24,6 @@ export default class extends Vue {
     public created() {
         this.config = new Config(this);
     }
-
-    public config!: Config;
-
-    public show = false;
 }
 </script>
 

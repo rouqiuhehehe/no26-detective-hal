@@ -2,6 +2,7 @@ import Util from '.';
 
 export default function formatParams(obj: Record<string, unknown>): Record<string, unknown> {
     const params = {};
+
     function _(objC: Record<string, unknown>, params: Record<string, unknown>) {
         for (const i in objC) {
             if (Reflect.has(objC, i)) {
@@ -32,6 +33,7 @@ export default function formatParams(obj: Record<string, unknown>): Record<strin
             }
         }
     }
+
     _(obj, params);
     return params;
 }

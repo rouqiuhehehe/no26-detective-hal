@@ -10,6 +10,7 @@ export interface List {
     id: string;
     updateDate: string;
 }
+
 export default class Test {
     public static getList(params: Record<string, any>) {
         return axios.get<List>('/api/test', { params });

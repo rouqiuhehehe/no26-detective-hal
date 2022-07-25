@@ -7,6 +7,7 @@ interface State {
     routesTree: Partial<WebRoutesTree>[];
     asideTree: Partial<AsideTree>[];
 }
+
 const state: State = {
     routesTree: [],
     asideTree: []
@@ -47,6 +48,7 @@ function formatRoutes(params: Partial<WebRoutesTree>[]): formatRoutesTree[] {
         };
     });
 }
+
 const actions: ActionTree<State, any> = {
     async getWebRoutes({ commit }) {
         const res = await routes.getRoutes<State>();

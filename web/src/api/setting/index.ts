@@ -9,6 +9,7 @@ export interface UserInfo {
     uid: string;
     update_date: string;
 }
+
 export default class Setting {
     public static getSettingUserInfo() {
         return axios.get<UserInfo>('/admin/setting/get-setting-user-info');

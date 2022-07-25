@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import Util, { DescriptorType } from '@/utils';
+
 // tslint:disable: no-invalid-this
 
 function autoBind<T extends Function>(target: T): T | void;

@@ -558,6 +558,7 @@ export interface elRuleObject {
     trigger: string;
     validator?: Check;
 }
+
 export interface Check {
     (
         rule: { field: string; fullField: string; type: string },
@@ -565,6 +566,7 @@ export interface Check {
         callback: (sub?: Error) => void
     ): void;
 }
+
 export type RequiredType = 'number' | '!number' | 'IdCard' | '!IdCard' | 'chinese' | '!chinese' | 'phone' | '!phone';
 
 export type RequiredRule<T> =
@@ -579,8 +581,10 @@ export interface BaseItemComponent {
     showStar?: boolean;
     hidden?: boolean;
 }
+
 export type ColumnsStore = ((params: any) => Promise<AxiosResponse<any, any>>) | any[];
 export type FormStore = (params: any) => Promise<AxiosResponse<any, any>>;
+
 export interface StoreBase<O> {
     /**
      * axios请求体，或key value数组
@@ -627,6 +631,7 @@ export interface ComponentBase<T = any, C = Record<string, any>, U = ComponentBa
         | ((value?: T, formdata: C, option: U) => string)
         | ((value?: T, row: C, option: U, options?: A) => string);
 }
+
 /**
  * 获取不继承自vue的单独接口
  */
@@ -661,6 +666,7 @@ type MyElementUIComponentTypeWithBeforeRender<T extends ElementUIComponent, U ex
               };
     }
 >;
+
 export interface ELEvent {
     change: (v: any) => void;
     'visible-change': (show: boolean) => void;
@@ -671,6 +677,7 @@ export interface ELEvent {
     'expand-change': (v: any[]) => void;
     input: (v: string | number) => void;
 }
+
 export type MyInput = MyElementUIComponentTypeWithBeforeRender<
     Overwrite<ElInput, { type: 'text' | 'textarea' | 'number' }>,
     'input',

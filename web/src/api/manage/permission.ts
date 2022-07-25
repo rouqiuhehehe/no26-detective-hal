@@ -14,6 +14,7 @@ export interface MenuTree {
 interface ListParams extends Pagination {
     role: string;
 }
+
 export default class Permission {
     public static getPermissionList(params: ListParams) {
         return axios.get<MenuTree[]>('/api/manage/permission', { params });

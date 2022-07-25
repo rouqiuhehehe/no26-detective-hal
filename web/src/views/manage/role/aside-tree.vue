@@ -15,30 +15,30 @@
         <div style="display: flex; margin-bottom: 8px">
             <el-input
                 v-model="searchVal"
-                @keydown.native.enter="search"
-                @clear="search"
+                clearable
                 placeholder="搜索角色名"
                 style="margin-right: 6px"
-                clearable
+                @clear="search"
+                @keydown.native.enter="search"
             >
-                <i slot="suffix" style="cursor: pointer" class="el-icon-search el-input__icon" @click="search"></i>
+                <i slot="suffix" class="el-icon-search el-input__icon" style="cursor: pointer" @click="search"></i>
             </el-input>
-            <el-button icon="el-icon-plus" size="small" @click="showDialog" v-if="operation"></el-button>
+            <el-button v-if="operation" icon="el-icon-plus" size="small" @click="showDialog"></el-button>
         </div>
         <el-scrollbar style="height: 100%">
             <el-tree
                 ref="tree"
                 :data="data"
+                :filter-node-method="filterNode"
                 :props="defaultProps"
                 node-key="id"
-                :filter-node-method="filterNode"
                 @node-click="$listeners['node-click']"
             >
-                <div class="custom-tree-node" slot-scope="{ node, data }">
-                    <el-tooltip :content="data.info" placement="bottom-start" effect="light">
+                <div slot-scope="{ node, data }" class="custom-tree-node">
+                    <el-tooltip :content="data.info" effect="light" placement="bottom-start">
                         <div style="width: 100%">
                             <span style="font-size: 14px">{{ node.label }}</span>
-                            <el-dropdown @command="handleCommand($event, data)" v-if="operation">
+                            <el-dropdown v-if="operation" @command="handleCommand($event, data)">
                                 <i class="el-icon-more-outline"></i>
                                 <el-dropdown-menu slot="dropdown">
                                     <el-dropdown-item command="edit">编辑</el-dropdown-item>
@@ -83,6 +83,8 @@ export default class extends Vue {
     };
 
     public searchVal = '';
+    private dialogType = 'add';
+    private roleId = '';
 
     public get dialogFormOption(): MyDialog {
         let option: Omit<AddForm, 'columns'> | Omit<EditForm, 'columns'>;
@@ -152,9 +154,6 @@ export default class extends Vue {
     public get dialogForm() {
         return this.$refs.dialogForm as dialogForm;
     }
-
-    private dialogType = 'add';
-    private roleId = '';
 
     public async mounted() {
         await this.getTreeData();

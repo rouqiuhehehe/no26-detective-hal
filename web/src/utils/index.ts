@@ -14,6 +14,8 @@ export enum DescriptorType {
 const componentMap = new Map();
 export default class Util {
     public static date = Date;
+    public static _r = _r;
+    public static loadScript = loadScript;
 
     public static async export(url: string, data?: Record<string, any>) {
         const res = await Axios.post(url, data, {
@@ -51,8 +53,6 @@ export default class Util {
         return newObj;
     }
 
-    public static _r = _r;
-
     public static colorSpan(color: string, label: string) {
         return `<span style="color: ${color}">${label}</span>`;
     }
@@ -67,8 +67,6 @@ export default class Util {
             return true;
         }
     }
-
-    public static loadScript = loadScript;
 
     public static downloadFile(filename: string, data: Blob) {
         const a = document.createElement('a');

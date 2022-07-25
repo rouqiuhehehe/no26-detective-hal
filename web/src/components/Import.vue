@@ -1,37 +1,37 @@
 <template>
     <div>
         <el-dialog
-            :visible.sync="show"
-            :title="option.title || '导入'"
             :before-close="() => $emit('update:show', false)"
+            :title="option.title || '导入'"
+            :visible.sync="show"
         >
             <el-upload
                 ref="upload"
+                :accept="option.accept"
+                :http-request="importFile"
+                :limit="1"
+                :on-remove="clearFile"
+                action="#"
                 class="upload-demo"
                 drag
-                action="#"
-                :accept="option.accept"
-                :limit="1"
-                :http-request="importFile"
-                :on-remove="clearFile"
             >
                 <i class="el-icon-upload"></i>
                 <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-                <div class="el-upload__tip" slot="tip">只能上传{{ getAccept(option.accept) }}文件，且不超过500kb</div>
+                <div slot="tip" class="el-upload__tip">只能上传{{ getAccept(option.accept) }}文件，且不超过500kb</div>
                 <div class="upload-header">
                     <span @click.stop="downloadTemplate(option.template.store)">
                         文件模板下载：
                         <span style="color: #409eff">{{ option.template.title }}</span>
                     </span>
-                    <el-button v-if="!file" size="small" type="primary" class="pick-file">选取文件</el-button>
-                    <el-button v-else size="small" type="primary" class="pick-file" @click.stop="clearFile"
-                        >清除文件</el-button
-                    >
+                    <el-button v-if="!file" class="pick-file" size="small" type="primary">选取文件</el-button>
+                    <el-button v-else class="pick-file" size="small" type="primary" @click.stop="clearFile"
+                        >清除文件
+                    </el-button>
                 </div>
             </el-upload>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="$emit('update:show', false)">取 消</el-button>
-                <el-button type="primary" :disabled="commitBtnDisabled" @click="commitForm">确 定</el-button>
+                <el-button :disabled="commitBtnDisabled" type="primary" @click="commitForm">确 定</el-button>
             </span>
         </el-dialog>
     </div>
@@ -54,15 +54,13 @@ export default class extends Vue {
         required: true
     })
     public option!: MyFileImport;
+    public file: File | null = null;
+    public commitBtnDisabled = true;
 
     @Watch('file')
     public changeBtnStatus() {
         this.commitBtnDisabled = !this.file;
     }
-
-    public file: File | null = null;
-
-    public commitBtnDisabled = true;
 
     public getAccept(accept: string) {
         return accept.replace(/\./g, '').replace(/,/, '/');

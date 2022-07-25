@@ -2,41 +2,41 @@
     <div class="login">
         <div class="form">
             <el-menu
+                active-text-color="#08c"
+                background-color="#fff"
                 default-active="1"
                 mode="horizontal"
-                background-color="#fff"
                 text-color="#000"
-                active-text-color="#08c"
             >
                 <el-menu-item index="1">登录</el-menu-item>
             </el-menu>
             <el-form
+                ref="formData"
                 :model="formData"
                 :rules="rules"
-                ref="formData"
-                status-icon
-                label-width="80px"
                 class="demo-ruleForm"
+                label-width="80px"
+                status-icon
             >
                 <el-form-item label="用户名" prop="userName">
                     <el-input
                         v-model="formData.userName"
-                        @keydown.enter.native="login('formData')"
                         placeholder="请输入用户名"
+                        @keydown.enter.native="login('formData')"
                     />
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
                     <el-input
                         v-model="formData.password"
-                        @keyup.enter.native="login('formData')"
-                        type="password"
                         placeholder="请输入密码"
+                        type="password"
+                        @keyup.enter.native="login('formData')"
                     />
                 </el-form-item>
                 <el-form-item label="验证码">
                     <div id="g-recaptcha">Submit</div>
                 </el-form-item>
-                <el-button type="primary" round @click="login('formData')" class="login-btn">登录</el-button>
+                <el-button class="login-btn" round type="primary" @click="login('formData')">登录</el-button>
             </el-form>
         </div>
     </div>
@@ -47,6 +47,7 @@
     height: 100%;
     background: url(../../assets/logo.jpg) no-repeat center;
     background-size: contain;
+
     .form {
         width: 420px;
         height: 380px;
@@ -64,11 +65,13 @@
                 text-align: center;
             }
         }
+
         .demo-ruleForm {
             padding: 10px 20px;
             margin-top: 30px;
             text-align: center;
         }
+
         .login-btn {
             width: 70%;
         }
@@ -149,15 +152,6 @@ export default class extends Vue {
         }
     }
 
-    private grecaptchaOnloadCallback() {
-        (window as any).grecaptcha.render('g-recaptcha', {
-            sitekey: this.scriptSitekey, //公钥
-            callback: this.onSubmit, //验证成功回调
-            'expired-callback': this.recaptchaExpired, //验证过期回调
-            'error-callback': this.errorCallback //验证错误回调
-        });
-    }
-
     public async login(formName: string) {
         if (!this.isVerify) {
             this.$alert('请先点击验证码进行进行验证', {
@@ -201,6 +195,15 @@ export default class extends Vue {
             } catch (error) {
                 // this.isVerify = false;
             }
+        });
+    }
+
+    private grecaptchaOnloadCallback() {
+        (window as any).grecaptcha.render('g-recaptcha', {
+            sitekey: this.scriptSitekey, //公钥
+            callback: this.onSubmit, //验证成功回调
+            'expired-callback': this.recaptchaExpired, //验证过期回调
+            'error-callback': this.errorCallback //验证错误回调
         });
     }
 

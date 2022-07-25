@@ -1,14 +1,14 @@
 <template>
-    <el-form :model="formData" :rules="ruleForm" inline v-bind="getMyFormBind" ref="my-form">
-        <el-row :gutter="20" class="my-form-container">
-            <template v-for="item in options.columns">
-                <el-col v-if="!item.hidden" :key="item.dataIndex" v-bind="getColSpan(item.box || 8)">
-                    <el-form-item v-bind="getMyFormItemBind(item)">
-                        <span slot="label" v-if="item.showStar" class="required-label">{{ item.label }}</span>
+    <el-form ref='my-form' :model='formData' :rules='ruleForm' inline v-bind='getMyFormBind'>
+        <el-row :gutter='20' class='my-form-container'>
+            <template v-for='item in options.columns'>
+                <el-col v-if='!item.hidden' :key='item.dataIndex' v-bind='getColSpan(item.box || 8)'>
+                    <el-form-item v-bind='getMyFormItemBind(item)'>
+                        <span v-if='item.showStar' slot='label' class='required-label'>{{ item.label }}</span>
                         <ItemComponent
-                            v-model="formData[item.dataIndex]"
-                            :formdata="formData"
-                            :option="item"
+                            v-model='formData[item.dataIndex]'
+                            :formdata='formData'
+                            :option='item'
                         ></ItemComponent>
                     </el-form-item>
                 </el-col>
@@ -17,7 +17,7 @@
     </el-form>
 </template>
 
-<script lang="ts">
+<script lang='ts'>
 import { Check, Columns, EditForm, elRuleObject, MyDialogForm, RequiredRule, ViewForm } from '@/types/components';
 import utils from '@/utils';
 import { Component, Inject, InjectReactive, Prop, ProvideReactive, Vue } from 'vue-property-decorator';
@@ -50,26 +50,21 @@ export default class extends Vue {
         default: {}
     })
     public readonly tableColumnData?: Record<string, any>;
+    @ProvideReactive('myForm')
+    public myForm = this.option;
+    public thisArg!: Vue;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    public options: MyDialogForm = {};
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    public formData: Record<string, any> = {};
+    public ruleForm: Record<string, any> = {};
     @Inject({
         from: 'thisArg',
         default: null
     })
     private readonly controller?: Vue;
-
-    @ProvideReactive('myForm')
-    public myForm = this.option;
-
-    public thisArg!: Vue;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    public options: MyDialogForm = {};
-
-    public formData: Record<string, any> = {};
-
-    public ruleForm: Record<string, any> = {};
-
     private config;
 
     private itemConfig;
@@ -195,9 +190,9 @@ export default class extends Vue {
                         const res = await store(params);
 
                         !this.options.hideSuccessTips &&
-                            (await this.$alert('提交成功', '提示', {
-                                type: 'success'
-                            }));
+                        (await this.$alert('提交成功', '提示', {
+                            type: 'success'
+                        }));
                         if (this.options.afterCommit && typeof this.options.afterCommit === 'function') {
                             await (this.options.afterCommit as any).call(
                                 this.thisArg,
@@ -359,11 +354,11 @@ export default class extends Vue {
         required:
             | boolean
             | ((
-                  value: any,
-                  options: Columns,
-                  option: Columns[],
-                  table?: Vue & { [x: string]: any }
-              ) => string | boolean),
+            value: any,
+            options: Columns,
+            option: Columns[],
+            table?: Vue & { [x: string]: any }
+        ) => string | boolean),
         message: string,
         reg?: RegExp
     ): Check {
@@ -399,9 +394,10 @@ export default class extends Vue {
 }
 </script>
 
-<style lang="less" scoped>
+<style lang='less' scoped>
 .el-form-item {
     display: flex;
+
     ::v-deep.el-form-item__label {
         white-space: nowrap;
     }

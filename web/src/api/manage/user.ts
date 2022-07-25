@@ -16,6 +16,7 @@ export interface UserListType {
     updateDate: Date;
     username: string;
 }
+
 export default class User {
     public static getUserList(params: UserListParams) {
         return axios.get<UserListType>('/api/manage/user', { params });

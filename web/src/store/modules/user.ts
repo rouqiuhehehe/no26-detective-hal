@@ -5,6 +5,7 @@ import { ActionTree, GetterTree, MutationTree } from 'vuex';
 export interface State {
     userInfo: Partial<UserInfo>;
 }
+
 const state: State = {
     userInfo: {}
 };

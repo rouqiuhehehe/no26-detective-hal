@@ -1,13 +1,13 @@
 <template>
-    <el-menu :default-active="$route.path" router class="el-menu-vertical-demo">
+    <el-menu :default-active="$route.path" class="el-menu-vertical-demo" router>
         <component
+            :is="value.children && value.children.length ? 'el-submenu' : 'el-menu-item'"
             v-for="value in menuTree"
             :key="value.name"
-            :is="value.children && value.children.length ? 'el-submenu' : 'el-menu-item'"
-            :index="value.path"
             :class="{
                 'has-child-router': value.children && value.children.length
             }"
+            :index="value.path"
         >
             <template slot="title">
                 <i :class="value.icon"></i>
@@ -42,12 +42,15 @@ export default class extends Vue {
 .el-menu {
     text-align: center;
 }
+
 .has-child-router {
     background: #eeeeee33;
 }
+
 .is-opened {
     background: #eeeeee99;
 }
+
 ///deep/ .el-submenu.is-opened > .el-submenu__title .el-submenu__icon-arrow {
 //    display: none;
 //}
