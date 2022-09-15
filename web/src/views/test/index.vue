@@ -1,5 +1,7 @@
 <template>
-    <my-table ref="myTable" :option="config.tableOptions"></my-table>
+    <div>
+        <my-table ref="myTable" :option="config.tableOptions"></my-table>
+    </div>
 </template>
 
 <script lang="ts">
@@ -7,6 +9,13 @@ import { Component, Vue } from 'vue-property-decorator';
 import MyTable from '@/components/table/table.vue';
 import Config from './config';
 
+// class A {
+//     @autobind
+//     public b() {}
+// }
+//
+// const a = new A();
+// const fn = a.b;
 @Component({
     name: 'test',
     components: {

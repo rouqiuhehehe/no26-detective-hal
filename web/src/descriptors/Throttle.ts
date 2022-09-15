@@ -21,7 +21,10 @@ export default (
                         prev = new Date().getTime();
                     } else {
                         prev = new Date().getTime();
-                        startExecution && func.apply(this, args);
+                        if (startExecution) {
+                            func.apply(this, args);
+                            startExecution = false;
+                        }
                     }
                 };
             } else {

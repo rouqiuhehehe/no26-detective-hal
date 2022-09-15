@@ -43,7 +43,7 @@ export default class extends BaseDao {
 
     @Override
     protected get hasPaginationBuilder() {
-        return `select SQL_CALC_FOUND_ROWS ${this.listFields
+        return `SELECT SQL_CALC_FOUND_ROWS ${this.listFields
             .map((v) => `c.${v}`)
             .toString()} from (SELECT a.*, GROUP_CONCAT(b.n_role_id) as role FROM ${
             this.table

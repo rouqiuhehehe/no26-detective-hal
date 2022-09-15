@@ -50,21 +50,21 @@ function methodAutoBind(target: Object, key: string | symbol, fn: ReturnType<typ
             }
             Object.defineProperty(this, key, {
                 get() {
-                    return get.bind(this);
+                    return fn.type === DescriptorType.DATA ? get.bind(this) : get.call(this);
                 },
-                set() {
+                set(...arg: any[]) {
                     if (set) {
-                        return set.bind(this);
+                        return set.call(this, ...arg);
                     }
                 },
                 configurable: true
             });
 
-            return get.bind(this);
+            return fn.type === DescriptorType.DATA ? get.bind(this) : get.call(this);
         },
-        set() {
+        set(...arg: any[]) {
             if (set) {
-                return set.bind(this);
+                return set.call(this, ...arg);
             }
         }
     };

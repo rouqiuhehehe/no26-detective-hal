@@ -6,7 +6,7 @@ module.exports = {
     // 是否需要验证时间戳
     timestamp: true,
     // 是否需要打印sql语句
-    debugSQL: false,
+    debugSQL: true,
     // 是否需要验证登录
     auth: true,
     // 进程数

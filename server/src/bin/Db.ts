@@ -1,44 +1,44 @@
-import serverError from '@src/util/serverError';
-import Util from '@util';
-import events from 'events';
-import { Request } from 'express';
-import FileStreamRotator from 'file-stream-rotator';
-import mysql from 'mysql';
-import mysqldump from 'mysqldump';
-import path from 'path';
-import fsPromise from 'fs/promises';
+import serverError from "@src/util/serverError";
+import Util from "@util";
+import events from "events";
+import { Request } from "express";
+import FileStreamRotator from "file-stream-rotator";
+import mysql from "mysql";
+import mysqldump from "mysqldump";
+import path from "path";
+import fsPromise from "fs/promises";
 
-const dbconfig = fsPromise.readFile(path.join(process.cwd(), 'config', 'dbconfig.json'));
+const dbconfig = fsPromise.readFile(path.join(process.cwd(), "config", "dbconfig.json"));
 
 // a bunch of session variables we use to make the import work smoothly
 const HEADER_VARIABLES = [
     // Add commands to store the client encodings used when importing and set to UTF8 to preserve data
-    '/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;',
-    '/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;',
-    '/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;',
-    '/*!40101 SET NAMES utf8 */;',
+    "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;",
+    "/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;",
+    "/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;",
+    "/*!40101 SET NAMES utf8 */;",
     // Add commands to disable foreign key checks
-    '/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;',
+    "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;",
     "/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;",
-    '/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;',
-    ''
-].join('\n');
+    "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;",
+    ""
+].join("\n");
 const FOOTER_VARIABLES = [
-    '/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;',
-    '/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;',
-    '/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;',
-    '/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;',
-    '/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;',
-    '/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;',
-    ''
-].join('\n');
+    "/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;",
+    "/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;",
+    "/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;",
+    "/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;",
+    "/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;",
+    "/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;",
+    ""
+].join("\n");
 
 type Callback<T> = (results: T, conn: mysql.PoolConnection, fields?: mysql.FieldInfo[]) => void;
 export default class extends events.EventEmitter {
     private status = new Set();
     private pool!: mysql.Pool;
 
-    public constructor() {
+    public constructor () {
         super();
         this.setMaxListeners(0);
 
@@ -49,7 +49,7 @@ export default class extends events.EventEmitter {
         })();
     }
 
-    public asyncQuery<T>(sql: string, values?: unknown[] | string): Promise<T> {
+    public asyncQuery<T> (sql: string, values?: unknown[] | string): Promise<T> {
         const { debugSQL } = global.baseConfig;
         debugSQL && console.log(sql, values);
         return new Promise((resolve, reject) => {
@@ -72,10 +72,10 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务回滚方法
      */
-    public beginTransaction<T>(sql: string, values?: unknown | unknown[], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T> (sql: string, values?: unknown | unknown[], cb?: Callback<T>): Promise<boolean>;
     // noinspection JSUnusedGlobalSymbols
-    public beginTransaction<T>(sql: string | string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
-    public beginTransaction<T>(
+    public beginTransaction<T> (sql: string | string[] | [string, unknown[]][], cb?: Callback<T>): Promise<boolean>;
+    public beginTransaction<T> (
         sql: string | string[] | [string, unknown[]][],
         values?: unknown | unknown[] | Callback<T>,
         cb?: Callback<T>
@@ -83,7 +83,7 @@ export default class extends events.EventEmitter {
         let callback: Callback<T> | undefined;
         let sqlVal: unknown | unknown[];
         if (arguments.length === 2) {
-            if (typeof values === 'function') {
+            if (typeof values === "function") {
                 callback = values as Callback<T>;
                 sqlVal = [];
             } else {
@@ -107,7 +107,7 @@ export default class extends events.EventEmitter {
                             reject(err);
                         } else {
                             try {
-                                if (typeof sql === 'string') {
+                                if (typeof sql === "string") {
                                     const result = await this.transactionHandle(conn, sql, sqlVal);
                                     try {
                                         callback && (await callback(result as unknown as T, conn));
@@ -120,7 +120,7 @@ export default class extends events.EventEmitter {
                                         });
                                     } catch (error) {
                                         conn.rollback((e) => {
-                                            console.log('事务回滚');
+                                            console.log("事务回滚");
                                             if (e) {
                                                 reject(e);
                                             }
@@ -131,7 +131,7 @@ export default class extends events.EventEmitter {
                                 } else {
                                     const allPromise = [];
                                     for (const value of sql) {
-                                        if (typeof value === 'string') {
+                                        if (typeof value === "string") {
                                             allPromise.push(this.transactionHandle(conn, value, []));
                                         } else {
                                             const [_sql, values] = value;
@@ -151,7 +151,7 @@ export default class extends events.EventEmitter {
                                             });
                                         } catch (error) {
                                             conn.rollback((e) => {
-                                                console.log('事务回滚');
+                                                console.log("事务回滚");
 
                                                 if (e) {
                                                     throw e;
@@ -176,27 +176,27 @@ export default class extends events.EventEmitter {
     /**
      * 数据库备份方法
      */
-    public async databaseBackup() {
+    public async databaseBackup () {
         const config = (await dbconfig).toString();
         const res = await mysqldump({
             connection: JSON.parse(config)
         });
 
         const stream = FileStreamRotator.getStream({
-            date_format: 'YYYYMMDD',
-            filename: path.join(process.cwd(), 'dump/%DATE%', `${Date.now()}.sql`),
-            frequency: 'daily',
+            date_format: "YYYYMMDD",
+            filename: path.join(process.cwd(), "dump/%DATE%", `${ Date.now() }.sql`),
+            frequency: "daily",
             verbose: false,
-            max_logs: '10d'
+            max_logs: "10d"
         });
 
         stream.write(
-            `${HEADER_VARIABLES}
-            ${res.dump.schema}
-            ${res.dump.data}
+            `${ HEADER_VARIABLES }
+            ${ res.dump.schema }
+            ${ res.dump.data }
                     
-            ${FOOTER_VARIABLES}`,
-            'utf-8',
+            ${ FOOTER_VARIABLES }`,
+            "utf-8",
             (err) => {
                 if (err) {
                     console.error(err);
@@ -213,8 +213,8 @@ export default class extends events.EventEmitter {
      * @param sql 数据库操作语句
      * @param values 数据库操作语句values
      */
-    public asyncQueryBySock<T>(req: Request | string, sql: string, values?: unknown[] | string): Promise<T> {
-        const url = typeof req === 'object' ? Util.getNoParamsUrl(req) : req;
+    public asyncQueryBySock<T> (req: Request | string, sql: string, values?: unknown[] | string): Promise<T> {
+        const url = typeof req === "object" ? Util.getNoParamsUrl(req) : req;
         return new Promise(async (resolve, reject) => {
             this.once(url, (res) => {
                 if (res instanceof Error) {
@@ -241,8 +241,9 @@ export default class extends events.EventEmitter {
     /**
      * 处理事务方法
      */
-    public transactionHandle(conn: mysql.PoolConnection, sql: string, sqlVal?: unknown | unknown[]) {
+    public transactionHandle (conn: mysql.PoolConnection, sql: string, sqlVal?: unknown | unknown[]) {
         const { debugSQL } = global.baseConfig;
+        console.log(debugSQL);
         debugSQL && console.log(sql, sqlVal);
         return new Promise((resolve, reject) => {
             conn.query(sql, sqlVal, async (err, result, _fields) => {

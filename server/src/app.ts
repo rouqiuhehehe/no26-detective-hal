@@ -4,7 +4,6 @@
 import 'reflect-metadata';
 // import './https';
 import cp from './child_process';
-import BaseConversion from '@src/util/BaseConversion';
 
 (async () => {
     new cp();
